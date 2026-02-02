@@ -234,228 +234,28 @@ Examples:
 
 ## 📁 Cấu Trúc Thư Mục
 
-```
-
 eco-mobile/
-├── app.json # Expo configuration
-├── App.tsx # Root component
-├── index.ts # Entry point
-├── package.json # Dependencies & scripts
-├── tsconfig.json # TypeScript config (path aliases)
-├── babel.config.js # Babel config
+├── assets/        # Icon, splash, media
+├── src/
+│   ├── components/   # UI components dùng chung
+│   ├── screens/      # Các màn hình chính
+│   ├── navigation/  # Điều hướng (Stack, Tab)
+│   ├── services/    # API, AI, storage
+│   ├── store/       # State management (Zustand)
+│   ├── hooks/       # Custom hooks
+│   ├── utils/       # Hàm tiện ích
+│   ├── constants/   # Hằng số, config
+│   ├── types/       # TypeScript types
+│   ├── theme/       # Theme & styling
+│   └── contexts/    # React Context
 │
-├── assets/ # Root assets (icon, splash)
-│
-└── src/
-├── components/ # Reusable UI components
-│ ├── common/ # Button, Card, Input...
-│ ├── ai/ # AI scanner components
-│ ├── dashboard/ # Dashboard components
-│ └── game/ # Game components
-│
-├── screens/ # Screen components (pages)
-│ ├── auth/ # LoginScreen
-│ ├── onboarding/ # OnboardingScreen
-│ ├── splash/ # SplashScreen
-│ ├── home/ # HomeScreen
-│ ├── dashboard/ # DashboardScreen
-│ ├── ai/ # AIScannerScreen
-│ ├── game/ # GameScreen
-│ └── profile/ # ProfileScreen
-│
-├── navigation/ # Navigation setup
-│ ├── AppNavigator.tsx # Main app navigation
-│ └── AuthNavigator.tsx # Auth flow navigation
-│
-├── services/ # External services
-│ ├── api/ # API clients (axios)
-│ │ ├── client.ts # Base axios instance
-│ │ ├── auth.ts # Auth API
-│ │ ├── game.ts # Game API
-│ │ ├── vision.ts # AI Vision API
-│ │ └── ...
-│ └── storage/ # AsyncStorage wrapper
-│
-├── store/ # Zustand state management
-│ ├── authStore.ts # Auth state (token, user)
-│ ├── gameStore.ts # Game state (points, level)
-│ ├── rewardStore.ts # Rewards state
-│ └── notificationStore.ts
-│
-├── hooks/ # Custom React hooks
-│ └── (chưa có - sẽ thêm useAuth, useGame...)
-│
-├── utils/ # Utility functions
-│ ├── helpers.ts # General helpers
-│ └── validators.ts # Validation functions
-│
-├── constants/ # App constants
-│ ├── config.ts # API URLs, app config
-│ ├── routes.ts # Route names
-│ └── game.ts # Game constants
-│
-├── types/ # TypeScript type definitions
-│ ├── user.ts
-│ ├── game.ts
-│ ├── reward.ts
-│ └── ...
-│
-├── theme/ # Theme system
-│ ├── colors.ts # Color palette
-│ ├── spacing.ts # Spacing scale
-│ ├── typography.ts # Font styles
-│ └── paperTheme.ts # React Native Paper theme
-│
-├── contexts/ # React contexts
-│ └── AuthContext.tsx
-│
-└── assets/ # Source assets
-├── images/ # PNG, JPG images
-└── sounds/ # Audio files
-
-````
-
-### Path Aliases (tsconfig.json)
-
-```typescript
-// Import tuyệt đối thay vì relative path
-import { Button } from '@/components/common';
-import { AuthService } from '@services/api';
-import { useAuthStore } from '@store/authStore';
-import { COLORS } from '@theme';
-````
-
----
-
-## 📝 Coding Convention
-
-### 1. Naming Conventions
-
-**Files & Folders:**
-
-- Components: `PascalCase.tsx` (Button.tsx, GameCard.tsx)
-- Utils/Hooks: `camelCase.ts` (useAuth.ts, helpers.ts)
-- Folders: `lowercase` or `kebab-case`
-
-**Variables & Functions:**
-
-```typescript
-// Variables: camelCase
-const userName = 'John';
-const totalPoints = 100;
-
-// Constants: UPPER_SNAKE_CASE
-const MAX_POINTS = 1000;
-const API_BASE_URL = 'https://api.example.com';
-
-// Functions: camelCase (verb + noun)
-const getUserData = () => {};
-const handleSubmit = () => {};
-
-// Components: PascalCase
-const UserProfile = () => {};
+├── App.tsx        # Root component
+├── app.json       # Expo config
+├── package.json   # Dependencies
+└── tsconfig.json  # TypeScript config
+```
 ```
 
-**Types & Interfaces:**
-
-```typescript
-// Interfaces: PascalCase
-interface User {
-  id: string;
-  name: string;
-}
-
-// Types: PascalCase
-type GameStatus = 'idle' | 'playing' | 'paused';
-
-// Enums: PascalCase
-enum WasteType {
-  Organic = 'organic',
-  Recyclable = 'recyclable',
-  Hazardous = 'hazardous',
-}
-```
-
-### 2. Component Structure
-
-```typescript
-// 1. Imports (thư viện -> local)
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Button } from '@/components/common';
-import { useAuthStore } from '@store/authStore';
-
-// 2. Types/Interfaces
-interface Props {
-  title: string;
-  onPress: () => void;
-}
-
-// 3. Component
-export const MyComponent: React.FC<Props> = ({ title, onPress }) => {
-  // 3.1 State & Store
-  const [count, setCount] = useState(0);
-  const { user } = useAuthStore();
-
-  // 3.2 Effects
-  useEffect(() => {
-    // side effects
-  }, []);
-
-  // 3.3 Handlers
-  const handlePress = () => {
-    setCount(count + 1);
-    onPress();
-  };
-
-  // 3.4 Render
-  return (
-    <View style={styles.container}>
-      <Text>{title}</Text>
-      <Button onPress={handlePress} />
-    </View>
-  );
-};
-
-// 4. Styles (cuối file)
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-});
-```
-
-### 3. Import Order
-
-```typescript
-// 1. React & React Native
-import React from 'react';
-import { View, Text } from 'react-native';
-
-// 2. External libraries
-import { useNavigation } from '@react-navigation/native';
-
-// 3. Aliases (@/ paths)
-import { Button } from '@/components/common';
-import { useAuthStore } from '@store/authStore';
-import { COLORS } from '@theme';
-
-// 4. Types
-import type { User } from '@types/user';
-```
-
-### 4. Code Quality Rules
-
-- ✅ Luôn định nghĩa types cho props, state, API response
-- ✅ Sử dụng path aliases (`@/`) thay vì relative paths
-- ✅ Export named thay vì default (dễ refactor)
-- ✅ Tách logic phức tạp thành custom hooks
-- ❌ Không để `console.log()` trong production code
-- ❌ Không dùng `any` type
-- ❌ Không hardcode giá trị (dùng constants)
-
----
 
 ## 🧪 Testing & Quality Assurance
 
