@@ -29,12 +29,12 @@ export default function WasteBin({ wasteType, isHighlighted }: WasteBinProps) {
 
 const styles = StyleSheet.create({
   bin: {
-    width: 80,
-    height: 88,
-    borderRadius: 16,
-    justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 16,
+    height: 88,
+    justifyContent: 'center',
     overflow: 'hidden',
+    width: 80,
     ...Platform.select({
       ios: {
         shadowColor: '#000',

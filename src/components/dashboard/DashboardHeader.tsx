@@ -57,45 +57,45 @@ export default function DashboardHeader({
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
   avatar: {
-    width: 48,
-    height: 48,
     borderRadius: 24,
+    height: 48,
+    width: 48,
+  },
+  badge: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  badgeText: {
+    fontWeight: 'bold',
   },
   greeting: {
     color: colors.text.secondary,
   },
-  username: {
-    fontWeight: 'bold',
-    color: colors.text.primary,
-  },
-  headerRight: {
-    flexDirection: 'row',
+  header: {
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  headerLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
     gap: 12,
   },
-  badge: {
-    flexDirection: 'row',
+  headerRight: {
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
+    flexDirection: 'row',
+    gap: 12,
   },
-  badgeText: {
+  username: {
+    color: colors.text.primary,
     fontWeight: 'bold',
   },
 });

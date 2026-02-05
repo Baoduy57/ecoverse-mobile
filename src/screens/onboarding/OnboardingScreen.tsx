@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, Dimensions, FlatList, ViewToken, Image, Animated } from 'react-native';
 import { Button, Text, Surface } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -124,6 +124,42 @@ export default function OnboardingScreen({}: OnboardingScreenProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
+  // Background floating animations
+  const floatAnim1 = useRef(new Animated.Value(0)).current;
+  const floatAnim2 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim1, {
+          toValue: -20,
+          duration: 3000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim1, {
+          toValue: 0,
+          duration: 3000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim2, {
+          toValue: -15,
+          duration: 4000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim2, {
+          toValue: 0,
+          duration: 4000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0 && viewableItems[0].index !== null) {
       setCurrentIndex(viewableItems[0].index);
@@ -171,147 +207,200 @@ export default function OnboardingScreen({}: OnboardingScreenProps) {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Image
-          source={require('../../../assets/images/logo_eco.png')}
-          style={styles.logoImage}
-          resizeMode="contain"
-        />
-        <Button
-          mode="text"
-          onPress={handleSkip}
-          textColor={colors.text.primary}
-          style={styles.skipButton}
-        >
-          Bỏ qua
-        </Button>
-      </View>
+    <View style={styles.wrapper}>
+      {/* Background Decorative Elements */}
+      <View style={styles.bgDecorativeTop} />
+      <View style={styles.bgDecorativeBottom} />
 
-      <FlatList
-        ref={flatListRef}
-        data={slides}
-        renderItem={renderSlide}
-        horizontal={true}
-        pagingEnabled={true}
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={item => item.id}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        bounces={false}
-      />
+      {/* Floating Icons */}
+      <Animated.View style={[styles.floatingIcon1, { transform: [{ translateY: floatAnim1 }] }]}>
+        <MaterialCommunityIcons name="leaf" size={80} color="rgba(76, 175, 80, 0.15)" />
+      </Animated.View>
 
-      <View style={styles.pagination}>
-        {slides.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.dot,
-              {
-                backgroundColor: index === currentIndex ? colors.primary : colors.border,
-                width: index === currentIndex ? 24 : 8,
-              },
-            ]}
+      <Animated.View style={[styles.floatingIcon2, { transform: [{ translateY: floatAnim2 }] }]}>
+        <MaterialCommunityIcons name="recycle" size={70} color="rgba(76, 175, 80, 0.15)" />
+      </Animated.View>
+
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Image
+            source={require('../../../assets/images/logo_eco.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
           />
-        ))}
-      </View>
+          <Button
+            mode="text"
+            onPress={handleSkip}
+            textColor={colors.text.primary}
+            style={styles.skipButton}
+          >
+            Bỏ qua
+          </Button>
+        </View>
 
-      <View style={styles.footer}>
-        <Button
-          mode="contained"
-          onPress={handleNext}
-          style={styles.button}
-          contentStyle={styles.buttonContent}
-        >
-          {currentIndex === slides.length - 1 ? 'Bắt đầu ngay' : 'Tiếp theo'}
-        </Button>
-      </View>
-    </SafeAreaView>
+        <FlatList
+          ref={flatListRef}
+          data={slides}
+          renderItem={renderSlide}
+          horizontal={true}
+          pagingEnabled={true}
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={item => item.id}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          bounces={false}
+        />
+
+        <View style={styles.pagination}>
+          {slides.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.dot,
+                {
+                  backgroundColor: index === currentIndex ? colors.primary : colors.border,
+                  width: index === currentIndex ? 24 : 8,
+                },
+              ]}
+            />
+          ))}
+        </View>
+
+        <View style={styles.footer}>
+          <Button
+            mode="contained"
+            onPress={handleNext}
+            style={styles.button}
+            contentStyle={styles.buttonContent}
+          >
+            {currentIndex === slides.length - 1 ? 'Bắt đầu ngay' : 'Tiếp theo'}
+          </Button>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
+    backgroundColor: colors.onboardingBg,
     flex: 1,
-    backgroundColor: colors.background,
+    position: 'relative',
+  },
+  // Background decorative elements
+  bgDecorativeTop: {
+    backgroundColor: 'rgba(76, 175, 80, 0.08)',
+    borderRadius: 9999,
+    height: '50%',
+    position: 'absolute',
+    right: '-15%',
+    top: '-15%',
+    width: '80%',
+  },
+  bgDecorativeBottom: {
+    backgroundColor: 'rgba(129, 199, 132, 0.12)',
+    borderRadius: 9999,
+    bottom: '-20%',
+    height: '45%',
+    left: '-10%',
+    position: 'absolute',
+    width: '70%',
+  },
+  // Floating icons
+  floatingIcon1: {
+    position: 'absolute',
+    right: 20,
+    top: '25%',
+    zIndex: 0,
+  },
+  floatingIcon2: {
+    bottom: '30%',
+    left: 15,
+    position: 'absolute',
+    zIndex: 0,
+  },
+  container: {
+    backgroundColor: 'transparent',
+    flex: 1,
+    zIndex: 10,
   },
   header: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: colors.background,
   },
   logoImage: {
-    width: 45,
     height: 45,
+    width: 45,
   },
   skipButton: {
     opacity: 0.5,
   },
   slide: {
-    width,
-    flex: 1,
     alignItems: 'center',
+    flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 32,
+    width,
   },
   iconContainer: {
+    alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
   },
   iconBackground: {
+    alignItems: 'center',
     borderRadius: 100,
-    width: 200,
     height: 200,
     justifyContent: 'center',
-    alignItems: 'center',
+    width: 200,
   },
   iconSurface: {
+    alignItems: 'center',
     borderRadius: 60,
-    width: 120,
     height: 120,
     justifyContent: 'center',
-    alignItems: 'center',
+    width: 120,
   },
   textContainer: {
+    alignItems: 'center',
     flex: 1,
     justifyContent: 'flex-start',
     paddingTop: 40,
-    alignItems: 'center',
   },
   title: {
-    textAlign: 'center',
-    marginBottom: 16,
-    fontWeight: 'bold',
     color: colors.text.primary,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
   },
   description: {
-    textAlign: 'center',
     color: colors.text.secondary,
     lineHeight: 24,
     paddingHorizontal: 16,
+    textAlign: 'center',
   },
   pagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 20,
+    flexDirection: 'row',
     gap: 8,
+    justifyContent: 'center',
+    paddingVertical: 20,
   },
   dot: {
-    height: 8,
     borderRadius: 4,
+    height: 8,
   },
   footer: {
-    paddingHorizontal: 32,
     paddingBottom: 32,
+    paddingHorizontal: 32,
   },
   button: {
-    borderRadius: 12,
     backgroundColor: colors.primary,
+    borderRadius: 12,
   },
   buttonContent: {
     paddingVertical: 8,

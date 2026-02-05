@@ -72,20 +72,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    try {
-      await authApi.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      await storageService.removeToken();
-      await storageService.removeUser();
-      set({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        error: null,
-      });
-    }
+    // Mock logout - chỉ clear local data
+    await storageService.removeToken();
+    await storageService.removeUser();
+    set({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      error: null,
+    });
   },
 
   loadUser: async () => {

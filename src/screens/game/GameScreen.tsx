@@ -234,4 +234,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 50,
   },
+  title: {
+    color: colors.text.primary,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
 });
