@@ -26,6 +26,7 @@ export const colors = {
   background: '#F5F5F5',
   surface: '#FFFFFF',
   card: '#FFFFFF',
+  onboardingBg: '#E8F5E9', // Xanh mint nhạt cho onboarding
 
   // Text Colors
   text: {

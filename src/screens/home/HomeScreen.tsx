@@ -104,23 +104,13 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  tabItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  centerTabContainer: {
-    position: 'absolute',
-    top: -25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   centerTab: {
-    width: 65,
-    height: 65,
-    borderRadius: 35,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 35,
+    elevation: 8,
+    height: 65,
+    justifyContent: 'center',
     shadowColor: colors.primary,
     shadowOffset: {
       width: 0,
@@ -128,6 +118,16 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 8,
+    width: 65,
+  },
+  centerTabContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    top: -25,
+  },
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
