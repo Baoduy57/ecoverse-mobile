@@ -69,31 +69,31 @@ export default function SplashScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: colors.primary,
+    flex: 1,
   },
   content: {
+    alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     paddingHorizontal: 32,
   },
   logoContainer: {
     marginBottom: 32,
   },
   logoImage: {
-    width: 200,
     height: 200,
-  },
-  title: {
-    fontWeight: 'bold',
-    color: colors.text.white,
-    marginBottom: 8,
-    textAlign: 'center',
+    width: 200,
   },
   subtitle: {
     color: colors.text.white,
     opacity: 0.9,
+    textAlign: 'center',
+  },
+  title: {
+    color: colors.text.white,
+    fontWeight: 'bold',
+    marginBottom: 8,
     textAlign: 'center',
   },
 });

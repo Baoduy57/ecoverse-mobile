@@ -26,17 +26,17 @@ export default function SectionHeader({ title, linkText, onLinkPress }: SectionH
 
 const styles = StyleSheet.create({
   sectionHeader: {
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 16,
-  },
-  sectionTitle: {
-    fontWeight: 'bold',
-    color: colors.text.primary,
   },
   sectionLink: {
     color: colors.primary,
     fontSize: 14,
+  },
+  sectionTitle: {
+    color: colors.text.primary,
+    fontWeight: 'bold',
   },
 });

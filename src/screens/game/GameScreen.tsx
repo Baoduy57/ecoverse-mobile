@@ -21,21 +21,21 @@ export default function GameScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: colors.background,
+    flex: 1,
   },
   content: {
+    alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
-  },
-  title: {
-    fontWeight: 'bold',
-    color: colors.text.primary,
-    marginBottom: 8,
   },
   subtitle: {
     color: colors.text.secondary,
+  },
+  title: {
+    color: colors.text.primary,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
 });

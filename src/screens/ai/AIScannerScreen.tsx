@@ -423,151 +423,68 @@ export default function AIScannerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  centerContainer: {
+  analyzingContainer: {
+    alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 24,
-    backgroundColor: colors.background,
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  gameHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  analyzingGradient: {
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 60,
+    height: 120,
+    justifyContent: 'center',
+    width: 120,
+  },
+  analyzingIcon: {
+    marginBottom: 28,
+  },
+  analyzingSubtitle: {
+    color: colors.text.secondary,
+  },
+  analyzingTitle: {
+    color: colors.text.primary,
+    fontWeight: '700',
+    marginBottom: 8,
   },
   backButton: {
     alignSelf: 'flex-start',
   },
   backButtonLabel: {
-    fontSize: 15,
     color: colors.text.primary,
-  },
-  categoryBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
+    fontSize: 15,
   },
   badgeText: {
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 28,
+  bottomLeft: {
+    borderBottomLeftRadius: 28,
+    borderBottomWidth: 5,
+    borderLeftWidth: 5,
+    bottom: -2,
+    left: -2,
   },
-  logoWrapper: {
-    marginBottom: 28,
-    alignItems: 'center',
-  },
-  logoGradient: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 12,
-      },
-    }),
-  },
-  logoBadge: {
-    marginTop: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    backgroundColor: colors.primary + '20',
-    borderRadius: 20,
-  },
-  logoBadgeText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.primary,
-    letterSpacing: 0.5,
-  },
-  title: {
-    fontWeight: '700',
-    color: colors.text.primary,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  subtitle: {
-    textAlign: 'center',
-    color: colors.text.secondary,
-    marginBottom: 40,
-    lineHeight: 24,
-    paddingHorizontal: 8,
-  },
-  buttons: {
-    width: '100%',
-    gap: 14,
-    maxWidth: 320,
-  },
-  primaryButton: {
-    borderRadius: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  secondaryButton: {
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: colors.primary,
+  bottomRight: {
+    borderBottomRightRadius: 28,
+    borderBottomWidth: 5,
+    borderRightWidth: 5,
+    bottom: -2,
+    right: -2,
   },
   buttonContent: {
     paddingVertical: 10,
   },
-  permissionTitle: {
-    marginTop: 20,
-    color: colors.text.primary,
-    fontWeight: '600',
-  },
-  permissionText: {
-    marginTop: 8,
-    color: colors.text.secondary,
-    textAlign: 'center',
-  },
-  permissionButton: {
-    marginTop: 24,
-    borderRadius: 16,
-  },
-  cameraContainer: {
-    flex: 1,
-    backgroundColor: '#000',
+  buttons: {
+    gap: 14,
+    maxWidth: 320,
+    width: '100%',
   },
   camera: {
+    flex: 1,
+  },
+  cameraContainer: {
+    backgroundColor: '#000',
     flex: 1,
   },
   cameraOverlay: {
@@ -576,91 +493,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-  },
-  closeButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderRadius: 24,
-  },
-  closeButtonContent: {
-    flexDirection: 'row-reverse',
-  },
-  scanFrameWrapper: {
-    width: 280,
-    height: 280,
-    alignSelf: 'center',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  scanFrame: {
-    width: 280,
-    height: 280,
-    borderRadius: 28,
-    backgroundColor: 'transparent',
-    position: 'relative',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  corner: {
-    position: 'absolute',
-    width: 36,
-    height: 36,
-    borderColor: colors.primary,
-  },
-  topLeft: {
-    top: -2,
-    left: -2,
-    borderTopWidth: 5,
-    borderLeftWidth: 5,
-    borderTopLeftRadius: 28,
-  },
-  topRight: {
-    top: -2,
-    right: -2,
-    borderTopWidth: 5,
-    borderRightWidth: 5,
-    borderTopRightRadius: 28,
-  },
-  bottomLeft: {
-    bottom: -2,
-    left: -2,
-    borderBottomWidth: 5,
-    borderLeftWidth: 5,
-    borderBottomLeftRadius: 28,
-  },
-  bottomRight: {
-    bottom: -2,
-    right: -2,
-    borderBottomWidth: 5,
-    borderRightWidth: 5,
-    borderBottomRightRadius: 28,
-  },
-  scanLine: {
-    position: 'absolute',
-    top: '50%',
-    left: 8,
-    right: 8,
-    height: 2,
-    backgroundColor: colors.primary,
-    opacity: 0.6,
-  },
-  instructionContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  instruction: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '600',
   },
   captureButton: {
     alignSelf: 'center',
@@ -678,31 +510,199 @@ const styles = StyleSheet.create({
     }),
   },
   captureButtonContent: {
-    paddingVertical: 14,
     paddingHorizontal: 32,
+    paddingVertical: 14,
   },
-  analyzingContainer: {
+  categoryBadge: {
+    alignItems: 'center',
+    borderColor: 'transparent',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  centerContainer: {
+    alignItems: 'center',
+    backgroundColor: colors.background,
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 24,
   },
-  analyzingIcon: {
+  closeButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 24,
+  },
+  closeButtonContent: {
+    flexDirection: 'row-reverse',
+  },
+  container: {
+    flex: 1,
+  },
+  content: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+  },
+  corner: {
+    borderColor: colors.primary,
+    height: 36,
+    position: 'absolute',
+    width: 36,
+  },
+  gameHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  instruction: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  instructionContainer: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 28,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+  },
+  logoBadge: {
+    backgroundColor: colors.primary + '20',
+    borderRadius: 20,
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+  },
+  logoBadgeText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  logoGradient: {
+    alignItems: 'center',
+    borderRadius: 60,
+    height: 120,
+    justifyContent: 'center',
+    width: 120,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
+  },
+  logoWrapper: {
+    alignItems: 'center',
     marginBottom: 28,
   },
-  analyzingGradient: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
+  permissionButton: {
+    borderRadius: 16,
+    marginTop: 24,
   },
-  analyzingTitle: {
-    fontWeight: '700',
-    color: colors.text.primary,
-    marginBottom: 8,
-  },
-  analyzingSubtitle: {
+  permissionText: {
     color: colors.text.secondary,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  permissionTitle: {
+    color: colors.text.primary,
+    fontWeight: '600',
+    marginTop: 20,
+  },
+  primaryButton: {
+    borderRadius: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  safeArea: {
+    flex: 1,
+  },
+  scanFrame: {
+    backgroundColor: 'transparent',
+    borderColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 28,
+    borderWidth: 2,
+    height: 280,
+    position: 'relative',
+    width: 280,
+  },
+  scanFrameWrapper: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    height: 280,
+    justifyContent: 'center',
+    position: 'relative',
+    width: 280,
+  },
+  scanLine: {
+    backgroundColor: colors.primary,
+    height: 2,
+    left: 8,
+    opacity: 0.6,
+    position: 'absolute',
+    right: 8,
+    top: '50%',
+  },
+  secondaryButton: {
+    borderColor: colors.primary,
+    borderRadius: 16,
+    borderWidth: 2,
+  },
+  subtitle: {
+    color: colors.text.secondary,
+    lineHeight: 24,
+    marginBottom: 40,
+    paddingHorizontal: 8,
+    textAlign: 'center',
+  },
+  title: {
+    color: colors.text.primary,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  topLeft: {
+    borderLeftWidth: 5,
+    borderTopLeftRadius: 28,
+    borderTopWidth: 5,
+    left: -2,
+    top: -2,
+  },
+  topRight: {
+    borderRightWidth: 5,
+    borderTopRightRadius: 28,
+    borderTopWidth: 5,
+    right: -2,
+    top: -2,
   },
 });

@@ -32,6 +32,7 @@ export default function DragDropGame({
   const [highlightedBin, setHighlightedBin] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrectAnswer, setIsCorrectAnswer] = useState(false);
+  const [successFeedback, setSuccessFeedback] = useState<string | null>(null);
 
   const binLayoutsRef = useRef<Record<string, BinLayout>>({});
   const binRefs = useRef<Record<string, View | null>>({});
@@ -117,8 +118,9 @@ export default function DragDropGame({
           setShowFeedback(true);
 
           if (result.isCorrect) {
-            setTimeout(() => onCorrect(result.feedback), 2000);
+            setSuccessFeedback(result.feedback);
           } else {
+            setSuccessFeedback(null);
             Animated.spring(pan, {
               toValue: { x: 0, y: 0 },
               useNativeDriver: false,
@@ -148,10 +150,18 @@ export default function DragDropGame({
   const handleTryAgain = () => {
     setShowFeedback(false);
     setIsCorrectAnswer(false);
+    setSuccessFeedback(null);
     Animated.spring(pan, {
       toValue: { x: 0, y: 0 },
       useNativeDriver: false,
     }).start();
+  };
+
+  const handleContinue = () => {
+    setShowFeedback(false);
+    setIsCorrectAnswer(false);
+    const feedbackToUse = successFeedback || '';
+    onCorrect(feedbackToUse);
   };
 
   return (
@@ -262,6 +272,14 @@ export default function DragDropGame({
                   <Text style={styles.feedbackSectionTitle}>Hướng dẫn xử lý</Text>
                 </View>
                 <Text style={styles.feedbackRecycling}>{correctWasteType.recyclingInfo}</Text>
+                <Button
+                  mode="contained"
+                  onPress={handleContinue}
+                  style={styles.feedbackContinueButton}
+                  buttonColor={colors.primary}
+                >
+                  Đã hiểu, tiếp tục
+                </Button>
               </View>
             )}
 
@@ -286,25 +304,166 @@ export default function DragDropGame({
 }
 
 const styles = StyleSheet.create({
+  binWrapper: {
+    alignItems: 'center',
+    flex: 1,
+    minWidth: 80,
+  },
+  binsContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+  },
+  confirmBadge: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+  confirmBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
   container: {
     flex: 1,
     paddingHorizontal: 16,
+  },
+  draggableWrapper: {
+    width: 200,
+  },
+  errorCard: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    padding: 24,
+  },
+  errorText: {
+    color: colors.status.error,
+    marginBottom: 20,
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  feedbackCard: {
+    alignItems: 'center',
+    borderRadius: 24,
+    maxWidth: 360,
+    padding: 28,
+    width: '100%',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+      },
+      android: { elevation: 12 },
+    }),
+  },
+  feedbackContent: {
+    gap: 12,
+    width: '100%',
+  },
+  feedbackContinueButton: {
+    alignSelf: 'stretch',
+    borderRadius: 16,
+    marginTop: 20,
+  },
+  feedbackDescription: {
+    color: colors.text.primary,
+    fontSize: 15,
+    lineHeight: 24,
+  },
+  feedbackError: {
+    backgroundColor: '#FFFFFF',
+    borderColor: colors.status.error,
+    borderWidth: 3,
+  },
+  feedbackHint: {
+    color: colors.text.primary,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  feedbackIconWrapper: {
+    marginBottom: 16,
+  },
+  feedbackOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  feedbackRecycling: {
+    color: colors.text.primary,
+    fontSize: 15,
+    lineHeight: 24,
+  },
+  feedbackRetryButton: {
+    borderRadius: 16,
+  },
+  feedbackSection: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  feedbackSectionTitle: {
+    color: colors.text.primary,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  feedbackSuccess: {
+    backgroundColor: '#FFFFFF',
+    borderColor: colors.status.success,
+    borderWidth: 3,
+  },
+  feedbackTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  feedbackTitleError: {
+    color: colors.status.error,
+  },
+  feedbackTitleSuccess: {
+    color: colors.status.success,
   },
   imageContainer: {
     alignItems: 'center',
     marginBottom: 20,
     minHeight: 260,
   },
-  draggableWrapper: {
-    width: 200,
+  instructionBanner: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  instructionBannerText: {
+    color: colors.text.primary,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
   },
   objectCard: {
-    width: 200,
-    borderRadius: 20,
-    overflow: 'hidden',
     backgroundColor: colors.surface,
-    borderWidth: 2,
     borderColor: 'transparent',
+    borderRadius: 20,
+    borderWidth: 2,
+    overflow: 'hidden',
+    width: 200,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -321,162 +480,26 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     borderWidth: 3,
   },
+  objectImage: {
+    backgroundColor: colors.background,
+    height: 140,
+    width: 200,
+  },
   objectLabel: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    gap: 8,
   },
   objectLabelText: {
+    flex: 1,
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 0.3,
-    flex: 1,
-  },
-  objectImage: {
-    width: 200,
-    height: 140,
-    backgroundColor: colors.background,
-  },
-  confirmBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    gap: 8,
-  },
-  confirmBadgeText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  instructionBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderRadius: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  instructionBannerText: {
-    flex: 1,
-    fontSize: 15,
-    color: colors.text.primary,
-    fontWeight: '500',
-  },
-  binsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    gap: 12,
-  },
-  binWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    minWidth: 80,
-  },
-  errorCard: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  errorText: {
-    textAlign: 'center',
-    color: colors.status.error,
-    marginTop: 16,
-    marginBottom: 20,
   },
   retryButton: {
-    borderRadius: 16,
-  },
-  feedbackOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  feedbackCard: {
-    width: '100%',
-    maxWidth: 360,
-    padding: 28,
-    borderRadius: 24,
-    alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 12,
-      },
-      android: { elevation: 12 },
-    }),
-  },
-  feedbackSuccess: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 3,
-    borderColor: colors.status.success,
-  },
-  feedbackError: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 3,
-    borderColor: colors.status.error,
-  },
-  feedbackIconWrapper: {
-    marginBottom: 16,
-  },
-  feedbackTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  feedbackTitleSuccess: {
-    color: colors.status.success,
-  },
-  feedbackTitleError: {
-    color: colors.status.error,
-  },
-  feedbackContent: {
-    width: '100%',
-    gap: 12,
-  },
-  feedbackSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  feedbackSectionTitle: {
-    fontWeight: '700',
-    fontSize: 15,
-    color: colors.text.primary,
-  },
-  feedbackDescription: {
-    fontSize: 15,
-    color: colors.text.primary,
-    lineHeight: 24,
-  },
-  feedbackRecycling: {
-    fontSize: 15,
-    color: colors.text.primary,
-    lineHeight: 24,
-  },
-  feedbackHint: {
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: 20,
-  },
-  feedbackRetryButton: {
     borderRadius: 16,
   },
 });

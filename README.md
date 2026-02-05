@@ -254,7 +254,8 @@ eco-mobile/
 ├── package.json   # Dependencies
 └── tsconfig.json  # TypeScript config
 ```
-```
+
+````
 
 
 ## 🧪 Testing & Quality Assurance
@@ -276,7 +277,7 @@ npm run format
 
 # Tất cả trong một
 npm run type-check && npm run lint && npm run format
-```
+````
 
 ### Khi Nào Chạy?
 
