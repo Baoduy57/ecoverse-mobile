@@ -4,13 +4,19 @@ import { Text, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { AppStackParamList } from '@navigation/AppNavigator';
+import type { HomeTabParamList } from '../home/HomeScreen';
 import { useAuthStore } from '@store/authStore';
 import { StatsCard, AchievementBadge } from '@/components/profile';
 import { colors, spacing, borderRadius } from '@theme';
 
-type NavigationProp = StackNavigationProp<AppStackParamList>;
+type NavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<HomeTabParamList, 'Profile'>,
+  StackNavigationProp<AppStackParamList>
+>;
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -74,16 +80,11 @@ export default function ProfileScreen() {
   };
 
   const handleSettings = () => {
-    // TODO: Navigate to settings screen
-    console.log('Navigate to Settings');
+    navigation.navigate('Settings');
   };
 
   const handleEditProfile = () => {
     navigation.navigate('EditAvatar');
-  };
-
-  const handleLogout = async () => {
-    await logout();
   };
 
   // Mock data - sẽ lấy từ store/API sau
@@ -221,20 +222,6 @@ export default function ProfileScreen() {
             <Text variant="bodyMedium" style={styles.infoText}>
               Đã liên kết với phụ huynh! <Text style={styles.infoBold}>Bố Nam</Text>
             </Text>
-          </View>
-
-          {/* Logout Button with shadow */}
-          <View style={styles.logoutButtonContainer}>
-            <Button
-              mode="text"
-              icon="logout"
-              textColor={colors.status.error}
-              style={styles.logoutButton}
-              labelStyle={styles.logoutButtonLabel}
-              onPress={handleLogout}
-            >
-              Đăng xuất
-            </Button>
           </View>
 
           {/* Extra padding to prevent bottom nav overlap */}
@@ -409,23 +396,5 @@ const styles = StyleSheet.create({
   infoBold: {
     color: colors.text.primary,
     fontWeight: 'bold',
-  },
-  logoutButtonContainer: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    elevation: 2,
-    marginHorizontal: spacing.base,
-    marginTop: spacing.xl,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  logoutButton: {
-    paddingVertical: spacing.sm,
-  },
-  logoutButtonLabel: {
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
