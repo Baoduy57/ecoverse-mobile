@@ -2,12 +2,13 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { HomeScreen } from '../screens/home';
 import { AIScannerScreen } from '../screens/ai';
-import { EditAvatarScreen } from '../screens/profile';
+import { EditAvatarScreen, SettingsScreen } from '../screens/profile';
 
 export type AppStackParamList = {
   Home: undefined;
   AIScanner: undefined;
   EditAvatar: undefined;
+  Settings: undefined;
 };
 
 const Stack = createStackNavigator<AppStackParamList>();
@@ -30,6 +31,13 @@ export default function AppNavigator() {
       <Stack.Screen
         name="EditAvatar"
         component={EditAvatarScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
         options={{
           presentation: 'card',
         }}
