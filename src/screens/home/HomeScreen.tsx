@@ -14,7 +14,7 @@ export type HomeTabParamList = {
   Achievement: undefined;
   Game: undefined;
   Reward: undefined;
-  Settings: undefined;
+  Profile: undefined;
 };
 
 const Tab = createBottomTabNavigator<HomeTabParamList>();
@@ -91,12 +91,12 @@ export default function HomeScreen() {
         }}
       />
       <Tab.Screen
-        name="Settings"
+        name="Profile"
         component={ProfileScreen}
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.tabItem}>
-              <MaterialCommunityIcons name="cog" size={focused ? 28 : 24} color={color} />
+              <MaterialCommunityIcons name="account-circle" size={focused ? 28 : 24} color={color} />
             </View>
           ),
         }}

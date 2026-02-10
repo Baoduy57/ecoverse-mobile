@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'transparent',
     borderBottomWidth: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
