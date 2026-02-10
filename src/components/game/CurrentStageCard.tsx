@@ -19,6 +19,22 @@ interface CurrentStageCardProps {
 }
 
 export default function CurrentStageCard({ stage, onPlay }: CurrentStageCardProps) {
+    // Get topic icon based on stage title
+    const getTopicIcon = () => {
+        const title = stage.title.toUpperCase();
+        if (title.includes('Ủ') || title.includes('PHÂN')) return 'sprout';
+        if (title.includes('TÁI CHẾ')) return 'recycle';
+        if (title.includes('CƠ BẢN')) return 'check-all';
+        if (title.includes('GIẢM')) return 'minus-circle';
+        if (title.includes('TÁI DÙNG')) return 'refresh';
+        if (title.includes('MUA')) return 'shopping';
+        if (title.includes('ĐIỆN')) return 'lightning-bolt';
+        if (title.includes('NƯỚC')) return 'water';
+        if (title.includes('CHUYỂN')) return 'bike';
+        if (title.includes('CHUYÊN')) return 'trophy';
+        return 'leaf';
+    };
+
     return (
         <LinearGradient
             colors={[colors.primary, colors.primaryDark]}
@@ -40,7 +56,21 @@ export default function CurrentStageCard({ stage, onPlay }: CurrentStageCardProp
 
                 {/* Right Section - 60% */}
                 <View style={styles.rightSection}>
-                    <Text style={styles.description}>{stage.description}</Text>
+                    {/* Topic Icon Background */}
+                    <View style={styles.topicIconContainer}>
+                        <MaterialCommunityIcons
+                            name={getTopicIcon() as any}
+                            size={48}
+                            color={colors.text.white}
+                            style={{ opacity: 0.3 }}
+                        />
+                    </View>
+
+                    {/* Mascot Speech Bubble */}
+                    <View style={styles.speechBubble}>
+                        <Text style={styles.mascotText}>🌱</Text>
+                        <Text style={styles.description}>{stage.description}</Text>
+                    </View>
 
                     {/* Stats */}
                     <View style={styles.statsContainer}>
@@ -86,6 +116,21 @@ const styles = StyleSheet.create({
     rightSection: {
         flex: 0.6,
         justifyContent: 'center',
+        position: 'relative',
+    },
+    topicIconContainer: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+    },
+    speechBubble: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 12,
+    },
+    mascotText: {
+        fontSize: 24,
     },
     label: {
         fontSize: 10,
@@ -95,7 +140,7 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
     },
     title: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: 'bold',
         color: colors.text.white,
         marginTop: 4,
@@ -123,7 +168,7 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         color: colors.text.white,
         opacity: 0.95,
-        marginBottom: 12,
+        flex: 1,
     },
     statsContainer: {
         gap: 8,

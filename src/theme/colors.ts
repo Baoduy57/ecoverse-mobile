@@ -10,7 +10,7 @@ export const colors = {
   secondaryDark: '#F57C00',
 
   // Accent Colors
-  accent: '#FFD700', // Vàng - điểm thưởng
+  accent: '#ffae00ff', // Vàng - điểm thưởng
   accentBlue: '#2196F3',
   accentPurple: '#9C27B0',
 

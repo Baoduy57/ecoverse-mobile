@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Animated, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Animated, Modal, TouchableWithoutFeedback, Dimensions } from 'react-native';
 import { Text } from 'react-native-paper';
 import { colors } from '../../theme';
 
@@ -7,6 +7,10 @@ interface TooltipProps {
     children: React.ReactNode;
     content: string;
 }
+
+const TOOLTIP_MAX_WIDTH = 250;
+const TOOLTIP_ARROW_HEIGHT = 10;
+const SCREEN_PADDING = 16;
 
 export default function Tooltip({ children, content }: TooltipProps) {
     const [visible, setVisible] = useState(false);
@@ -63,8 +67,28 @@ export default function Tooltip({ children, content }: TooltipProps) {
     }, []);
 
     // Calculate tooltip position (centered below the trigger)
-    const tooltipLeft = position.x + position.width / 2;
-    const tooltipTop = position.y + position.height + 8; // 8px gap below trigger
+    const screenWidth = Dimensions.get('window').width;
+
+    // Step 1: Center the tooltip horizontally relative to the trigger
+    // Formula: triggerCenter - (tooltipWidth / 2)
+    // - position.x is pageX (absolute screen coordinate from measure())
+    // - position.width is the trigger element's width
+    // - TOOLTIP_MAX_WIDTH is the maximum width of the tooltip (250px)
+    let tooltipLeft = position.x + (position.width / 2) - (TOOLTIP_MAX_WIDTH / 2);
+
+    // Step 2: Ensure tooltip doesn't go off-screen
+    // Clamp the tooltip position to stay within screen boundaries with padding
+    if (tooltipLeft < SCREEN_PADDING) {
+        tooltipLeft = SCREEN_PADDING;
+    } else if (tooltipLeft + TOOLTIP_MAX_WIDTH > screenWidth - SCREEN_PADDING) {
+        tooltipLeft = screenWidth - TOOLTIP_MAX_WIDTH - SCREEN_PADDING;
+    }
+
+    // Step 3: Position tooltip below the trigger with a small gap
+    // - position.y is pageY (absolute screen coordinate from measure())
+    // - position.height is the trigger element's height
+    // - Add 8px gap between trigger and arrow for visual clarity
+    const tooltipTop = position.y + position.height + 8;
 
     return (
         <>
@@ -110,7 +134,6 @@ const styles = StyleSheet.create({
     tooltipContainer: {
         position: 'absolute',
         alignItems: 'center',
-        transform: [{ translateX: -125 }], // Center the tooltip (maxWidth 250 / 2)
     },
     arrow: {
         width: 0,
@@ -119,17 +142,17 @@ const styles = StyleSheet.create({
         borderStyle: 'solid',
         borderLeftWidth: 8,
         borderRightWidth: 8,
-        borderBottomWidth: 10,
+        borderBottomWidth: TOOLTIP_ARROW_HEIGHT,
         borderLeftColor: 'transparent',
         borderRightColor: 'transparent',
-        borderBottomColor: colors.text.primary,
+        borderBottomColor: colors.primaryLight,
     },
     tooltip: {
-        backgroundColor: colors.text.primary,
+        backgroundColor: colors.primaryLight,
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderRadius: 8,
-        maxWidth: 250,
+        maxWidth: TOOLTIP_MAX_WIDTH,
         elevation: 8,
         shadowColor: colors.shadow,
         shadowOffset: { width: 0, height: 4 },
@@ -137,7 +160,7 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
     },
     tooltipText: {
-        color: colors.surface,
+        color: colors.text.white,
         fontSize: 13,
         lineHeight: 19,
         textAlign: 'center',

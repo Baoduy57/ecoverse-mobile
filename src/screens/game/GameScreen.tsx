@@ -12,98 +12,105 @@ import { colors } from '../../theme';
 import TopHeaderBar from '../../components/game/TopHeaderBar';
 import CurrentStageCard from '../../components/game/CurrentStageCard';
 import LearningPathNode from '../../components/game/LearningPathNode';
+import BackgroundDecorations from '../../components/game/BackgroundDecorations';
+import UnitSeparator from '../../components/game/UnitSeparator';
 import type { Level } from '../../types/game';
+import { StatusBar } from 'expo-status-bar';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const LEVEL_HEIGHT = 120; // Vertical spacing between nodes
 const START_OFFSET_Y = 50;
+const LESSONS_PER_UNIT = 7; // Number of lessons per unit
+const SEPARATOR_HEIGHT = 60; // Height of separator between units
 
-// Mock Data
 const LEARNING_PATH: Level[] = [
   {
     id: 1,
-    title: 'BASICS',
+    title: 'Cơ Bản',
     icon: 'check-all',
     status: 'completed',
     bestScore: '100%',
-    description: 'Learn fundamental eco-friendly practices and waste sorting basics.',
+    description: 'Học cách phân loại rác đúng cách!',
     playsCount: 12,
     completionRate: 100,
   },
   {
     id: 2,
-    title: 'RECYCLING',
+    title: 'Tái Chế',
     icon: 'recycle',
     status: 'completed',
     bestScore: '95%',
-    description: 'Master the art of recycling different materials correctly.',
+    description: 'Biến rác thành đồ hữu ích!',
     playsCount: 8,
     completionRate: 95,
   },
   {
     id: 3,
-    title: 'COMPOSTING',
+    title: 'Ủ Phân',
     icon: 'sprout',
     status: 'current',
     isCurrent: true,
-    description: 'Discover how to turn organic waste into valuable compost for your garden.',
+    description: 'Cùng mình ủ rác hữu cơ nhé!',
     playsCount: 3,
     completionRate: 60,
   },
   {
     id: 4,
-    title: 'REDUCE',
+    title: 'Giảm Rác',
     icon: 'minus-circle',
     status: 'locked',
-    description: 'Learn strategies to reduce waste in your daily life.',
+    description: 'Giảm rác từng ngày!',
   },
   {
     id: 5,
-    title: 'REUSE',
+    title: 'Tái Dùng',
     icon: 'refresh',
     status: 'locked',
-    description: 'Creative ways to reuse items before throwing them away.',
+    description: 'Tái sử dụng đồ cũ thật sáng tạo!',
   },
   {
     id: 6,
-    title: 'ECO SHOPPING',
+    title: 'Mua Sắm',
     icon: 'shopping',
     status: 'locked',
-    description: 'Make sustainable choices when shopping for groceries and products.',
+    description: 'Mua sắm thông minh, bảo vệ môi trường!',
   },
   {
     id: 7,
-    title: 'ENERGY',
+    title: 'Tiết Điện',
     icon: 'lightning-bolt',
     status: 'locked',
-    description: 'Save energy and reduce your carbon footprint at home.',
+    description: 'Tiết kiệm điện mỗi ngày!',
   },
   {
     id: 8,
-    title: 'WATER',
+    title: 'Nước Sạch',
     icon: 'water',
     status: 'locked',
-    description: 'Conserve water with smart habits and techniques.',
+    description: 'Nước sạch quý giá lắm!',
   },
   {
     id: 9,
-    title: 'TRANSPORT',
+    title: 'Di Chuyển',
     icon: 'bike',
     status: 'locked',
-    description: 'Choose eco-friendly transportation options.',
+    description: 'Đi xe đạp vui khỏe!',
   },
   {
     id: 10,
-    title: 'EXPERT',
+    title: 'Chuyên Gia',
     icon: 'trophy',
     status: 'locked',
-    description: 'Become an eco-warrior and inspire others!',
+    description: 'Trở thành chiến binh môi trường!',
   },
 ];
 
-// Helper: Calculate node position with wavy pattern
+// Helper: Calculate node position with wavy pattern and unit offsets
 const getNodePosition = (index: number) => {
-  const y = START_OFFSET_Y + index * LEVEL_HEIGHT;
+  const unitIndex = Math.floor(index / LESSONS_PER_UNIT);
+  const unitOffset = unitIndex * SEPARATOR_HEIGHT;
+
+  const y = START_OFFSET_Y + (index * LEVEL_HEIGHT) + unitOffset;
   // Sine wave with smooth frequency for natural roadmap feel
   const x = SCREEN_WIDTH / 2 + (SCREEN_WIDTH * 0.3) * Math.sin(index * 0.8);
   return { x, y };
@@ -114,42 +121,76 @@ export default function GameScreen() {
     LEARNING_PATH.find((l) => l.isCurrent) || LEARNING_PATH[0]
   );
 
-  // Generate SVG Path
-  const pathData = useMemo(() => {
-    let d = `M${getNodePosition(0).x} ${getNodePosition(0).y}`;
-    for (let i = 0; i < LEARNING_PATH.length - 1; i++) {
-      const p1 = getNodePosition(i);
-      const p2 = getNodePosition(i + 1);
+  // Calculate which unit is currently unlocked (contains current node)
+  const currentLevelIndex = LEARNING_PATH.findIndex((l) => l.status === 'current');
+  const currentUnitIndex = currentLevelIndex >= 0
+    ? Math.floor(currentLevelIndex / LESSONS_PER_UNIT)
+    : 0;
 
-      // Bezier control points for smooth curves
-      const cp1x = p1.x;
-      const cp1y = p1.y + LEVEL_HEIGHT / 2;
-      const cp2x = p2.x;
-      const cp2y = p2.y - LEVEL_HEIGHT / 2;
+  // Generate SVG Path segments (one per unit, breaking at separators)
+  const pathSegments = useMemo(() => {
+    const segments: string[] = [];
+    const numberOfUnits = Math.ceil(LEARNING_PATH.length / LESSONS_PER_UNIT);
 
-      d += ` C${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
+    for (let unitIndex = 0; unitIndex < numberOfUnits; unitIndex++) {
+      const startIdx = unitIndex * LESSONS_PER_UNIT;
+      const endIdx = Math.min(startIdx + LESSONS_PER_UNIT, LEARNING_PATH.length);
+
+      if (startIdx >= LEARNING_PATH.length) break;
+
+      let d = `M${getNodePosition(startIdx).x} ${getNodePosition(startIdx).y}`;
+
+      for (let i = startIdx; i < endIdx - 1; i++) {
+        const p1 = getNodePosition(i);
+        const p2 = getNodePosition(i + 1);
+
+        // Bezier control points for smooth curves
+        const cp1x = p1.x;
+        const cp1y = p1.y + LEVEL_HEIGHT / 2;
+        const cp2x = p2.x;
+        const cp2y = p2.y - LEVEL_HEIGHT / 2;
+
+        d += ` C${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
+      }
+
+      segments.push(d);
     }
-    return d;
+
+    return segments;
   }, []);
 
-  // Generate completed path (green solid line)
-  const completedPathData = useMemo(() => {
+  // Generate completed path segments (green solid line)
+  const completedPathSegments = useMemo(() => {
+    const segments: string[] = [];
     const currentIndex = LEARNING_PATH.findIndex((l) => l.status === 'current');
-    if (currentIndex <= 0) return '';
+    if (currentIndex <= 0) return segments;
 
-    let d = `M${getNodePosition(0).x} ${getNodePosition(0).y}`;
-    for (let i = 0; i < currentIndex; i++) {
-      const p1 = getNodePosition(i);
-      const p2 = getNodePosition(i + 1);
+    const numberOfUnits = Math.ceil(currentIndex / LESSONS_PER_UNIT);
 
-      const cp1x = p1.x;
-      const cp1y = p1.y + LEVEL_HEIGHT / 2;
-      const cp2x = p2.x;
-      const cp2y = p2.y - LEVEL_HEIGHT / 2;
+    for (let unitIndex = 0; unitIndex < numberOfUnits; unitIndex++) {
+      const startIdx = unitIndex * LESSONS_PER_UNIT;
+      const endIdx = Math.min(startIdx + LESSONS_PER_UNIT, currentIndex + 1);
 
-      d += ` C${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
+      if (startIdx >= currentIndex) break;
+
+      let d = `M${getNodePosition(startIdx).x} ${getNodePosition(startIdx).y}`;
+
+      for (let i = startIdx; i < endIdx - 1; i++) {
+        const p1 = getNodePosition(i);
+        const p2 = getNodePosition(i + 1);
+
+        const cp1x = p1.x;
+        const cp1y = p1.y + LEVEL_HEIGHT / 2;
+        const cp2x = p2.x;
+        const cp2y = p2.y - LEVEL_HEIGHT / 2;
+
+        d += ` C${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
+      }
+
+      segments.push(d);
     }
-    return d;
+
+    return segments;
   }, []);
 
   const handleLevelPress = (level: Level) => {
@@ -169,10 +210,12 @@ export default function GameScreen() {
     // TODO: Navigate back
   };
 
-  const contentHeight = START_OFFSET_Y + LEARNING_PATH.length * LEVEL_HEIGHT + 100;
+  const numberOfSeparators = Math.floor(LEARNING_PATH.length / LESSONS_PER_UNIT);
+  const contentHeight = START_OFFSET_Y + (LEARNING_PATH.length * LEVEL_HEIGHT) + (numberOfSeparators * SEPARATOR_HEIGHT) + 100;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar style="dark" backgroundColor="white" translucent={false} />
       {/* Top Header */}
       <TopHeaderBar
         onBack={handleBackPress}
@@ -183,45 +226,79 @@ export default function GameScreen() {
         }}
       />
 
-      {/* Current Stage Card */}
-      <CurrentStageCard stage={selectedStage} onPlay={handlePlayPress} />
+      {/* Game Content Container with Green Background */}
+      <View style={styles.gameContent}>
+        {/* Current Stage Card */}
+        <CurrentStageCard stage={selectedStage} onPlay={handlePlayPress} />
 
-      {/* Learning Path */}
-      <ScrollView
-        contentContainerStyle={[styles.scrollContent, { height: contentHeight }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* SVG Path Background */}
-        <Svg style={StyleSheet.absoluteFill} height={contentHeight} width={SCREEN_WIDTH}>
-          {/* Locked path (gray dashed) */}
-          <Path
-            d={pathData}
-            stroke={colors.text.disabled}
-            strokeWidth="6"
-            strokeDasharray="10, 10"
-            fill="none"
-          />
-          {/* Completed path (green solid) */}
-          {completedPathData && (
-            <Path
-              d={completedPathData}
-              stroke={colors.primaryDark}
-              strokeWidth="6"
-              fill="none"
-            />
-          )}
-        </Svg>
+        {/* Learning Path */}
+        <ScrollView
+          contentContainerStyle={[styles.scrollContent, { height: contentHeight }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Background Decorations */}
+          <BackgroundDecorations width={SCREEN_WIDTH} height={contentHeight} />
 
-        {/* Nodes */}
-        {LEARNING_PATH.map((level, index) => (
-          <LearningPathNode
-            key={level.id}
-            level={level}
-            position={getNodePosition(index)}
-            onPress={handleLevelPress}
-          />
-        ))}
-      </ScrollView>
+          {/* SVG Path Background */}
+          <Svg style={StyleSheet.absoluteFill} height={contentHeight} width={SCREEN_WIDTH}>
+            {/* Locked path segments (gray dashed) */}
+            {pathSegments.map((pathData, index) => (
+              <Path
+                key={`locked-${index}`}
+                d={pathData}
+                stroke={colors.text.disabled}
+                strokeWidth="6"
+                strokeDasharray="10, 10"
+                strokeLinecap="round"
+                fill="none"
+              />
+            ))}
+
+            {/* Completed path segments (green solid) */}
+            {completedPathSegments.map((pathData, index) => (
+              <Path
+                key={`completed-${index}`}
+                d={pathData}
+                stroke={colors.primaryDark}
+                strokeWidth="6"
+                strokeLinecap="round"
+                fill="none"
+              />
+            ))}
+          </Svg>
+
+          {/* Unit Separators */}
+          {Array.from({ length: numberOfSeparators }).map((_, unitIndex) => {
+            const lastNodeInUnit = (unitIndex + 1) * LESSONS_PER_UNIT - 1;
+            const separatorY = getNodePosition(lastNodeInUnit).y + LEVEL_HEIGHT / 2 + 10;
+
+            return (
+              <UnitSeparator
+                key={`separator-${unitIndex}`}
+                y={separatorY}
+                width={SCREEN_WIDTH}
+                unitIndex={unitIndex}
+              />
+            );
+          })}
+
+          {/* Nodes */}
+          {LEARNING_PATH.map((level, index) => {
+            const nodeUnitIndex = Math.floor(index / LESSONS_PER_UNIT);
+            const isUnitUnlocked = nodeUnitIndex <= currentUnitIndex;
+
+            return (
+              <LearningPathNode
+                key={level.id}
+                level={level}
+                position={getNodePosition(index)}
+                onPress={handleLevelPress}
+                isUnitUnlocked={isUnitUnlocked}
+              />
+            );
+          })}
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -229,7 +306,11 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E8F5E9', // Light pastel green - softer than #B8E6C9
+    backgroundColor: 'white', // Seamless with header/status bar
+  },
+  gameContent: {
+    flex: 1,
+    backgroundColor: '#E8F5E9', // Content background
   },
   scrollContent: {
     paddingBottom: 50,

@@ -9,9 +9,10 @@ interface LearningPathNodeProps {
     level: Level;
     position: { x: number; y: number };
     onPress: (level: Level) => void;
+    isUnitUnlocked: boolean; // Whether this node's unit is unlocked
 }
 
-export default function LearningPathNode({ level, position, onPress }: LearningPathNodeProps) {
+export default function LearningPathNode({ level, position, onPress, isUnitUnlocked }: LearningPathNodeProps) {
     const { x, y } = position;
     const isCurrent = level.status === 'current';
     const isLocked = level.status === 'locked';
@@ -61,11 +62,36 @@ export default function LearningPathNode({ level, position, onPress }: LearningP
         }
     }, [isCurrent, scale, translateY]);
 
-    const backgroundColor = isLocked
-        ? colors.text.disabled
+    // Color scheme based on unit unlock status:
+    // In unlocked unit:
+    //   - Current: Green background
+    //   - Completed: Green background  
+    //   - Locked (not played yet): White background
+    // In locked unit:
+    //   - All: Blue background
+    const backgroundColor = !isUnitUnlocked
+        ? colors.accentBlue // Blue for locked units
+        : isCurrent || isCompleted
+            ? colors.primary // Green for current/completed in unlocked unit
+            : colors.surface; // White for unplayed in unlocked unit
+
+    // Icon color:
+    // - Locked unit: White
+    // - Unlocked unit, current: White (on green bg)
+    // - Unlocked unit, completed: Gold (on green bg)
+    // - Unlocked unit, unplayed: Green (on white bg)
+    const iconColor = !isUnitUnlocked
+        ? colors.surface // White for locked units
         : isCurrent
-            ? colors.primary
-            : colors.primaryDark;
+            ? colors.surface // White on green
+            : isCompleted
+                ? colors.accent // Gold on green
+                : colors.primary; // Green on white
+
+    // Border color:
+    // - Current: Green (thicker)
+    // - Others: Light gray
+    const borderColor = isCurrent ? colors.primary : '#E0E0E0';
 
     const nodeSize = isCurrent ? 80 : 70;
 
@@ -91,25 +117,30 @@ export default function LearningPathNode({ level, position, onPress }: LearningP
                         height: nodeSize,
                         borderRadius: nodeSize / 2,
                         backgroundColor,
-                        borderColor: isCurrent ? colors.surface : 'transparent',
-                        borderWidth: isCurrent ? 4 : 0,
-                        elevation: isLocked ? 0 : 6,
+                        borderColor,
+                        borderWidth: isCurrent ? 6 : 4,
+                        elevation: 8, // Shadow for all nodes
+                        shadowOpacity: 0.3,
+                        shadowRadius: 10,
                     },
                 ]}
             >
-                {isLocked ? (
-                    <MaterialCommunityIcons name="lock" size={28} color={colors.surface} style={{ opacity: 0.7 }} />
+                {/* Main Icon */}
+                {!isUnitUnlocked ? (
+                    // Locked unit: show lock icon
+                    <MaterialCommunityIcons name="lock" size={28} color={iconColor} />
                 ) : (
+                    // Unlocked unit: show content icon
                     <MaterialCommunityIcons
                         name={level.icon as any}
                         size={isCurrent ? 36 : 32}
-                        color={isCompleted ? colors.accent : colors.surface}
+                        color={iconColor}
                     />
                 )}
             </TouchableOpacity>
 
             {/* Label */}
-            {!isLocked && (
+            {isUnitUnlocked && (
                 <View style={styles.labelContainer}>
                     <Text style={styles.labelText}>{level.title}</Text>
                 </View>
@@ -142,9 +173,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: colors.shadow,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 6 }, // Increased offset for floating effect
+        position: 'relative',
     },
     labelContainer: {
         marginTop: 8,
