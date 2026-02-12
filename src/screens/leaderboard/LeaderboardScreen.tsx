@@ -1,15 +1,156 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, Animated, ScrollView, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors } from '../../theme';
+import { colors, spacing, borderRadius } from '../../theme';
+import { PodiumDisplay, RankingItem } from '../../components/leaderboard';
+import type { ILeaderboardEntry } from '../../types/game';
+
+// Mock data - replace with actual API call
+const MOCK_CLASS_LEADERBOARD: ILeaderboardEntry[] = [
+  {
+    rank: 1,
+    userId: '1',
+    userName: 'Trần Nam',
+    avatar: '',
+    points: 2440,
+    level: 12,
+    isCurrentUser: false,
+  },
+  {
+    rank: 2,
+    userId: '2',
+    userName: 'Minh Anh',
+    avatar: '',
+    points: 2150,
+    level: 11,
+    isCurrentUser: false,
+  },
+  {
+    rank: 3,
+    userId: '3',
+    userName: 'Bảo Ngọc',
+    avatar: '',
+    points: 1840,
+    level: 10,
+    isCurrentUser: false,
+  },
+  {
+    rank: 4,
+    userId: '4',
+    userName: 'Kiddo',
+    avatar: '',
+    points: 1250,
+    level: 8,
+    isCurrentUser: true,
+  },
+  {
+    rank: 5,
+    userId: '5',
+    userName: 'Lê Hoàng',
+    avatar: '',
+    points: 1750,
+    level: 9,
+    isCurrentUser: false,
+  },
+  {
+    rank: 6,
+    userId: '6',
+    userName: 'Thanh Hương',
+    avatar: '',
+    points: 1620,
+    level: 9,
+    isCurrentUser: false,
+  },
+  {
+    rank: 7,
+    userId: '7',
+    userName: 'Gia Bảo',
+    avatar: '',
+    points: 1580,
+    level: 8,
+    isCurrentUser: false,
+  },
+  {
+    rank: 8,
+    userId: '8',
+    userName: 'Thủy Dương',
+    avatar: '',
+    points: 1490,
+    level: 8,
+    isCurrentUser: false,
+  },
+];
+
+const MOCK_SCHOOL_LEADERBOARD: ILeaderboardEntry[] = [
+  {
+    rank: 1,
+    userId: '11',
+    userName: 'Nguyễn Anh',
+    avatar: '',
+    points: 3200,
+    level: 15,
+    isCurrentUser: false,
+  },
+  {
+    rank: 2,
+    userId: '12',
+    userName: 'Trần Bình',
+    avatar: '',
+    points: 2980,
+    level: 14,
+    isCurrentUser: false,
+  },
+  {
+    rank: 3,
+    userId: '13',
+    userName: 'Lê Cường',
+    avatar: '',
+    points: 2750,
+    level: 13,
+    isCurrentUser: false,
+  },
+  {
+    rank: 4,
+    userId: '1',
+    userName: 'Trần Nam',
+    avatar: '',
+    points: 2440,
+    level: 12,
+    isCurrentUser: false,
+  },
+  {
+    rank: 5,
+    userId: '2',
+    userName: 'Minh Anh',
+    avatar: '',
+    points: 2150,
+    level: 11,
+    isCurrentUser: false,
+  },
+  {
+    rank: 12,
+    userId: '4',
+    userName: 'Kiddo',
+    avatar: '',
+    points: 1250,
+    level: 8,
+    isCurrentUser: true,
+  },
+];
+
+type TabType = 'class' | 'school';
 
 export default function LeaderboardScreen() {
+  const [activeTab, setActiveTab] = useState<TabType>('class');
+  const [tabContainerWidth, setTabContainerWidth] = useState(0);
+
   // Animations
   const floatAnim1 = useRef(new Animated.Value(0)).current;
   const floatAnim2 = useRef(new Animated.Value(0)).current;
   const floatAnim3 = useRef(new Animated.Value(0)).current;
+  const tabIndicatorAnim = useRef(new Animated.Value(0)).current; // 0 for class, 1 for school
 
   useEffect(() => {
     // Floating animation for decorative icons
@@ -59,6 +200,40 @@ export default function LeaderboardScreen() {
     ).start();
   }, []);
 
+  useEffect(() => {
+    // Animate tab indicator
+    Animated.spring(tabIndicatorAnim, {
+      toValue: activeTab === 'class' ? 0 : 1,
+      useNativeDriver: true,
+      tension: 80,
+      friction: 10,
+    }).start();
+  }, [activeTab]);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+  };
+
+  const currentData = activeTab === 'class' ? MOCK_CLASS_LEADERBOARD : MOCK_SCHOOL_LEADERBOARD;
+  const top3 = currentData.slice(0, 3) as [
+    ILeaderboardEntry?,
+    ILeaderboardEntry?,
+    ILeaderboardEntry?,
+  ];
+  const remaining = currentData.slice(3);
+
+  // Calculate tab indicator position
+  const tabWidth = tabContainerWidth > 0 ? (tabContainerWidth - 8) / 2 : 0; // subtract padding
+  const indicatorTranslateX = tabIndicatorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, tabWidth],
+  });
+
+  const indicatorScale = tabIndicatorAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 0.95, 1],
+  });
+
   return (
     <View style={styles.container}>
       {/* Background Decorative Elements */}
@@ -80,14 +255,60 @@ export default function LeaderboardScreen() {
       </Animated.View>
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <View style={styles.content}>
-          <MaterialCommunityIcons name="trophy" size={80} color={colors.primary} />
+        {/* Header */}
+        <View style={styles.header}>
           <Text style={styles.title}>Bảng Xếp Hạng</Text>
-          <Text style={styles.subtitle}>Tính năng đang được phát triển</Text>
-          <Text style={styles.description}>
-            Sắp có thể xem thành tích của bạn và so sánh với những người chơi khác!
-          </Text>
         </View>
+
+        {/* Tabs */}
+        <View
+          style={styles.tabContainer}
+          onLayout={e => setTabContainerWidth(e.nativeEvent.layout.width)}
+        >
+          {/* Animated Indicator */}
+          <Animated.View
+            style={[
+              styles.tabIndicator,
+              {
+                transform: [{ translateX: indicatorTranslateX }, { scale: indicatorScale }],
+              },
+            ]}
+          />
+
+          {/* Tab Buttons */}
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => handleTabChange('class')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabText, activeTab === 'class' && styles.activeTabText]}>Lớp</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => handleTabChange('school')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabText, activeTab === 'school' && styles.activeTabText]}>
+              Toàn trường
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Podium - Fixed */}
+        <PodiumDisplay top3={top3} />
+
+        {/* Remaining Rankings - Scrollable */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.rankingList}>
+            {remaining.map(entry => (
+              <RankingItem key={entry.userId} entry={entry} isCurrentUser={entry.isCurrentUser} />
+            ))}
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
@@ -152,29 +373,64 @@ const styles = StyleSheet.create({
     flex: 1,
     zIndex: 10,
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     alignItems: 'center',
-    paddingHorizontal: 32,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: colors.text.primary,
-    marginTop: 24,
-    marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-    marginBottom: 16,
+  tabContainer: {
+    flexDirection: 'row',
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: 4,
+    position: 'relative',
   },
-  description: {
+  tabIndicator: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    width: '50%',
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    marginRight: -8,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    borderRadius: borderRadius.md,
+    zIndex: 1,
+  },
+  tabText: {
     fontSize: 14,
+    fontWeight: '600',
     color: colors.text.secondary,
-    textAlign: 'center',
-    lineHeight: 22,
+    zIndex: 2,
+  },
+  activeTabText: {
+    color: colors.surface,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  rankingList: {
+    paddingHorizontal: spacing.lg,
+    marginTop: 0,
   },
 });

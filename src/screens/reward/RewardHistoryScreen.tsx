@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Animated, TouchableOpacity, FlatList } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Animated, ScrollView, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { colors, spacing, borderRadius } from '../../theme';
-import { RewardCard, ConfirmRedeemDialog, SuccessDialog } from '../../components/reward';
-import type { IReward } from '../../types';
+import { RewardHistoryItem } from '../../components/reward';
+import type { IRedeemHistory, IReward } from '../../types';
 
 // Mock data
 const MOCK_REWARDS: IReward[] = [
@@ -35,30 +35,6 @@ const MOCK_REWARDS: IReward[] = [
     iconColor: '#E91E63',
   },
   {
-    id: '3',
-    title: 'Skin Hiệp Sĩ Xanh',
-    description: 'Trang phục đặc biệt',
-    image: '',
-    pointsCost: 1500,
-    category: 'PREMIUM' as any,
-    stock: 0,
-    isAvailable: false,
-    icon: 'shield-account',
-    iconColor: '#2196F3',
-  },
-  {
-    id: '4',
-    title: 'Cây số mềm non',
-    description: 'Sách vở tái chế',
-    image: '',
-    pointsCost: 2200,
-    category: 'MERCHANDISE' as any,
-    stock: 5,
-    isAvailable: true,
-    icon: 'notebook',
-    iconColor: '#9C27B0',
-  },
-  {
     id: '5',
     title: 'Hạt giống thần kỳ',
     description: 'Hạt giống rau củ',
@@ -84,12 +60,48 @@ const MOCK_REWARDS: IReward[] = [
   },
 ];
 
-export default function RewardScreen() {
+const MOCK_HISTORY: IRedeemHistory[] = [
+  {
+    id: '1',
+    userId: 'user1',
+    rewardId: '1',
+    reward: MOCK_REWARDS[0],
+    pointsSpent: 500,
+    status: 'PENDING' as any,
+    redeemedAt: '22/12/2025',
+  },
+  {
+    id: '2',
+    userId: 'user1',
+    rewardId: '6',
+    reward: MOCK_REWARDS[3],
+    pointsSpent: 2500,
+    status: 'APPROVED' as any,
+    redeemedAt: '18/12/2025',
+  },
+  {
+    id: '3',
+    userId: 'user1',
+    rewardId: '2',
+    reward: MOCK_REWARDS[1],
+    pointsSpent: 300,
+    status: 'PARENT_REJECTED' as any,
+    redeemedAt: '15/12/2025',
+  },
+  {
+    id: '4',
+    userId: 'user1',
+    rewardId: '5',
+    reward: MOCK_REWARDS[2],
+    pointsSpent: 800,
+    status: 'USED' as any,
+    redeemedAt: '10/12/2025',
+  },
+] as IRedeemHistory[];
+
+export default function RewardHistoryScreen() {
   const navigation = useNavigation();
-  const [selectedReward, setSelectedReward] = useState<IReward | null>(null);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [userPoints] = useState(1250); // Mock user points
+  const userPoints = 1250; // Mock - should get from store
 
   // Animations
   const floatAnim1 = useRef(new Animated.Value(0)).current;
@@ -144,32 +156,6 @@ export default function RewardScreen() {
     ).start();
   }, []);
 
-  const handleRedeemPress = (id: string) => {
-    const reward = MOCK_REWARDS.find(r => r.id === id);
-    if (reward) {
-      setSelectedReward(reward);
-      setShowConfirmDialog(true);
-    }
-  };
-
-  const handleConfirmRedeem = () => {
-    setShowConfirmDialog(false);
-    // Simulate API call
-    setTimeout(() => {
-      setShowSuccessDialog(true);
-    }, 300);
-  };
-
-  const handleCancelRedeem = () => {
-    setShowConfirmDialog(false);
-    setSelectedReward(null);
-  };
-
-  const handleCloseSuccess = () => {
-    setShowSuccessDialog(false);
-    setSelectedReward(null);
-  };
-
   return (
     <View style={styles.container}>
       {/* Background Decorative Elements */}
@@ -193,74 +179,32 @@ export default function RewardScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Đổi thưởng</Text>
-          <View style={styles.headerRight}>
-            <View style={styles.pointsBadge}>
-              <MaterialCommunityIcons name="circle-multiple" size={20} color={colors.accent} />
-              <Text style={styles.pointsText}>{userPoints}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.historyButton}
-              onPress={() => navigation.navigate('RewardHistory' as never)}
-            >
-              <Text style={styles.historyButtonText}>Lịch sử</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Tabs */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity style={styles.tab} activeOpacity={0.7}>
-            <Text style={styles.tabTextActive}>Quà tặng</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text.primary} />
           </TouchableOpacity>
-          <View style={styles.tab}>
-            <Text style={styles.tabTextInactive}>Huy hiệu</Text>
+          <Text style={styles.headerTitle}>Lịch sử đổi quà</Text>
+          <View style={styles.pointsBadge}>
+            <MaterialCommunityIcons name="circle-multiple" size={20} color={colors.accent} />
+            <Text style={styles.pointsText}>{userPoints}</Text>
           </View>
         </View>
 
         {/* Content */}
-        <View style={styles.content}>
-          <FlatList
-            data={MOCK_REWARDS}
-            renderItem={({ item }) => (
-              <View style={styles.gridItem}>
-                <RewardCard
-                  id={item.id}
-                  title={item.title}
-                  image={item.image}
-                  icon={item.icon}
-                  iconColor={item.iconColor}
-                  pointsCost={item.pointsCost}
-                  userPoints={userPoints}
-                  stock={item.stock}
-                  isAvailable={item.isAvailable}
-                  onRedeem={handleRedeemPress}
-                />
-              </View>
-            )}
-            keyExtractor={item => item.id}
-            numColumns={2}
-            contentContainerStyle={styles.gridContent}
-            showsVerticalScrollIndicator={false}
-          />
-        </View>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {MOCK_HISTORY.map(item => (
+            <RewardHistoryItem
+              key={item.id}
+              title={item.reward.title}
+              image={item.reward.image}
+              icon={item.reward.icon}
+              iconColor={item.reward.iconColor}
+              pointsSpent={item.pointsSpent}
+              status={item.status}
+              redeemedAt={item.redeemedAt}
+            />
+          ))}
+        </ScrollView>
       </SafeAreaView>
-
-      {/* Dialogs */}
-      {selectedReward && (
-        <ConfirmRedeemDialog
-          visible={showConfirmDialog}
-          rewardTitle={selectedReward.title}
-          pointsCost={selectedReward.pointsCost}
-          image={selectedReward.image}
-          icon={selectedReward.icon}
-          iconColor={selectedReward.iconColor}
-          onConfirm={handleConfirmRedeem}
-          onCancel={handleCancelRedeem}
-        />
-      )}
-
-      <SuccessDialog visible={showSuccessDialog} onClose={handleCloseSuccess} />
     </View>
   );
 }
@@ -331,15 +275,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
   },
+  backButton: {
+    padding: spacing.xs,
+  },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: colors.text.primary,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: spacing.sm,
   },
   pointsBadge: {
     flexDirection: 'row',
@@ -355,52 +300,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.accent,
   },
-  historyButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.xl,
-  },
-  historyButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text.white,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-  },
-  tab: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.xl,
-  },
-  tabTextActive: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text.white,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.xl,
-  },
-  tabTextInactive: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text.secondary,
-  },
   content: {
-    flex: 1,
-  },
-  gridContent: {
     padding: spacing.base,
     paddingBottom: spacing['6xl'],
-  },
-  gridItem: {
-    flex: 1,
-    maxWidth: '50%',
-    padding: spacing.xs,
   },
 });
