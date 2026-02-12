@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 20, // Scaled 1.2x
         paddingVertical: 14, // Scaled 1.2x
-        backgroundColor: colors.surface,
+        backgroundColor: 'transparent',
         elevation: 0, // Explicitly remove Android shadow
         shadowOpacity: 0, // Explicitly remove iOS shadow
         borderBottomWidth: 0, // Ensure no border
