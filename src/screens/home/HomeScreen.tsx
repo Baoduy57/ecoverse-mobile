@@ -5,6 +5,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { DashboardScreen } from '../dashboard';
 import { GameScreen } from '../game';
 import { ProfileScreen } from '../profile';
+import { LeaderboardScreen } from '../leaderboard';
+import { RewardScreen } from '../reward';
 import { colors } from '../../theme';
 
 export type HomeTabParamList = {
@@ -55,7 +57,7 @@ export default function HomeScreen() {
       />
       <Tab.Screen
         name="Achievement"
-        component={GameScreen}
+        component={LeaderboardScreen}
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.tabItem}>
@@ -79,7 +81,7 @@ export default function HomeScreen() {
       />
       <Tab.Screen
         name="Reward"
-        component={GameScreen}
+        component={RewardScreen}
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.tabItem}>

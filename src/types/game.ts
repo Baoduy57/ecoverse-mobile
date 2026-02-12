@@ -74,3 +74,18 @@ export interface IDailyChallenge {
   isCompleted: boolean;
   progress?: number;
 }
+
+// Learning Path Level
+export type LevelStatus = 'locked' | 'current' | 'completed';
+
+export interface Level {
+  id: number;
+  title: string;
+  icon: string;
+  status: LevelStatus;
+  bestScore?: string;
+  isCurrent?: boolean;
+  description: string;
+  playsCount?: number;
+  completionRate?: number;
+}
