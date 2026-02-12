@@ -1,13 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Dimensions,
-  Alert,
-} from 'react-native';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, Dimensions, Alert, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../../theme';
 import TopHeaderBar from '../../components/game/TopHeaderBar';
 import CurrentStageCard from '../../components/game/CurrentStageCard';
@@ -110,22 +105,74 @@ const getNodePosition = (index: number) => {
   const unitIndex = Math.floor(index / LESSONS_PER_UNIT);
   const unitOffset = unitIndex * SEPARATOR_HEIGHT;
 
-  const y = START_OFFSET_Y + (index * LEVEL_HEIGHT) + unitOffset;
+  const y = START_OFFSET_Y + index * LEVEL_HEIGHT + unitOffset;
   // Sine wave with smooth frequency for natural roadmap feel
-  const x = SCREEN_WIDTH / 2 + (SCREEN_WIDTH * 0.3) * Math.sin(index * 0.8);
+  const x = SCREEN_WIDTH / 2 + SCREEN_WIDTH * 0.3 * Math.sin(index * 0.8);
   return { x, y };
 };
 
 export default function GameScreen() {
   const [selectedStage, setSelectedStage] = useState<Level>(
-    LEARNING_PATH.find((l) => l.isCurrent) || LEARNING_PATH[0]
+    LEARNING_PATH.find(l => l.isCurrent) || LEARNING_PATH[0]
   );
 
+  // Animations
+  const floatAnim1 = useRef(new Animated.Value(0)).current;
+  const floatAnim2 = useRef(new Animated.Value(0)).current;
+  const floatAnim3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Floating animation for decorative icons
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim1, {
+          toValue: -20,
+          duration: 3000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim1, {
+          toValue: 0,
+          duration: 3000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim2, {
+          toValue: -15,
+          duration: 4000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim2, {
+          toValue: 0,
+          duration: 4000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim3, {
+          toValue: -10,
+          duration: 2500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim3, {
+          toValue: 0,
+          duration: 2500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
   // Calculate which unit is currently unlocked (contains current node)
-  const currentLevelIndex = LEARNING_PATH.findIndex((l) => l.status === 'current');
-  const currentUnitIndex = currentLevelIndex >= 0
-    ? Math.floor(currentLevelIndex / LESSONS_PER_UNIT)
-    : 0;
+  const currentLevelIndex = LEARNING_PATH.findIndex(l => l.status === 'current');
+  const currentUnitIndex =
+    currentLevelIndex >= 0 ? Math.floor(currentLevelIndex / LESSONS_PER_UNIT) : 0;
 
   // Generate SVG Path segments (one per unit, breaking at separators)
   const pathSegments = useMemo(() => {
@@ -162,7 +209,7 @@ export default function GameScreen() {
   // Generate completed path segments (green solid line)
   const completedPathSegments = useMemo(() => {
     const segments: string[] = [];
-    const currentIndex = LEARNING_PATH.findIndex((l) => l.status === 'current');
+    const currentIndex = LEARNING_PATH.findIndex(l => l.status === 'current');
     if (currentIndex <= 0) return segments;
 
     const numberOfUnits = Math.ceil(currentIndex / LESSONS_PER_UNIT);
@@ -211,106 +258,185 @@ export default function GameScreen() {
   };
 
   const numberOfSeparators = Math.floor(LEARNING_PATH.length / LESSONS_PER_UNIT);
-  const contentHeight = START_OFFSET_Y + (LEARNING_PATH.length * LEVEL_HEIGHT) + (numberOfSeparators * SEPARATOR_HEIGHT) + 100;
+  const contentHeight =
+    START_OFFSET_Y +
+    LEARNING_PATH.length * LEVEL_HEIGHT +
+    numberOfSeparators * SEPARATOR_HEIGHT +
+    100;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar style="dark" backgroundColor="white" translucent={false} />
-      {/* Top Header */}
-      <TopHeaderBar
-        onBack={handleBackPress}
-        stats={{
-          missions: 7,
-          streak: 124,
-          ecoPoints: 850,
-        }}
-      />
+    <View style={styles.container}>
+      <StatusBar style="dark" backgroundColor={colors.background} translucent={false} />
 
-      {/* Game Content Container with Green Background */}
-      <View style={styles.gameContent}>
-        {/* Current Stage Card */}
-        <CurrentStageCard stage={selectedStage} onPlay={handlePlayPress} />
+      {/* Background Decorative Elements */}
+      <View style={styles.bgDecorativeTop} />
+      <View style={styles.bgDecorativeRight} />
+      <View style={styles.bgDecorativeBottom} />
 
-        {/* Learning Path */}
-        <ScrollView
-          contentContainerStyle={[styles.scrollContent, { height: contentHeight }]}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Background Decorations */}
-          <BackgroundDecorations width={SCREEN_WIDTH} height={contentHeight} />
+      {/* Floating Icons */}
+      <Animated.View style={[styles.floatingIcon1, { transform: [{ translateY: floatAnim1 }] }]}>
+        <MaterialCommunityIcons name="leaf" size={100} color="rgba(129, 199, 132, 0.3)" />
+      </Animated.View>
 
-          {/* SVG Path Background */}
-          <Svg style={StyleSheet.absoluteFill} height={contentHeight} width={SCREEN_WIDTH}>
-            {/* Locked path segments (gray dashed) */}
-            {pathSegments.map((pathData, index) => (
-              <Path
-                key={`locked-${index}`}
-                d={pathData}
-                stroke={colors.text.disabled}
-                strokeWidth="6"
-                strokeDasharray="10, 10"
-                strokeLinecap="round"
-                fill="none"
-              />
-            ))}
+      <Animated.View style={[styles.floatingIcon2, { transform: [{ translateY: floatAnim2 }] }]}>
+        <MaterialCommunityIcons name="recycle" size={80} color="rgba(129, 199, 132, 0.3)" />
+      </Animated.View>
 
-            {/* Completed path segments (green solid) */}
-            {completedPathSegments.map((pathData, index) => (
-              <Path
-                key={`completed-${index}`}
-                d={pathData}
-                stroke={colors.primaryDark}
-                strokeWidth="6"
-                strokeLinecap="round"
-                fill="none"
-              />
-            ))}
-          </Svg>
+      <Animated.View style={[styles.floatingIcon3, { transform: [{ translateY: floatAnim3 }] }]}>
+        <MaterialCommunityIcons name="cloud" size={60} color="rgba(144, 202, 249, 0.4)" />
+      </Animated.View>
 
-          {/* Unit Separators */}
-          {Array.from({ length: numberOfSeparators }).map((_, unitIndex) => {
-            const lastNodeInUnit = (unitIndex + 1) * LESSONS_PER_UNIT - 1;
-            const separatorY = getNodePosition(lastNodeInUnit).y + LEVEL_HEIGHT / 2 + 10;
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Top Header */}
+        <TopHeaderBar
+          onBack={handleBackPress}
+          stats={{
+            missions: 7,
+            streak: 124,
+            ecoPoints: 850,
+          }}
+        />
 
-            return (
-              <UnitSeparator
-                key={`separator-${unitIndex}`}
-                y={separatorY}
-                width={SCREEN_WIDTH}
-                unitIndex={unitIndex}
-              />
-            );
-          })}
+        {/* Game Content Container with Green Background */}
+        <View style={styles.gameContent}>
+          {/* Current Stage Card */}
+          <CurrentStageCard stage={selectedStage} onPlay={handlePlayPress} />
 
-          {/* Nodes */}
-          {LEARNING_PATH.map((level, index) => {
-            const nodeUnitIndex = Math.floor(index / LESSONS_PER_UNIT);
-            const isUnitUnlocked = nodeUnitIndex <= currentUnitIndex;
+          {/* Learning Path */}
+          <ScrollView
+            contentContainerStyle={[styles.scrollContent, { height: contentHeight }]}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Background Decorations */}
+            <BackgroundDecorations width={SCREEN_WIDTH} height={contentHeight} />
 
-            return (
-              <LearningPathNode
-                key={level.id}
-                level={level}
-                position={getNodePosition(index)}
-                onPress={handleLevelPress}
-                isUnitUnlocked={isUnitUnlocked}
-              />
-            );
-          })}
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+            {/* SVG Path Background */}
+            <Svg style={StyleSheet.absoluteFill} height={contentHeight} width={SCREEN_WIDTH}>
+              {/* Locked path segments (gray dashed) */}
+              {pathSegments.map((pathData, index) => (
+                <Path
+                  key={`locked-${index}`}
+                  d={pathData}
+                  stroke={colors.text.disabled}
+                  strokeWidth="6"
+                  strokeDasharray="10, 10"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              ))}
+
+              {/* Completed path segments (green solid) */}
+              {completedPathSegments.map((pathData, index) => (
+                <Path
+                  key={`completed-${index}`}
+                  d={pathData}
+                  stroke={colors.primaryDark}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              ))}
+            </Svg>
+
+            {/* Unit Separators */}
+            {Array.from({ length: numberOfSeparators }).map((_, unitIndex) => {
+              const lastNodeInUnit = (unitIndex + 1) * LESSONS_PER_UNIT - 1;
+              const separatorY = getNodePosition(lastNodeInUnit).y + LEVEL_HEIGHT / 2 + 10;
+
+              return (
+                <UnitSeparator
+                  key={`separator-${unitIndex}`}
+                  y={separatorY}
+                  width={SCREEN_WIDTH}
+                  unitIndex={unitIndex}
+                />
+              );
+            })}
+
+            {/* Nodes */}
+            {LEARNING_PATH.map((level, index) => {
+              const nodeUnitIndex = Math.floor(index / LESSONS_PER_UNIT);
+              const isUnitUnlocked = nodeUnitIndex <= currentUnitIndex;
+
+              return (
+                <LearningPathNode
+                  key={level.id}
+                  level={level}
+                  position={getNodePosition(index)}
+                  onPress={handleLevelPress}
+                  isUnitUnlocked={isUnitUnlocked}
+                />
+              );
+            })}
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: colors.background,
     flex: 1,
-    backgroundColor: 'white', // Seamless with header/status bar
+    position: 'relative',
+  },
+  // Background decorative elements
+  bgDecorativeTop: {
+    backgroundColor: '#dbe6e0',
+    borderRadius: 9999,
+    height: '40%',
+    left: '-10%',
+    opacity: 0.6,
+    position: 'absolute',
+    top: '-10%',
+    width: '70%',
+  },
+  bgDecorativeRight: {
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    borderRadius: 9999,
+    height: '50%',
+    position: 'absolute',
+    right: '-20%',
+    top: '40%',
+    width: '80%',
+  },
+  bgDecorativeBottom: {
+    backgroundColor: '#dbe6e0',
+    borderRadius: 9999,
+    bottom: '-10%',
+    height: '40%',
+    left: '10%',
+    opacity: 0.5,
+    position: 'absolute',
+    width: '60%',
+  },
+  // Floating icons
+  floatingIcon1: {
+    position: 'absolute',
+    right: -20,
+    top: '15%',
+    zIndex: 0,
+  },
+  floatingIcon2: {
+    bottom: '20%',
+    left: -30,
+    position: 'absolute',
+    zIndex: 0,
+  },
+  floatingIcon3: {
+    left: '5%',
+    position: 'absolute',
+    top: '40%',
+    zIndex: 0,
+  },
+  safeArea: {
+    flex: 1,
+    zIndex: 10,
   },
   gameContent: {
     flex: 1,
-    backgroundColor: '#E8F5E9', // Content background
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     paddingBottom: 50,

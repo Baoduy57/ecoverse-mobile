@@ -9,6 +9,8 @@ export interface IReward {
   stock: number;
   isAvailable: boolean;
   expiresAt?: string;
+  icon?: string; // Icon name for MaterialCommunityIcons
+  iconColor?: string; // Color for the icon
 }
 
 export enum RewardCategory {
