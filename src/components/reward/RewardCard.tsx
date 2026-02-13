@@ -48,8 +48,13 @@ export default function RewardCard({
         {image ? (
           <Image source={{ uri: image }} style={styles.image} />
         ) : (
-          <View style={[styles.iconPlaceholder, { backgroundColor: `${iconColor}20` }]}>
-            <MaterialCommunityIcons name={icon as any} size={48} color={iconColor} />
+          <View style={[styles.iconPlaceholder, { backgroundColor: `${iconColor}18` }]}>
+            <MaterialCommunityIcons name={icon as any} size={44} color={iconColor} />
+          </View>
+        )}
+        {!inStock && (
+          <View style={styles.outOfStockOverlay}>
+            <Text style={styles.outOfStockText}>Hết hàng</Text>
           </View>
         )}
       </View>
@@ -60,9 +65,10 @@ export default function RewardCard({
           {title}
         </Text>
         <View style={styles.pointsRow}>
-          <MaterialCommunityIcons name="circle-multiple" size={16} color={colors.accent} />
-          <Text style={styles.points}>{pointsCost} xu</Text>
+          <MaterialCommunityIcons name="star-four-points" size={15} color={colors.accent} />
+          <Text style={styles.points}>{pointsCost.toLocaleString()} xu</Text>
         </View>
+        {inStock && stock <= 5 && <Text style={styles.stockHint}>Còn {stock} sản phẩm</Text>}
       </View>
 
       {/* Button */}
@@ -74,6 +80,7 @@ export default function RewardCard({
         ]}
         onPress={() => onRedeem(id)}
         disabled={buttonState.disabled}
+        activeOpacity={0.8}
       >
         <Text style={[styles.buttonText, canRedeem && styles.buttonTextActive]}>
           {buttonState.text}
@@ -86,21 +93,24 @@ export default function RewardCard({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     padding: spacing.md,
     gap: spacing.sm,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.divider,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   imageContainer: {
     width: '100%',
     aspectRatio: 1,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
     backgroundColor: colors.background,
+    position: 'relative',
   },
   image: {
     width: '100%',
@@ -113,14 +123,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  outOfStockOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  outOfStockText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text.white,
+  },
   info: {
-    gap: spacing.xs,
+    gap: 4,
   },
   title: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.text.primary,
-    minHeight: 36,
+    minHeight: 38,
+    lineHeight: 18,
   },
   pointsRow: {
     flexDirection: 'row',
@@ -129,13 +151,18 @@ const styles = StyleSheet.create({
   },
   points: {
     fontSize: 14,
-    fontWeight: '600',
-    color: colors.accent,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  stockHint: {
+    fontSize: 11,
+    color: colors.status.warning,
+    marginTop: 2,
   },
   button: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.xl,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -143,7 +170,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   buttonDisabled: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.divider,
   },
   buttonText: {
     fontSize: 14,

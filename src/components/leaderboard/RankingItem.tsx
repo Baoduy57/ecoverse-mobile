@@ -5,20 +5,32 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../../theme';
 import type { ILeaderboardEntry } from '../../types/game';
 
+const RANK_STYLE: Record<number, { bg: string; color: string }> = {
+  4: { bg: 'rgba(33, 150, 243, 0.12)', color: colors.accentBlue },
+  5: { bg: 'rgba(156, 39, 176, 0.12)', color: colors.accentPurple },
+};
+
+function getRankStyle(rank: number) {
+  return RANK_STYLE[rank] || { bg: colors.background, color: colors.text.secondary };
+}
+
 interface RankingItemProps {
   entry: ILeaderboardEntry;
   isCurrentUser?: boolean;
 }
 
 export default function RankingItem({ entry, isCurrentUser }: RankingItemProps) {
-  const containerStyle = isCurrentUser
-    ? [styles.container, styles.currentUserContainer]
-    : styles.container;
+  const rankStyle = getRankStyle(entry.rank);
 
   return (
-    <TouchableOpacity style={containerStyle} activeOpacity={0.7}>
-      <View style={styles.leftSection}>
-        <Text style={styles.rank}>{entry.rank}</Text>
+    <TouchableOpacity
+      style={[styles.container, isCurrentUser && styles.currentUserContainer]}
+      activeOpacity={0.8}
+    >
+      <View style={[styles.rankBadge, { backgroundColor: rankStyle.bg }]}>
+        <Text style={[styles.rankText, { color: rankStyle.color }]}>{entry.rank}</Text>
+      </View>
+      <View style={styles.avatarWrap}>
         {entry.avatar ? (
           <Image source={{ uri: entry.avatar }} style={styles.avatar} />
         ) : (
@@ -26,16 +38,22 @@ export default function RankingItem({ entry, isCurrentUser }: RankingItemProps) 
             <MaterialCommunityIcons name="account" size={24} color={colors.text.secondary} />
           </View>
         )}
-        <View style={styles.infoContainer}>
+      </View>
+      <View style={styles.infoContainer}>
+        <View style={styles.nameRow}>
           <Text style={styles.name} numberOfLines={1}>
             {entry.userName}
-            {isCurrentUser && <Text style={styles.youBadge}> (Bạn)</Text>}
           </Text>
-          {entry.level && <Text style={styles.subtitle}>Level {entry.level}</Text>}
+          {isCurrentUser && (
+            <View style={styles.youBadge}>
+              <Text style={styles.youBadgeText}>Bạn</Text>
+            </View>
+          )}
         </View>
+        {entry.level != null && <Text style={styles.subtitle}>Level {entry.level}</Text>}
       </View>
-      <View style={styles.pointsContainer}>
-        <MaterialCommunityIcons name="poker-chip" size={18} color="#FFA726" />
+      <View style={styles.pointsChip}>
+        <MaterialCommunityIcons name="star-four-points" size={16} color={colors.accent} />
         <Text style={styles.points}>{entry.points.toLocaleString()}</Text>
       </View>
     </TouchableOpacity>
@@ -46,35 +64,43 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    borderRadius: borderRadius.xl,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   currentUserContainer: {
-    backgroundColor: '#E8F5E9',
-    borderWidth: 2,
+    backgroundColor: colors.surface,
     borderColor: colors.primary,
+    borderWidth: 2,
   },
-  leftSection: {
-    flexDirection: 'row',
+  rankBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
     alignItems: 'center',
-    flex: 1,
-    gap: spacing.sm,
+    marginRight: spacing.md,
   },
-  rank: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.text.secondary,
-    minWidth: 24,
+  rankText: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  avatarWrap: {
+    marginRight: spacing.sm,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: colors.border,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   avatarPlaceholder: {
     backgroundColor: colors.background,
@@ -83,29 +109,51 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     flex: 1,
+    minWidth: 0,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    flexWrap: 'wrap',
   },
   name: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.text.primary,
-    marginBottom: 2,
   },
   youBadge: {
-    color: colors.primary,
-    fontWeight: 'bold',
+    backgroundColor: colors.primaryDark,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.base,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  youBadgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.text.white,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 12,
     color: colors.text.secondary,
+    marginTop: 2,
   },
-  pointsContainer: {
+  pointsChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    backgroundColor: 'rgba(255, 174, 0, 0.12)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.lg,
   },
   points: {
-    fontSize: 15,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '700',
     color: colors.text.primary,
   },
 });

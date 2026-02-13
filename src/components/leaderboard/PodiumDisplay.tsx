@@ -2,8 +2,35 @@ import React from 'react';
 import { View, StyleSheet, Image } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors, spacing } from '../../theme';
+import { colors, spacing, borderRadius } from '../../theme';
 import type { ILeaderboardEntry } from '../../types/game';
+
+const RANK_CONFIG = {
+  1: {
+    medalColor: '#FFD700',
+    baseColor: '#FFF8E1',
+    baseBorder: 'rgba(255, 215, 0, 0.4)',
+    height: 90,
+    label: 'Nhất',
+    icon: 'trophy' as const,
+  },
+  2: {
+    medalColor: '#B0BEC5',
+    baseColor: '#ECEFF1',
+    baseBorder: 'rgba(176, 190, 197, 0.5)',
+    height: 75,
+    label: 'Nhì',
+    icon: 'medal' as const,
+  },
+  3: {
+    medalColor: '#BC8F5C',
+    baseColor: '#FFF3E0',
+    baseBorder: 'rgba(188, 143, 92, 0.4)',
+    height: 66,
+    label: 'Ba',
+    icon: 'medal-outline' as const,
+  },
+};
 
 interface PodiumDisplayProps {
   top3: [ILeaderboardEntry?, ILeaderboardEntry?, ILeaderboardEntry?];
@@ -12,46 +39,95 @@ interface PodiumDisplayProps {
 export default function PodiumDisplay({ top3 }: PodiumDisplayProps) {
   const [first, second, third] = top3;
 
-  const renderPodiumItem = (
-    entry: ILeaderboardEntry | undefined,
-    rank: number,
-    height: number,
-    color: string
-  ) => {
-    if (!entry) return null;
+  const renderPodiumItem = (entry: ILeaderboardEntry | undefined, rank: 1 | 2 | 3) => {
+    if (!entry) {
+      return (
+        <View style={styles.placeholderItem}>
+          <View style={[styles.avatarWrap, styles.avatarPlaceholderEmpty]} />
+          <View
+            style={[
+              styles.podiumBase,
+              { height: RANK_CONFIG[rank].height, backgroundColor: RANK_CONFIG[rank].baseColor },
+            ]}
+          >
+            <Text style={styles.rankPlaceholder}>—</Text>
+          </View>
+        </View>
+      );
+    }
 
-    const iconColor = rank === 1 ? '#FFD700' : rank === 2 ? '#C0C0C0' : '#CD7F32';
+    const config = RANK_CONFIG[rank];
+    const isFirst = rank === 1;
+    const avatarSize = isFirst ? 80 : 72;
+    const avatarInner = isFirst ? 74 : 66;
 
     return (
-      <View style={styles.podiumItem}>
-        <View style={styles.avatarContainer}>
+      <View style={[styles.podiumItem, isFirst && styles.podiumItemFirst]}>
+        <View
+          style={[
+            styles.avatarWrap,
+            {
+              borderColor: config.medalColor,
+              width: avatarSize,
+              height: avatarSize,
+              borderRadius: avatarSize / 2,
+            },
+          ]}
+        >
           {entry.avatar ? (
-            <Image source={{ uri: entry.avatar }} style={styles.avatar} />
+            <Image
+              source={{ uri: entry.avatar }}
+              style={[
+                styles.avatar,
+                { width: avatarInner, height: avatarInner, borderRadius: avatarInner / 2 },
+              ]}
+            />
           ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <MaterialCommunityIcons name="account" size={32} color={colors.text.secondary} />
+            <View
+              style={[
+                styles.avatar,
+                styles.avatarPlaceholder,
+                { width: avatarInner, height: avatarInner, borderRadius: avatarInner / 2 },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="account"
+                size={isFirst ? 36 : 30}
+                color={colors.text.secondary}
+              />
             </View>
           )}
-          {rank === 1 && (
+          {isFirst ? (
             <View style={styles.crownBadge}>
-              <MaterialCommunityIcons name="crown" size={24} color={iconColor} />
+              <MaterialCommunityIcons name="crown" size={28} color={config.medalColor} />
             </View>
-          )}
-          {rank !== 1 && (
-            <View style={[styles.medalBadge, { backgroundColor: iconColor }]}>
+          ) : (
+            <View style={[styles.medalBadge, { backgroundColor: config.medalColor }]}>
               <Text style={styles.medalText}>{rank}</Text>
             </View>
           )}
         </View>
-        <Text style={styles.podiumName} numberOfLines={1}>
+        <Text style={[styles.podiumName, isFirst && styles.podiumNameFirst]} numberOfLines={1}>
           {entry.userName}
         </Text>
-        <View style={styles.pointsContainer}>
-          <MaterialCommunityIcons name="poker-chip" size={16} color="#FFA726" />
+        <View style={styles.pointsChip}>
+          <MaterialCommunityIcons name="star-four-points" size={14} color={colors.accent} />
           <Text style={styles.podiumPoints}>{entry.points.toLocaleString()}</Text>
         </View>
-        <View style={[styles.podiumBase, { backgroundColor: color, height }]}>
-          <Text style={styles.rankNumber}>{rank}</Text>
+        <View
+          style={[
+            styles.podiumBase,
+            {
+              height: config.height,
+              backgroundColor: config.baseColor,
+              borderColor: config.baseBorder,
+            },
+          ]}
+        >
+          <View style={[styles.rankBadge, { backgroundColor: config.medalColor }]}>
+            <MaterialCommunityIcons name={config.icon} size={18} color={colors.text.white} />
+          </View>
+          <Text style={styles.rankLabel}>{config.label}</Text>
         </View>
       </View>
     );
@@ -60,14 +136,9 @@ export default function PodiumDisplay({ top3 }: PodiumDisplayProps) {
   return (
     <View style={styles.container}>
       <View style={styles.podiumRow}>
-        {/* 2nd Place - Left */}
-        <View style={styles.sidePosition}>{renderPodiumItem(second, 2, 100, '#E0E0E0')}</View>
-
-        {/* 1st Place - Center */}
-        <View style={styles.centerPosition}>{renderPodiumItem(first, 1, 130, '#FFD700')}</View>
-
-        {/* 3rd Place - Right */}
-        <View style={styles.sidePosition}>{renderPodiumItem(third, 3, 80, '#CD7F32')}</View>
+        <View style={styles.sidePosition}>{renderPodiumItem(second, 2)}</View>
+        <View style={styles.centerPosition}>{renderPodiumItem(first, 1)}</View>
+        <View style={styles.sidePosition}>{renderPodiumItem(third, 3)}</View>
       </View>
     </View>
   );
@@ -75,8 +146,8 @@ export default function PodiumDisplay({ top3 }: PodiumDisplayProps) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.md,
   },
   podiumRow: {
@@ -88,83 +159,137 @@ const styles = StyleSheet.create({
   sidePosition: {
     flex: 1,
     alignItems: 'center',
+    maxWidth: 110,
   },
   centerPosition: {
-    flex: 1,
+    flex: 1.15,
     alignItems: 'center',
+    maxWidth: 130,
   },
   podiumItem: {
     alignItems: 'center',
     width: '100%',
   },
-  avatarContainer: {
-    position: 'relative',
+  placeholderItem: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  podiumItemFirst: {
+    marginBottom: -4,
+  },
+  avatarWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 3,
+    borderColor: colors.border,
     marginBottom: spacing.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 3,
-    borderColor: colors.surface,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
   },
   avatarPlaceholder: {
-    backgroundColor: colors.border,
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  avatarPlaceholderEmpty: {
+    borderStyle: 'dashed',
+    opacity: 0.5,
+  },
   crownBadge: {
     position: 'absolute',
-    top: -12,
+    top: -14,
     left: '50%',
-    marginLeft: -12,
+    marginLeft: -14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   medalBadge: {
     position: 'absolute',
-    bottom: -4,
-    right: -4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    bottom: -6,
+    right: -6,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: colors.surface,
   },
   medalText: {
-    color: colors.surface,
+    color: colors.text.white,
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   podiumName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: colors.text.primary,
     marginBottom: 4,
     textAlign: 'center',
+    paddingHorizontal: 2,
   },
-  pointsContainer: {
+  podiumNameFirst: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  pointsChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    backgroundColor: 'rgba(255, 174, 0, 0.12)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
     marginBottom: spacing.sm,
   },
   podiumPoints: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.text.secondary,
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.text.primary,
   },
   podiumBase: {
     width: '100%',
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingTop: spacing.sm,
+    minHeight: 40,
+  },
+  rankBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    marginBottom: 4,
   },
-  rankNumber: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.surface,
+  rankLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.text.secondary,
+    textTransform: 'uppercase',
+  },
+  rankPlaceholder: {
+    fontSize: 20,
+    color: colors.text.disabled,
+    marginTop: 8,
   },
 });
