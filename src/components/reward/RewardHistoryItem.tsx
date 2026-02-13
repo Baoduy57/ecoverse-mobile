@@ -13,6 +13,8 @@ interface RewardHistoryItemProps {
   pointsSpent: number;
   status: RedeemStatus;
   redeemedAt: string;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
 export default function RewardHistoryItem({
@@ -23,90 +25,141 @@ export default function RewardHistoryItem({
   pointsSpent,
   status,
   redeemedAt,
+  isFirst,
+  isLast,
 }: RewardHistoryItemProps) {
   const getStatusInfo = () => {
     switch (status) {
       case 'PENDING':
-        return { text: 'Chờ phụ huynh duyệt', color: colors.accent, icon: 'clock-outline' };
+        return {
+          text: 'Chờ duyệt',
+          color: colors.accent,
+          icon: 'clock-outline',
+          bg: 'rgba(255, 174, 0, 0.12)',
+        };
       case 'PARENT_APPROVED':
       case 'APPROVED':
       case 'DELIVERED':
       case 'USED':
-        return { text: 'Đã duyệt', color: colors.status.success, icon: 'check-circle' };
+        return {
+          text: 'Đã duyệt',
+          color: colors.status.success,
+          icon: 'check-circle',
+          bg: 'rgba(76, 175, 80, 0.12)',
+        };
       case 'PARENT_REJECTED':
       case 'CANCELLED':
-        return { text: 'Từ chối', color: colors.status.error, icon: 'close-circle' };
+        return {
+          text: 'Từ chối',
+          color: colors.status.error,
+          icon: 'close-circle',
+          bg: 'rgba(244, 67, 54, 0.1)',
+        };
       case 'EXPIRED':
-        return { text: 'Hết hạn', color: colors.text.disabled, icon: 'alert-circle' };
+        return {
+          text: 'Hết hạn',
+          color: colors.text.disabled,
+          icon: 'alert-circle',
+          bg: 'rgba(189, 189, 189, 0.15)',
+        };
       default:
-        return { text: 'Đang xử lý', color: colors.text.secondary, icon: 'information' };
+        return {
+          text: 'Đang xử lý',
+          color: colors.text.secondary,
+          icon: 'information',
+          bg: 'rgba(117, 117, 117, 0.1)',
+        };
     }
   };
 
   const statusInfo = getStatusInfo();
-
-  // Chỉ hiển thị số xu bị trừ khi đã được duyệt
   const isPointsDeducted = ['PARENT_APPROVED', 'APPROVED', 'DELIVERED', 'USED'].includes(status);
 
   return (
-    <View style={styles.container}>
-      {/* Image/Icon */}
-      <View style={styles.imageContainer}>
-        {image ? (
-          <Image source={{ uri: image }} style={styles.image} />
-        ) : (
-          <View style={[styles.iconPlaceholder, { backgroundColor: `${iconColor}20` }]}>
-            <MaterialCommunityIcons name={icon as any} size={28} color={iconColor} />
+    <View style={[styles.wrapper, isFirst && styles.wrapperFirst, isLast && styles.wrapperLast]}>
+      {/* Timeline line */}
+      {!isLast && <View style={styles.timelineLine} />}
+      <View style={[styles.container, { borderLeftColor: statusInfo.color }]}>
+        <View style={styles.imageContainer}>
+          {image ? (
+            <Image source={{ uri: image }} style={styles.image} />
+          ) : (
+            <View style={[styles.iconPlaceholder, { backgroundColor: `${iconColor}18` }]}>
+              <MaterialCommunityIcons name={icon as any} size={30} color={iconColor} />
+            </View>
+          )}
+        </View>
+        <View style={styles.info}>
+          <Text style={styles.title} numberOfLines={2}>
+            {title}
+          </Text>
+          <View style={styles.metaRow}>
+            <MaterialCommunityIcons
+              name="calendar-outline"
+              size={14}
+              color={colors.text.secondary}
+            />
+            <Text style={styles.date}>{redeemedAt}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
+            <MaterialCommunityIcons
+              name={statusInfo.icon as any}
+              size={14}
+              color={statusInfo.color}
+            />
+            <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.text}</Text>
+          </View>
+        </View>
+        {isPointsDeducted && (
+          <View style={styles.pointsContainer}>
+            <Text style={styles.pointsValue}>-{pointsSpent}</Text>
+            <Text style={styles.pointsUnit}>xu</Text>
           </View>
         )}
       </View>
-
-      {/* Info */}
-      <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={1}>
-          {title}
-        </Text>
-        <Text style={styles.date}>{redeemedAt}</Text>
-        {/* Status */}
-        <View style={styles.statusRow}>
-          <MaterialCommunityIcons
-            name={statusInfo.icon as any}
-            size={14}
-            color={statusInfo.color}
-          />
-          <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.text}</Text>
-        </View>
-      </View>
-
-      {/* Points - Only show when points are deducted */}
-      {isPointsDeducted && (
-        <View style={styles.pointsContainer}>
-          <Text style={styles.pointsValue}>-{pointsSpent} xu</Text>
-        </View>
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    position: 'relative',
+    marginBottom: spacing.sm,
+  },
+  wrapperFirst: {
+    marginTop: spacing.xs,
+  },
+  wrapperLast: {
+    marginBottom: spacing.lg,
+  },
+  timelineLine: {
+    position: 'absolute',
+    left: 23,
+    top: 52,
+    bottom: -spacing.sm,
+    width: 2,
+    backgroundColor: colors.divider,
+    borderRadius: 1,
+  },
   container: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    borderRadius: borderRadius.xl,
+    padding: spacing.base,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    marginBottom: spacing.md,
-    elevation: 1,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   imageContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: borderRadius.md,
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
     backgroundColor: colors.background,
   },
@@ -123,21 +176,32 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
-    gap: spacing.xs,
+    gap: 4,
+    minWidth: 0,
   },
   title: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.text.primary,
   },
-  date: {
-    fontSize: 12,
-    color: colors.text.secondary,
-  },
-  statusRow: {
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  date: {
+    fontSize: 13,
+    color: colors.text.secondary,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.base,
+    marginTop: 2,
   },
   statusText: {
     fontSize: 12,
@@ -145,10 +209,15 @@ const styles = StyleSheet.create({
   },
   pointsContainer: {
     alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   pointsValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: colors.status.error,
+  },
+  pointsUnit: {
+    fontSize: 12,
+    color: colors.text.secondary,
   },
 });

@@ -179,19 +179,33 @@ export default function RewardHistoryScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text.primary} />
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <View style={styles.backButtonInner}>
+              <MaterialCommunityIcons name="chevron-left" size={26} color={colors.text.primary} />
+            </View>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Lịch sử đổi quà</Text>
           <View style={styles.pointsBadge}>
-            <MaterialCommunityIcons name="circle-multiple" size={20} color={colors.accent} />
+            <View style={styles.pointsIconWrap}>
+              <MaterialCommunityIcons name="star-four-points" size={16} color={colors.accent} />
+            </View>
             <Text style={styles.pointsText}>{userPoints}</Text>
           </View>
         </View>
 
+        {/* Subtitle */}
+        <View style={styles.subtitleRow}>
+          <MaterialCommunityIcons name="clock-outline" size={18} color={colors.text.secondary} />
+          <Text style={styles.subtitleText}>Các giao dịch đổi quà gần đây</Text>
+        </View>
+
         {/* Content */}
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {MOCK_HISTORY.map(item => (
+          {MOCK_HISTORY.map((item, index) => (
             <RewardHistoryItem
               key={item.id}
               title={item.reward.title}
@@ -201,6 +215,8 @@ export default function RewardHistoryScreen() {
               pointsSpent={item.pointsSpent}
               status={item.status}
               redeemedAt={item.redeemedAt}
+              isFirst={index === 0}
+              isLast={index === MOCK_HISTORY.length - 1}
             />
           ))}
         </ScrollView>
@@ -276,11 +292,27 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   backButton: {
-    padding: spacing.xs,
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButtonInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 2,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: colors.text.primary,
     flex: 1,
     textAlign: 'center',
@@ -289,19 +321,45 @@ const styles = StyleSheet.create({
   pointsBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 174, 0, 0.25)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  pointsIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255, 174, 0, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pointsText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    color: colors.accent,
+    color: colors.text.primary,
+  },
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.base,
+    marginBottom: spacing.md,
+  },
+  subtitleText: {
+    fontSize: 14,
+    color: colors.text.secondary,
   },
   content: {
-    padding: spacing.base,
+    paddingHorizontal: spacing.base,
     paddingBottom: spacing['6xl'],
   },
 });

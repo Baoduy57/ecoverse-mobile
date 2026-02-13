@@ -222,8 +222,7 @@ export default function LeaderboardScreen() {
   ];
   const remaining = currentData.slice(3);
 
-  // Calculate tab indicator position
-  const tabWidth = tabContainerWidth > 0 ? (tabContainerWidth - 8) / 2 : 0; // subtract padding
+  const tabWidth = tabContainerWidth > 0 ? (tabContainerWidth - 8) / 2 : 0;
   const indicatorTranslateX = tabIndicatorAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, tabWidth],
@@ -257,7 +256,17 @@ export default function LeaderboardScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Bảng Xếp Hạng</Text>
+          <View style={styles.titleRow}>
+            <View style={styles.titleIconWrap}>
+              <MaterialCommunityIcons name="trophy" size={26} color={colors.primary} />
+            </View>
+            <View>
+              <Text style={styles.title}>Bảng xếp hạng</Text>
+              <Text style={styles.subtitle}>
+                {activeTab === 'class' ? 'Xếp hạng trong lớp' : 'Xếp hạng toàn trường'}
+              </Text>
+            </View>
+          </View>
         </View>
 
         {/* Tabs */}
@@ -265,39 +274,52 @@ export default function LeaderboardScreen() {
           style={styles.tabContainer}
           onLayout={e => setTabContainerWidth(e.nativeEvent.layout.width)}
         >
-          {/* Animated Indicator */}
           <Animated.View
             style={[
               styles.tabIndicator,
               {
+                width: tabWidth,
                 transform: [{ translateX: indicatorTranslateX }, { scale: indicatorScale }],
               },
             ]}
           />
-
-          {/* Tab Buttons */}
           <TouchableOpacity
             style={styles.tab}
             onPress={() => handleTabChange('class')}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
+            <MaterialCommunityIcons
+              name="account-group"
+              size={18}
+              color={activeTab === 'class' ? colors.text.white : colors.text.secondary}
+            />
             <Text style={[styles.tabText, activeTab === 'class' && styles.activeTabText]}>Lớp</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.tab}
             onPress={() => handleTabChange('school')}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
+            <MaterialCommunityIcons
+              name="school"
+              size={18}
+              color={activeTab === 'school' ? colors.text.white : colors.text.secondary}
+            />
             <Text style={[styles.tabText, activeTab === 'school' && styles.activeTabText]}>
               Toàn trường
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Podium - Fixed */}
+        {/* Podium */}
         <PodiumDisplay top3={top3} />
 
-        {/* Remaining Rankings - Scrollable */}
+        {/* Section label + list */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Từ hạng 4</Text>
+          <Text style={styles.sectionCount}>{remaining.length} học sinh</Text>
+        </View>
+
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -374,54 +396,94 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  titleIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: 'rgba(76, 175, 80, 0.12)',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
     color: colors.text.primary,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    marginTop: 2,
   },
   tabContainer: {
     flexDirection: 'row',
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     padding: 4,
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   tabIndicator: {
     position: 'absolute',
     top: 4,
     left: 4,
-    width: '50%',
     height: '100%',
     backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    marginRight: -8,
+    borderRadius: borderRadius.lg,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 3,
   },
   tab: {
     flex: 1,
-    paddingVertical: spacing.sm,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: borderRadius.md,
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
     zIndex: 1,
   },
   tabText: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.text.secondary,
-    zIndex: 2,
   },
   activeTabText: {
-    color: colors.surface,
+    color: colors.text.white,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+    paddingTop: spacing.xs,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  sectionCount: {
+    fontSize: 13,
+    color: colors.text.secondary,
   },
   scrollView: {
     flex: 1,
@@ -430,7 +492,6 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   rankingList: {
-    paddingHorizontal: spacing.lg,
-    marginTop: 0,
+    paddingHorizontal: spacing.base,
   },
 });

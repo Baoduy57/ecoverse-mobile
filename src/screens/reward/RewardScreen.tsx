@@ -196,13 +196,17 @@ export default function RewardScreen() {
           <Text style={styles.headerTitle}>Đổi thưởng</Text>
           <View style={styles.headerRight}>
             <View style={styles.pointsBadge}>
-              <MaterialCommunityIcons name="circle-multiple" size={20} color={colors.accent} />
-              <Text style={styles.pointsText}>{userPoints}</Text>
+              <View style={styles.pointsIconWrap}>
+                <MaterialCommunityIcons name="star-four-points" size={18} color={colors.accent} />
+              </View>
+              <Text style={styles.pointsText}>{userPoints.toLocaleString()} xu</Text>
             </View>
             <TouchableOpacity
               style={styles.historyButton}
               onPress={() => navigation.navigate('RewardHistory' as never)}
+              activeOpacity={0.8}
             >
+              <MaterialCommunityIcons name="history" size={20} color={colors.primary} />
               <Text style={styles.historyButtonText}>Lịch sử</Text>
             </TouchableOpacity>
           </View>
@@ -210,12 +214,28 @@ export default function RewardScreen() {
 
         {/* Tabs */}
         <View style={styles.tabContainer}>
-          <TouchableOpacity style={styles.tab} activeOpacity={0.7}>
-            <Text style={styles.tabTextActive}>Quà tặng</Text>
-          </TouchableOpacity>
-          <View style={styles.tab}>
-            <Text style={styles.tabTextInactive}>Huy hiệu</Text>
+          <View style={styles.tabPill}>
+            <TouchableOpacity style={[styles.tab, styles.tabActive]} activeOpacity={0.8}>
+              <MaterialCommunityIcons name="gift-outline" size={18} color={colors.text.white} />
+              <Text style={styles.tabTextActive}>Quà tặng</Text>
+            </TouchableOpacity>
+            <View style={[styles.tab, styles.tabInactive]}>
+              <MaterialCommunityIcons
+                name="medal-outline"
+                size={18}
+                color={colors.text.secondary}
+              />
+              <Text style={styles.tabTextInactive}>Huy hiệu</Text>
+            </View>
           </View>
+        </View>
+
+        {/* Section label */}
+        <View style={styles.sectionLabelRow}>
+          <Text style={styles.sectionLabel}>Quà có thể đổi</Text>
+          <Text style={styles.sectionCount}>
+            {MOCK_REWARDS.filter(r => r.isAvailable && r.stock > 0).length} quà
+          </Text>
         </View>
 
         {/* Content */}
@@ -344,51 +364,108 @@ const styles = StyleSheet.create({
   pointsBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 174, 0, 0.25)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  pointsIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 174, 0, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pointsText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  historyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.xl,
-  },
-  pointsText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.accent,
-  },
-  historyButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.xl,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   historyButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text.white,
+    color: colors.primary,
   },
   tabContainer: {
-    flexDirection: 'row',
-    gap: spacing.md,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
   },
+  tabPill: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: 4,
+    alignSelf: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
   tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderRadius: borderRadius.xl,
+    borderRadius: borderRadius.lg,
+  },
+  tabActive: {
+    backgroundColor: colors.primary,
+  },
+  tabInactive: {
+    backgroundColor: 'transparent',
   },
   tabTextActive: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.text.white,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.xl,
   },
   tabTextInactive: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
+    color: colors.text.secondary,
+  },
+  sectionLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+    paddingTop: spacing.xs,
+  },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  sectionCount: {
+    fontSize: 13,
     color: colors.text.secondary,
   },
   content: {
