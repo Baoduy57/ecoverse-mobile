@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Platform, Animated } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { DashboardScreen } from '../dashboard';
@@ -56,6 +56,30 @@ function CenterTabIcon({ focused }: { focused: boolean }) {
 }
 
 export default function HomeScreen() {
+  const floatingAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatingAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatingAnim, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const translateY = floatingAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -8],
+  });
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -77,6 +101,7 @@ export default function HomeScreen() {
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.1,
           shadowRadius: 12,
+          transform: [{ translateY }],
         },
         tabBarShowLabel: false,
       }}
