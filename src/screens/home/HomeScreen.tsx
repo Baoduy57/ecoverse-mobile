@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Platform, Animated } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { DashboardScreen } from '../dashboard';
@@ -19,27 +19,89 @@ export type HomeTabParamList = {
 
 const Tab = createBottomTabNavigator<HomeTabParamList>();
 
+const TAB_BAR_HEIGHT = 64;
+const CENTER_BUTTON_SIZE = 56;
+const CENTER_BUTTON_TOP = -24;
+const ACTIVE_DOT_SIZE = 6;
+
+function TabIcon({
+  name,
+  focused,
+  activeColor,
+  inactiveColor,
+}: {
+  name: keyof typeof MaterialCommunityIcons.glyphMap;
+  focused: boolean;
+  activeColor: string;
+  inactiveColor: string;
+}) {
+  const color = focused ? activeColor : inactiveColor;
+  return (
+    <View style={styles.tabItem}>
+      <MaterialCommunityIcons name={name} size={26} color={color} />
+      {focused && <View style={styles.activeDot} />}
+    </View>
+  );
+}
+
+function CenterTabIcon({ focused }: { focused: boolean }) {
+  return (
+    <View style={styles.centerTabWrapper}>
+      <View style={styles.centerTab}>
+        <MaterialCommunityIcons name="gamepad-variant" size={28} color={colors.text.white} />
+      </View>
+      {focused && <View style={[styles.activeDot, styles.activeDotCenter]} />}
+    </View>
+  );
+}
+
 export default function HomeScreen() {
+  const floatingAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatingAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatingAnim, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const translateY = floatingAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -8],
+  });
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.text.disabled,
+        tabBarInactiveTintColor: colors.text.secondary,
         tabBarStyle: {
           position: 'absolute',
           backgroundColor: colors.surface,
           borderTopWidth: 0,
-          elevation: 8,
-          shadowColor: colors.shadow,
-          shadowOffset: { width: 0, height: -4 },
+          height: TAB_BAR_HEIGHT + (Platform.OS === 'ios' ? 24 : 12),
+          paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+          paddingTop: 8,
+          borderRadius: 28,
+          marginHorizontal: 16,
+          marginBottom: Platform.OS === 'ios' ? 24 : 16,
+          elevation: 12,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.1,
-          shadowRadius: 8,
-          height: 70,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 10,
-          paddingTop: 10,
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
+          shadowRadius: 12,
+          transform: [{ translateY }],
         },
         tabBarShowLabel: false,
       }}
@@ -49,9 +111,12 @@ export default function HomeScreen() {
         component={DashboardScreen}
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <View style={styles.tabItem}>
-              <MaterialCommunityIcons name="home" size={focused ? 28 : 24} color={color} />
-            </View>
+            <TabIcon
+              name="home"
+              focused={focused}
+              activeColor={colors.primary}
+              inactiveColor={color}
+            />
           ),
         }}
       />
@@ -60,9 +125,12 @@ export default function HomeScreen() {
         component={LeaderboardScreen}
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <View style={styles.tabItem}>
-              <MaterialCommunityIcons name="trophy" size={focused ? 28 : 24} color={color} />
-            </View>
+            <TabIcon
+              name="trophy"
+              focused={focused}
+              activeColor={colors.primary}
+              inactiveColor={color}
+            />
           ),
         }}
       />
@@ -70,13 +138,7 @@ export default function HomeScreen() {
         name="Game"
         component={GameScreen}
         options={{
-          tabBarIcon: ({ focused }) => (
-            <View style={styles.centerTabContainer}>
-              <View style={styles.centerTab}>
-                <MaterialCommunityIcons name="gamepad-variant" size={32} color={colors.surface} />
-              </View>
-            </View>
-          ),
+          tabBarIcon: ({ focused }) => <CenterTabIcon focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -84,9 +146,12 @@ export default function HomeScreen() {
         component={RewardScreen}
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <View style={styles.tabItem}>
-              <MaterialCommunityIcons name="gift" size={focused ? 28 : 24} color={color} />
-            </View>
+            <TabIcon
+              name="gift-outline"
+              focused={focused}
+              activeColor={colors.primary}
+              inactiveColor={color}
+            />
           ),
         }}
       />
@@ -95,9 +160,12 @@ export default function HomeScreen() {
         component={ProfileScreen}
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <View style={styles.tabItem}>
-              <MaterialCommunityIcons name="account-circle" size={focused ? 28 : 24} color={color} />
-            </View>
+            <TabIcon
+              name="account-circle"
+              focused={focused}
+              activeColor={colors.primary}
+              inactiveColor={color}
+            />
           ),
         }}
       />
@@ -106,30 +174,37 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  centerTab: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 35,
-    elevation: 8,
-    height: 65,
-    justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    width: 65,
-  },
-  centerTabContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'absolute',
-    top: -25,
-  },
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  activeDot: {
+    width: ACTIVE_DOT_SIZE,
+    height: ACTIVE_DOT_SIZE,
+    borderRadius: ACTIVE_DOT_SIZE / 2,
+    backgroundColor: colors.primary,
+    marginTop: 6,
+  },
+  centerTabWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    top: CENTER_BUTTON_TOP,
+  },
+  centerTab: {
+    width: CENTER_BUTTON_SIZE,
+    height: CENTER_BUTTON_SIZE,
+    borderRadius: CENTER_BUTTON_SIZE / 2,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 8,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  activeDotCenter: {
+    marginTop: 4,
   },
 });
