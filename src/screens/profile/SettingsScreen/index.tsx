@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Animated, Platform } from 'react-native';
 import { Text, Switch } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -8,6 +8,16 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import type { AppStackParamList } from '@navigation/AppNavigator';
 import { useAuthStore } from '@store/authStore';
 import { colors, spacing, borderRadius } from '@theme';
+import * as Notifications from 'expo-notifications';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 type NavigationProp = StackNavigationProp<AppStackParamList>;
 
@@ -16,6 +26,34 @@ export default function SettingsScreen() {
   const { logout } = useAuthStore();
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [notificationEnabled, setNotificationEnabled] = useState(true);
+
+  // Request notifications permission
+  useEffect(() => {
+    (async () => {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== 'granted') {
+        console.log('Failed to get notification permission');
+      }
+    })();
+  }, []);
+
+  const scheduleTestNotification = async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Eco-Verse 🌱",
+        body: "Đây là thông báo thử nghiệm sau 10 giây!",
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 10,
+      } as Notifications.TimeIntervalTriggerInput,
+    });
+  };
 
   // Animations
   const floatAnim1 = useRef(new Animated.Value(0)).current;
@@ -139,22 +177,38 @@ export default function SettingsScreen() {
             </View>
 
             {/* Notification Setting */}
-            <View style={styles.settingItem}>
-              <View style={styles.settingLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: '#FFE8CC' }]}>
-                  <MaterialCommunityIcons name="bell" size={24} color={colors.secondary} />
+            <View style={styles.notificationCard}>
+              <View style={styles.settingItemInner}>
+                <View style={styles.settingLeft}>
+                  <View style={[styles.iconContainer, { backgroundColor: '#FFE8CC' }]}>
+                    <MaterialCommunityIcons name="bell" size={24} color={colors.secondary} />
+                  </View>
+                  <View style={styles.settingTextContainer}>
+                    <Text variant="titleSmall" style={styles.settingTitle}>
+                      Thông báo
+                    </Text>
+                    <Text variant="bodySmall" style={styles.settingSubtitle}>
+                      Hiện thị trên màn hình khóa
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.settingTextContainer}>
-                  <Text variant="titleSmall" style={styles.settingTitle}>
-                    Thông báo
-                  </Text>
-                </View>
+                <Switch
+                  value={notificationEnabled}
+                  onValueChange={setNotificationEnabled}
+                  color={colors.primary}
+                />
               </View>
-              <Switch
-                value={notificationEnabled}
-                onValueChange={setNotificationEnabled}
-                color={colors.primary}
-              />
+
+              {notificationEnabled && (
+                <TouchableOpacity
+                  style={styles.testNotifButton}
+                  onPress={scheduleTestNotification}
+                  activeOpacity={0.75}
+                >
+                  <MaterialCommunityIcons name="bell-ring" size={18} color="#fff" />
+                  <Text style={styles.testNotifText}>Kiểm tra thông báo (10s)</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Help & Feedback */}
@@ -353,5 +407,39 @@ const styles = StyleSheet.create({
     color: colors.status.error,
     fontWeight: '600',
     fontSize: 15,
+  },
+  notificationCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    marginBottom: spacing.xs,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    overflow: 'hidden',
+  },
+  settingItemInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.base,
+    paddingHorizontal: spacing.base,
+  },
+  testNotifButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.base,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+  },
+  testNotifText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
