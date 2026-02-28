@@ -1,95 +1,29 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Animated, TouchableOpacity, FlatList } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { View, StyleSheet, Animated, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, borderRadius } from '../../theme';
 import { RewardCard, ConfirmRedeemDialog, SuccessDialog } from '../../components/reward';
 import type { IReward } from '../../types';
-
-// Mock data
-const MOCK_REWARDS: IReward[] = [
-  {
-    id: '1',
-    title: 'Vở viết EcoVerse',
-    description: 'Vở viết thân thiện môi trường',
-    image: '',
-    pointsCost: 500,
-    category: 'MERCHANDISE' as any,
-    stock: 10,
-    isAvailable: true,
-    icon: 'book-outline',
-    iconColor: '#FF9800',
-  },
-  {
-    id: '2',
-    title: 'Bộ bút chì màu',
-    description: 'Bút chì màu từ gỗ tái chế',
-    image: '',
-    pointsCost: 300,
-    category: 'MERCHANDISE' as any,
-    stock: 15,
-    isAvailable: true,
-    icon: 'palette',
-    iconColor: '#E91E63',
-  },
-  {
-    id: '3',
-    title: 'Skin Hiệp Sĩ Xanh',
-    description: 'Trang phục đặc biệt',
-    image: '',
-    pointsCost: 1500,
-    category: 'PREMIUM' as any,
-    stock: 0,
-    isAvailable: false,
-    icon: 'shield-account',
-    iconColor: '#2196F3',
-  },
-  {
-    id: '4',
-    title: 'Cây số mềm non',
-    description: 'Sách vở tái chế',
-    image: '',
-    pointsCost: 2200,
-    category: 'MERCHANDISE' as any,
-    stock: 5,
-    isAvailable: true,
-    icon: 'notebook',
-    iconColor: '#9C27B0',
-  },
-  {
-    id: '5',
-    title: 'Hạt giống thần kỳ',
-    description: 'Hạt giống rau củ',
-    image: '',
-    pointsCost: 800,
-    category: 'MERCHANDISE' as any,
-    stock: 20,
-    isAvailable: true,
-    icon: 'seed',
-    iconColor: '#4CAF50',
-  },
-  {
-    id: '6',
-    title: 'Balo Eco Green',
-    description: 'Balo từ vải tái chế',
-    image: '',
-    pointsCost: 2500,
-    category: 'MERCHANDISE' as any,
-    stock: 3,
-    isAvailable: true,
-    icon: 'bag-personal',
-    iconColor: '#00BCD4',
-  },
-];
+import { useRewardStore } from '../../store/rewardStore';
 
 export default function RewardScreen() {
   const navigation = useNavigation();
+  const { rewards, isLoading, fetchRewards, requestRedemption } = useRewardStore();
+
   const [selectedReward, setSelectedReward] = useState<IReward | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [userPoints] = useState(1250); // Mock user points
+  const [userPoints] = useState(1250); // MOCK: should come from user profile
+
+  // Fetch data every time screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchRewards();
+    }, [fetchRewards])
+  );
 
   // Animations
   const floatAnim1 = useRef(new Animated.Value(0)).current;
@@ -145,19 +79,23 @@ export default function RewardScreen() {
   }, []);
 
   const handleRedeemPress = (id: string) => {
-    const reward = MOCK_REWARDS.find(r => r.id === id);
+    const reward = rewards.find(r => r.id === id);
     if (reward) {
       setSelectedReward(reward);
       setShowConfirmDialog(true);
     }
   };
 
-  const handleConfirmRedeem = () => {
-    setShowConfirmDialog(false);
-    // Simulate API call
-    setTimeout(() => {
+  const handleConfirmRedeem = async () => {
+    if (!selectedReward) return;
+    try {
+      await requestRedemption(selectedReward.id);
+      setShowConfirmDialog(false);
       setShowSuccessDialog(true);
-    }, 300);
+    } catch (error) {
+      // Error is handled by store natively, could show a toast here
+      setShowConfirmDialog(false);
+    }
   };
 
   const handleCancelRedeem = () => {
@@ -234,35 +172,39 @@ export default function RewardScreen() {
         <View style={styles.sectionLabelRow}>
           <Text style={styles.sectionLabel}>Quà có thể đổi</Text>
           <Text style={styles.sectionCount}>
-            {MOCK_REWARDS.filter(r => r.isAvailable && r.stock > 0).length} quà
+            {rewards.filter(r => r.isAvailable && r.stock > 0).length} quà
           </Text>
         </View>
 
         {/* Content */}
         <View style={styles.content}>
-          <FlatList
-            data={MOCK_REWARDS}
-            renderItem={({ item }) => (
-              <View style={styles.gridItem}>
-                <RewardCard
-                  id={item.id}
-                  title={item.title}
-                  image={item.image}
-                  icon={item.icon}
-                  iconColor={item.iconColor}
-                  pointsCost={item.pointsCost}
-                  userPoints={userPoints}
-                  stock={item.stock}
-                  isAvailable={item.isAvailable}
-                  onRedeem={handleRedeemPress}
-                />
-              </View>
-            )}
-            keyExtractor={item => item.id}
-            numColumns={2}
-            contentContainerStyle={styles.gridContent}
-            showsVerticalScrollIndicator={false}
-          />
+          {isLoading ? (
+            <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+          ) : (
+            <FlatList
+              data={rewards}
+              renderItem={({ item }) => (
+                <View style={styles.gridItem}>
+                  <RewardCard
+                    id={item.id}
+                    title={item.title}
+                    image={item.image}
+                    icon={item.icon}
+                    iconColor={item.iconColor}
+                    pointsCost={item.pointsCost}
+                    userPoints={userPoints}
+                    stock={item.stock}
+                    isAvailable={item.isAvailable}
+                    onRedeem={handleRedeemPress}
+                  />
+                </View>
+              )}
+              keyExtractor={item => item.id}
+              numColumns={2}
+              contentContainerStyle={styles.gridContent}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
         </View>
       </SafeAreaView>
 
