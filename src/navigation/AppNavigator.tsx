@@ -4,6 +4,7 @@ import { HomeScreen } from '../screens/home';
 import { AIScannerScreen } from '../screens/ai';
 import { EditAvatarScreen, SettingsScreen } from '../screens/profile';
 import { RewardHistoryScreen } from '../screens/reward';
+import { DragDropGamePlayScreen, GameResultDetailScreen } from '../screens/game';
 
 export type AppStackParamList = {
   Home: undefined;
@@ -11,6 +12,8 @@ export type AppStackParamList = {
   EditAvatar: undefined;
   Settings: undefined;
   RewardHistory: undefined;
+  DragDropGamePlay: { levelId: number };
+  GameResultDetail: { results: any[] };
 };
 
 const Stack = createStackNavigator<AppStackParamList>();
@@ -47,6 +50,20 @@ export default function AppNavigator() {
       <Stack.Screen
         name="RewardHistory"
         component={RewardHistoryScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="DragDropGamePlay"
+        component={DragDropGamePlayScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="GameResultDetail"
+        component={GameResultDetailScreen}
         options={{
           presentation: 'card',
         }}
