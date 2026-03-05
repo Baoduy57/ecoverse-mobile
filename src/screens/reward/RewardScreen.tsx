@@ -1,5 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, StyleSheet, Animated, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Animated,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -7,7 +14,108 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, borderRadius } from '../../theme';
 import { RewardCard, ConfirmRedeemDialog, SuccessDialog } from '../../components/reward';
 import type { IReward } from '../../types';
+import { RewardCategory } from '../../types';
 import { useRewardStore } from '../../store/rewardStore';
+
+// Mock data for testing
+const MOCK_REWARDS: IReward[] = [
+  {
+    id: '1',
+    title: 'Voucher Shopee 50K',
+    description: 'Mã giảm giá Shopee trị giá 50.000đ',
+    image: '',
+    pointsCost: 500,
+    category: RewardCategory.VOUCHER,
+    stock: 10,
+    isAvailable: true,
+    icon: 'ticket-percent',
+    iconColor: '#FF6B00',
+  },
+  {
+    id: '2',
+    title: 'Balo thân thiện môi trường',
+    description: 'Balo làm từ vải tái chế',
+    image: '',
+    pointsCost: 1200,
+    category: RewardCategory.MERCHANDISE,
+    stock: 5,
+    isAvailable: true,
+    icon: 'bag-personal',
+    iconColor: '#4CAF50',
+  },
+  {
+    id: '3',
+    title: 'Bình nước Inox',
+    description: 'Bình giữ nhiệt cao cấp 500ml',
+    image: '',
+    pointsCost: 800,
+    category: RewardCategory.MERCHANDISE,
+    stock: 15,
+    isAvailable: true,
+    icon: 'bottle-tonic',
+    iconColor: '#2196F3',
+  },
+  {
+    id: '4',
+    title: 'Voucher The Coffee House',
+    description: 'Mã giảm giá 30.000đ tại The Coffee House',
+    image: '',
+    pointsCost: 300,
+    category: RewardCategory.VOUCHER,
+    stock: 20,
+    isAvailable: true,
+    icon: 'coffee',
+    iconColor: '#795548',
+  },
+  {
+    id: '5',
+    title: 'Bộ dụng cụ học tập',
+    description: 'Bút, sổ tay từ giấy tái chế',
+    image: '',
+    pointsCost: 450,
+    category: RewardCategory.MERCHANDISE,
+    stock: 8,
+    isAvailable: true,
+    icon: 'pencil-box',
+    iconColor: '#9C27B0',
+  },
+  {
+    id: '6',
+    title: 'Quyên góp trồng cây',
+    description: 'Trồng 1 cây xanh cho môi trường',
+    image: '',
+    pointsCost: 600,
+    category: RewardCategory.DONATION,
+    stock: 100,
+    isAvailable: true,
+    icon: 'tree',
+    iconColor: '#4CAF50',
+  },
+  {
+    id: '7',
+    title: 'Voucher CGV 2D',
+    description: 'Vé xem phim 2D tại CGV',
+    image: '',
+    pointsCost: 900,
+    category: RewardCategory.VOUCHER,
+    stock: 0,
+    isAvailable: false,
+    icon: 'movie',
+    iconColor: '#F44336',
+  },
+  {
+    id: '8',
+    title: 'Túi vải canvas',
+    description: 'Túi vải đa năng thân thiện môi trường',
+    image: '',
+    pointsCost: 350,
+    category: RewardCategory.MERCHANDISE,
+    stock: 12,
+    isAvailable: true,
+    icon: 'shopping',
+    iconColor: '#FF9800',
+  },
+];
 
 export default function RewardScreen() {
   const navigation = useNavigation();
@@ -18,12 +126,19 @@ export default function RewardScreen() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [userPoints] = useState(1250); // MOCK: should come from user profile
 
+  // Use mock data for testing - comment this out when API is ready
+  const displayRewards = MOCK_REWARDS;
+  // const displayRewards = rewards; // Uncomment this to use real API data
+
   // Fetch data every time screen comes into focus
+  // Comment out when using mock data
+  /*
   useFocusEffect(
     useCallback(() => {
       fetchRewards();
     }, [fetchRewards])
   );
+  */
 
   // Animations
   const floatAnim1 = useRef(new Animated.Value(0)).current;
@@ -79,7 +194,7 @@ export default function RewardScreen() {
   }, []);
 
   const handleRedeemPress = (id: string) => {
-    const reward = rewards.find(r => r.id === id);
+    const reward = displayRewards.find(r => r.id === id);
     if (reward) {
       setSelectedReward(reward);
       setShowConfirmDialog(true);
@@ -89,7 +204,8 @@ export default function RewardScreen() {
   const handleConfirmRedeem = async () => {
     if (!selectedReward) return;
     try {
-      await requestRedemption(selectedReward.id);
+      // In production, this would call API: await requestRedemption(selectedReward.id);
+      // This will create a pending redemption request for parent approval
       setShowConfirmDialog(false);
       setShowSuccessDialog(true);
     } catch (error) {
@@ -139,6 +255,7 @@ export default function RewardScreen() {
               </View>
               <Text style={styles.pointsText}>{userPoints.toLocaleString()} xu</Text>
             </View>
+
             <TouchableOpacity
               style={styles.historyButton}
               onPress={() => navigation.navigate('RewardHistory' as never)}
@@ -172,7 +289,7 @@ export default function RewardScreen() {
         <View style={styles.sectionLabelRow}>
           <Text style={styles.sectionLabel}>Quà có thể đổi</Text>
           <Text style={styles.sectionCount}>
-            {rewards.filter(r => r.isAvailable && r.stock > 0).length} quà
+            {displayRewards.filter(r => r.isAvailable && r.stock > 0).length} quà
           </Text>
         </View>
 
@@ -182,7 +299,7 @@ export default function RewardScreen() {
             <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
           ) : (
             <FlatList
-              data={rewards}
+              data={displayRewards}
               renderItem={({ item }) => (
                 <View style={styles.gridItem}>
                   <RewardCard
@@ -292,6 +409,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
+    flexWrap: 'wrap',
+    gap: spacing.sm,
   },
   headerTitle: {
     fontSize: 20,
@@ -302,6 +421,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    flexWrap: 'wrap',
   },
   pointsBadge: {
     flexDirection: 'row',

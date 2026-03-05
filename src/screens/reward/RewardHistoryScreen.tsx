@@ -68,7 +68,7 @@ const MOCK_HISTORY: IRedeemHistory[] = [
     reward: MOCK_REWARDS[0],
     pointsSpent: 500,
     status: 'PENDING' as any,
-    redeemedAt: '22/12/2025',
+    redeemedAt: '04/03/2026',
   },
   {
     id: '2',
@@ -76,8 +76,8 @@ const MOCK_HISTORY: IRedeemHistory[] = [
     rewardId: '6',
     reward: MOCK_REWARDS[3],
     pointsSpent: 2500,
-    status: 'APPROVED' as any,
-    redeemedAt: '18/12/2025',
+    status: 'PARENT_APPROVED' as any,
+    redeemedAt: '02/03/2026',
   },
   {
     id: '3',
@@ -86,7 +86,7 @@ const MOCK_HISTORY: IRedeemHistory[] = [
     reward: MOCK_REWARDS[1],
     pointsSpent: 300,
     status: 'PARENT_REJECTED' as any,
-    redeemedAt: '15/12/2025',
+    redeemedAt: '28/02/2026',
   },
   {
     id: '4',
@@ -94,8 +94,17 @@ const MOCK_HISTORY: IRedeemHistory[] = [
     rewardId: '5',
     reward: MOCK_REWARDS[2],
     pointsSpent: 800,
+    status: 'DELIVERED' as any,
+    redeemedAt: '25/02/2026',
+  },
+  {
+    id: '5',
+    userId: 'user1',
+    rewardId: '1',
+    reward: MOCK_REWARDS[0],
+    pointsSpent: 500,
     status: 'USED' as any,
-    redeemedAt: '10/12/2025',
+    redeemedAt: '20/02/2026',
   },
 ] as IRedeemHistory[];
 

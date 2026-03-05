@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Dimensions, Alert, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../../theme';
@@ -10,6 +11,7 @@ import LearningPathNode from '../../components/game/LearningPathNode';
 import BackgroundDecorations from '../../components/game/BackgroundDecorations';
 import UnitSeparator from '../../components/game/UnitSeparator';
 import type { Level } from '../../types/game';
+import type { AppStackParamList } from '../../navigation/AppNavigator';
 import { StatusBar } from 'expo-status-bar';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -112,6 +114,7 @@ const getNodePosition = (index: number) => {
 };
 
 export default function GameScreen() {
+  const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const [selectedStage, setSelectedStage] = useState<Level>(
     LEARNING_PATH.find(l => l.isCurrent) || LEARNING_PATH[0]
   );
@@ -242,10 +245,12 @@ export default function GameScreen() {
 
   const handleLevelPress = (level: Level) => {
     if (level.status === 'locked') {
-      Alert.alert('Locked', 'Complete previous levels to unlock this stage!');
+      Alert.alert('Khóa', 'Hoàn thành bài học trước để mở khóa!');
       return;
     }
     setSelectedStage(level);
+    // Navigate to game play screen
+    navigation.navigate('DragDropGamePlay', { levelId: level.id });
   };
 
   const handlePlayPress = () => {
