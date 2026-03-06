@@ -14,6 +14,7 @@ import {
   CircularProgress,
 } from '../../components/dashboard';
 import { colors, spacing, borderRadius } from '@theme';
+import { getUnreadCount } from '../../data/notificationData';
 
 type DashboardNavigationProp = StackNavigationProp<AppStackParamList>;
 
@@ -134,7 +135,8 @@ export default function DashboardScreen() {
             avatarSource={require('../../../assets/images/default-avatar.jpg')}
             streakCount={5}
             coinCount={1250}
-            onNotificationPress={() => console.log('Notification pressed')}
+            notificationCount={getUnreadCount()}
+            onNotificationPress={() => navigation.navigate('Notification')}
           />
 
           {/* Game Cards */}
@@ -164,30 +166,39 @@ export default function DashboardScreen() {
             <SectionHeader
               title="Bài tập kiểm tra"
               linkText="Xem tất cả"
-              onLinkPress={() => console.log('View all quizzes')}
+              onLinkPress={() => navigation.navigate('QuizList')}
             />
 
-            <Surface style={styles.quizCard} elevation={1}>
-              <View style={styles.quizIconBox}>
-                <MaterialCommunityIcons
-                  name="clipboard-check"
-                  size={24}
-                  color={colors.accentPurple}
-                />
+            <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('QuizList')}>
+              <View style={styles.quizCard}>
+                <View style={styles.quizLeftSection}>
+                  <View style={styles.quizIconBox}>
+                    <MaterialCommunityIcons name="clipboard-check" size={32} color="#8B5CF6" />
+                  </View>
+                </View>
+                <View style={styles.quizContent}>
+                  <View style={styles.quizBadge}>
+                    <MaterialCommunityIcons name="star" size={12} color="#F59E0B" />
+                    <Text style={styles.quizBadgeText}>Quiz tuần</Text>
+                  </View>
+                  <Text style={styles.quizTitle}>Kiểm thức cơ bản</Text>
+                  <View style={styles.quizMetaRow}>
+                    <View style={styles.quizMetaItem}>
+                      <MaterialCommunityIcons name="help-circle" size={14} color="#8B5CF6" />
+                      <Text style={styles.quizMetaText}>10 câu</Text>
+                    </View>
+                    <View style={styles.quizMetaDot} />
+                    <View style={styles.quizMetaItem}>
+                      <MaterialCommunityIcons name="clock-outline" size={14} color="#8B5CF6" />
+                      <Text style={styles.quizMetaText}>4 phút</Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={styles.quizArrowButton}>
+                  <MaterialCommunityIcons name="chevron-right" size={24} color="#8B5CF6" />
+                </View>
               </View>
-              <View style={styles.quizContent}>
-                <Text variant="labelSmall" style={styles.quizLabel}>
-                  Quiz tuần
-                </Text>
-                <Text variant="titleSmall" style={styles.quizTitle}>
-                  Kiểm thức cơ bản
-                </Text>
-                <Text variant="bodySmall" style={styles.quizMeta}>
-                  10 câu hỏi • 4 phút
-                </Text>
-              </View>
-              <MaterialCommunityIcons name="chevron-right" size={24} color={colors.text.disabled} />
-            </Surface>
+            </TouchableOpacity>
           </View>
 
           {/* Mục tiêu tuần & Kiểm tra hàng ngày */}
@@ -331,6 +342,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     marginBottom: 24,
+    marginTop: 16,
     paddingHorizontal: 20,
   },
   section: {
@@ -338,35 +350,87 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   quizCard: {
-    alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     flexDirection: 'row',
-    gap: 12,
-    padding: 16,
+    alignItems: 'center',
+    padding: spacing.base,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 2,
+    borderColor: 'rgba(139, 92, 246, 0.1)',
+  },
+  quizLeftSection: {
+    marginRight: spacing.md,
   },
   quizIconBox: {
     alignItems: 'center',
     backgroundColor: '#F5F3FF',
-    borderRadius: borderRadius.md,
-    height: 48,
+    borderRadius: 16,
+    height: 64,
     justifyContent: 'center',
-    width: 48,
+    width: 64,
+    borderWidth: 3,
+    borderColor: 'rgba(139, 92, 246, 0.2)',
   },
   quizContent: {
     flex: 1,
   },
-  quizLabel: {
-    color: colors.text.secondary,
-    marginBottom: 4,
+  quizBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+    gap: 4,
+  },
+  quizBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#F59E0B',
+    letterSpacing: 0.3,
   },
   quizTitle: {
+    fontSize: 18,
+    fontWeight: '800',
     color: colors.text.primary,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 6,
   },
-  quizMeta: {
-    color: colors.text.secondary,
+  quizMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  quizMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  quizMetaText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#8B5CF6',
+  },
+  quizMetaDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D1D5DB',
+  },
+  quizArrowButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F3FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: spacing.sm,
   },
   statsRow: {
     flexDirection: 'row',
