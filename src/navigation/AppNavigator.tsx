@@ -5,6 +5,9 @@ import { AIScannerScreen } from '../screens/ai';
 import { EditAvatarScreen, SettingsScreen } from '../screens/profile';
 import { RewardHistoryScreen } from '../screens/reward';
 import { DragDropGamePlayScreen, GameResultDetailScreen } from '../screens/game';
+import { QuizListScreen, QuizQuestionScreen, QuizResultScreen } from '../screens/quiz';
+import { NotificationScreen } from '../screens/notification';
+import { QuizAnswer, QuizAnswerDetail } from '../types/quiz';
 
 export type AppStackParamList = {
   Home: undefined;
@@ -12,8 +15,20 @@ export type AppStackParamList = {
   EditAvatar: undefined;
   Settings: undefined;
   RewardHistory: undefined;
+  Notification: undefined;
   DragDropGamePlay: { levelId: number };
   GameResultDetail: { results: any[] };
+  QuizList: undefined;
+  QuizQuestion: { quizId: string };
+  QuizResult: {
+    quizId: string;
+    totalQuestions: number;
+    correctAnswers: number;
+    wrongAnswers: number;
+    totalPoints: number;
+    answers: QuizAnswer[];
+  };
+  QuizAnswerDetail: { answerDetails: QuizAnswerDetail[] };
 };
 
 const Stack = createStackNavigator<AppStackParamList>();
@@ -55,6 +70,13 @@ export default function AppNavigator() {
         }}
       />
       <Stack.Screen
+        name="Notification"
+        component={NotificationScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
         name="DragDropGamePlay"
         component={DragDropGamePlayScreen}
         options={{
@@ -64,6 +86,27 @@ export default function AppNavigator() {
       <Stack.Screen
         name="GameResultDetail"
         component={GameResultDetailScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="QuizList"
+        component={QuizListScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="QuizQuestion"
+        component={QuizQuestionScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="QuizResult"
+        component={QuizResultScreen}
         options={{
           presentation: 'card',
         }}

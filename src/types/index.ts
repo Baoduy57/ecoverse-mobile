@@ -1,3 +1,6 @@
+// Re-exports
+export * from './quiz';
+
 // API Response Types
 export interface IApiResponse<T = any> {
   success: boolean;
