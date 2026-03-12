@@ -1,7 +1,9 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Platform, Animated } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, Platform, Animated, Dimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { TouchableOpacity } from 'react-native';
 import { DashboardScreen } from '../dashboard';
 import { GameScreen } from '../game';
 import { ProfileScreen } from '../profile';
@@ -23,157 +25,172 @@ const TAB_BAR_HEIGHT = 64;
 const CENTER_BUTTON_SIZE = 56;
 const CENTER_BUTTON_TOP = -24;
 const ACTIVE_DOT_SIZE = 6;
+const NUM_TABS = 5;
 
-function TabIcon({
-  name,
-  focused,
-  activeColor,
-  inactiveColor,
-}: {
-  name: keyof typeof MaterialCommunityIcons.glyphMap;
-  focused: boolean;
-  activeColor: string;
-  inactiveColor: string;
-}) {
-  const color = focused ? activeColor : inactiveColor;
-  return (
-    <View style={styles.tabItem}>
-      <MaterialCommunityIcons name={name} size={26} color={color} />
-      {focused && <View style={styles.activeDot} />}
-    </View>
-  );
-}
+const TAB_ICONS: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
+  Dashboard: 'home',
+  Achievement: 'trophy',
+  Game: 'gamepad-variant',
+  Reward: 'gift-outline',
+  Profile: 'account-circle',
+};
 
-function CenterTabIcon({ focused }: { focused: boolean }) {
-  return (
-    <View style={styles.centerTabWrapper}>
-      <View style={styles.centerTab}>
-        <MaterialCommunityIcons name="gamepad-variant" size={28} color={colors.text.white} />
-      </View>
-      {focused && <View style={[styles.activeDot, styles.activeDotCenter]} />}
-    </View>
-  );
-}
-
-export default function HomeScreen() {
+function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const floatingAnim = useRef(new Animated.Value(0)).current;
+  // activeAnim: index of currently active tab (animated)
+  const activeIndexAnim = useRef(new Animated.Value(state.index)).current;
+  const [barWidth, setBarWidth] = useState(Dimensions.get('window').width - 32);
 
+  // Floating (bob) animation
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(floatingAnim, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatingAnim, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
+        Animated.timing(floatingAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+        Animated.timing(floatingAnim, { toValue: 0, duration: 1000, useNativeDriver: true }),
       ])
     ).start();
   }, []);
 
-  const translateY = floatingAnim.interpolate({
+  // Animate bubble to new tab on change
+  useEffect(() => {
+    Animated.timing(activeIndexAnim, {
+      toValue: state.index,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+  }, [state.index]);
+
+  const tabWidth = barWidth / NUM_TABS;
+
+  // Horizontal position of bubble center: centers on the active tab
+  const bubbleTranslateX = activeIndexAnim.interpolate({
+    inputRange: state.routes.map((_, i) => i),
+    outputRange: state.routes.map((_, i) => i * tabWidth + tabWidth / 2 - CENTER_BUTTON_SIZE / 2),
+  });
+
+  const floatTranslateY = floatingAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, -8],
   });
 
   return (
+    <Animated.View
+      style={[styles.tabBarContainer, { transform: [{ translateY: floatTranslateY }] }]}
+      onLayout={e => setBarWidth(e.nativeEvent.layout.width)}
+    >
+      {/* Floating bubble */}
+      <Animated.View
+        style={[styles.bubble, { transform: [{ translateX: bubbleTranslateX }] }]}
+        pointerEvents="none"
+      >
+        <View style={styles.bubbleCircle}>
+          <MaterialCommunityIcons
+            name={TAB_ICONS[state.routes[state.index].name]}
+            size={28}
+            color={colors.text.white}
+          />
+        </View>
+      </Animated.View>
+
+      {/* Tab buttons */}
+      {state.routes.map((route, index) => {
+        const isFocused = state.index === index;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            onPress={onPress}
+            activeOpacity={0.8}
+            style={styles.tabButton}
+          >
+            {!isFocused && (
+              <MaterialCommunityIcons
+                name={TAB_ICONS[route.name]}
+                size={26}
+                color={colors.text.secondary}
+              />
+            )}
+          </TouchableOpacity>
+        );
+      })}
+    </Animated.View>
+  );
+}
+
+export default function HomeScreen() {
+  return (
     <Tab.Navigator
+      tabBar={props => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.text.secondary,
-        tabBarStyle: {
-          position: 'absolute',
-          backgroundColor: colors.surface,
-          borderTopWidth: 0,
-          height: TAB_BAR_HEIGHT + (Platform.OS === 'ios' ? 24 : 12),
-          paddingBottom: Platform.OS === 'ios' ? 24 : 12,
-          paddingTop: 8,
-          borderRadius: 28,
-          marginHorizontal: 16,
-          marginBottom: Platform.OS === 'ios' ? 24 : 16,
-          elevation: 12,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.1,
-          shadowRadius: 12,
-          transform: [{ translateY }],
-        },
         tabBarShowLabel: false,
       }}
     >
-      <Tab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
-        options={{
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="home"
-              focused={focused}
-              activeColor={colors.primary}
-              inactiveColor={color}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Achievement"
-        component={LeaderboardScreen}
-        options={{
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="trophy"
-              focused={focused}
-              activeColor={colors.primary}
-              inactiveColor={color}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Game"
-        component={GameScreen}
-        options={{
-          tabBarIcon: ({ focused }) => <CenterTabIcon focused={focused} />,
-        }}
-      />
-      <Tab.Screen
-        name="Reward"
-        component={RewardScreen}
-        options={{
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="gift-outline"
-              focused={focused}
-              activeColor={colors.primary}
-              inactiveColor={color}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name="account-circle"
-              focused={focused}
-              activeColor={colors.primary}
-              inactiveColor={color}
-            />
-          ),
-        }}
-      />
+      <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="Achievement" component={LeaderboardScreen} />
+      <Tab.Screen name="Game" component={GameScreen} />
+      <Tab.Screen name="Reward" component={RewardScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
 
 const styles = StyleSheet.create({
+  tabBarContainer: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 24 : 16,
+    left: 16,
+    right: 16,
+    height: TAB_BAR_HEIGHT + (Platform.OS === 'ios' ? 24 : 12),
+    backgroundColor: colors.surface,
+    borderRadius: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+    paddingTop: 15,
+    elevation: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    overflow: 'visible',
+  },
+  bubble: {
+    position: 'absolute',
+    top: CENTER_BUTTON_TOP,
+    zIndex: 10,
+  },
+  bubbleCircle: {
+    width: CENTER_BUTTON_SIZE,
+    height: CENTER_BUTTON_SIZE,
+    borderRadius: CENTER_BUTTON_SIZE / 2,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 8,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -184,27 +201,5 @@ const styles = StyleSheet.create({
     borderRadius: ACTIVE_DOT_SIZE / 2,
     backgroundColor: colors.primary,
     marginTop: 6,
-  },
-  centerTabWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'absolute',
-    top: CENTER_BUTTON_TOP,
-  },
-  centerTab: {
-    width: CENTER_BUTTON_SIZE,
-    height: CENTER_BUTTON_SIZE,
-    borderRadius: CENTER_BUTTON_SIZE / 2,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 8,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-  },
-  activeDotCenter: {
-    marginTop: 4,
   },
 });

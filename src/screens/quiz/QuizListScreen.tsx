@@ -11,7 +11,7 @@ import { MOCK_QUIZ_MISSIONS } from '../../data/quizData';
 import type { AppStackParamList } from '../../navigation/AppNavigator';
 import ScreenBackground from '../../components/common/ScreenBackground';
 
-type QuizCategory = 'all' | 'starter' | 'ai' | 'manual';
+type QuizCategory = 'all' | 'manual';
 
 export default function QuizListScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
@@ -49,8 +49,6 @@ export default function QuizListScreen() {
 
   const filteredMissions = MOCK_QUIZ_MISSIONS.filter(mission => {
     if (selectedCategory === 'all') return true;
-    if (selectedCategory === 'starter') return mission.difficulty === QuizDifficulty.STARTER;
-    if (selectedCategory === 'ai') return mission.difficulty === QuizDifficulty.AI_GENERATED;
     if (selectedCategory === 'manual') return mission.difficulty === QuizDifficulty.MANUAL;
     return true;
   });
@@ -70,7 +68,10 @@ export default function QuizListScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.navigate('Home' as never)}
+          >
             <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <View style={styles.userBadge}>
@@ -84,8 +85,8 @@ export default function QuizListScreen() {
 
         {/* Title */}
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>Choose Your</Text>
-          <Text style={styles.titleHighlight}>Mission</Text>
+          <Text style={styles.title}>Chọn nhiệm vụ</Text>
+          <Text style={styles.titleHighlight}>Của bạn</Text>
         </View>
 
         {/* Filter Tabs */}
@@ -95,20 +96,7 @@ export default function QuizListScreen() {
             onPress={() => setSelectedCategory('all')}
           >
             <Text style={[styles.tabText, selectedCategory === 'all' && styles.tabTextActive]}>
-              All Quizzes
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, selectedCategory === 'starter' && styles.tabActive]}
-            onPress={() => setSelectedCategory('starter')}
-          >
-            <MaterialCommunityIcons
-              name="star"
-              size={16}
-              color={selectedCategory === 'starter' ? colors.primary : colors.text.secondary}
-            />
-            <Text style={[styles.tabText, selectedCategory === 'starter' && styles.tabTextActive]}>
-              AI-Generated
+              Tất cả các bài kiểm tra
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -118,10 +106,10 @@ export default function QuizListScreen() {
             <MaterialCommunityIcons
               name="pencil"
               size={16}
-              color={selectedCategory === 'manual' ? colors.primary : colors.text.secondary}
+              color={selectedCategory === 'manual' ? colors.background : colors.text.secondary}
             />
             <Text style={[styles.tabText, selectedCategory === 'manual' && styles.tabTextActive]}>
-              Manual
+              Thủ công
             </Text>
           </TouchableOpacity>
         </View>
@@ -187,7 +175,7 @@ export default function QuizListScreen() {
                     mission.status === QuizStatus.LOCKED && styles.startButtonTextLocked,
                   ]}
                 >
-                  Start Mission
+                  Bắt đầu nhiệm vụ
                 </Text>
                 <MaterialCommunityIcons
                   name={mission.status === QuizStatus.LOCKED ? 'lock' : 'play'}
@@ -217,7 +205,7 @@ export default function QuizListScreen() {
             }}
           >
             <MaterialCommunityIcons name="flash" size={20} color={colors.text.white} />
-            <Text style={styles.quickPlayText}>Quick Play</Text>
+            <Text style={styles.quickPlayText}>Chơi nhanh</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

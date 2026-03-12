@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
-import { Text, Surface, ProgressBar } from 'react-native-paper';
+import React from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Text, ProgressBar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -13,66 +13,17 @@ import {
   SectionHeader,
   CircularProgress,
 } from '../../components/dashboard';
+import ScreenBackground from '../../components/common/ScreenBackground';
+import { ScheduledExamCard } from '../../components/exam';
 import { colors, spacing, borderRadius } from '@theme';
 import { getUnreadCount } from '../../data/notificationData';
+import { MOCK_SCHEDULED_EXAMS } from '../../data/examData';
 
 type DashboardNavigationProp = StackNavigationProp<AppStackParamList>;
 
 export default function DashboardScreen() {
   const navigation = useNavigation<DashboardNavigationProp>();
 
-  // Animations
-  const floatAnim1 = useRef(new Animated.Value(0)).current;
-  const floatAnim2 = useRef(new Animated.Value(0)).current;
-  const floatAnim3 = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    // Floating animation for decorative icons
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim1, {
-          toValue: -20,
-          duration: 3000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim1, {
-          toValue: 0,
-          duration: 3000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim2, {
-          toValue: -15,
-          duration: 4000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim2, {
-          toValue: 0,
-          duration: 4000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim3, {
-          toValue: -10,
-          duration: 2500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim3, {
-          toValue: 0,
-          duration: 2500,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, []);
   // Data cho Progress Card
   const progressData = [
     {
@@ -109,23 +60,7 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Background Decorative Elements */}
-      <View style={styles.bgDecorativeTop} />
-      <View style={styles.bgDecorativeRight} />
-      <View style={styles.bgDecorativeBottom} />
-
-      {/* Floating Icons */}
-      <Animated.View style={[styles.floatingIcon1, { transform: [{ translateY: floatAnim1 }] }]}>
-        <MaterialCommunityIcons name="leaf" size={100} color="rgba(129, 199, 132, 0.3)" />
-      </Animated.View>
-
-      <Animated.View style={[styles.floatingIcon2, { transform: [{ translateY: floatAnim2 }] }]}>
-        <MaterialCommunityIcons name="recycle" size={80} color="rgba(129, 199, 132, 0.3)" />
-      </Animated.View>
-
-      <Animated.View style={[styles.floatingIcon3, { transform: [{ translateY: floatAnim3 }] }]}>
-        <MaterialCommunityIcons name="cloud" size={60} color="rgba(144, 202, 249, 0.4)" />
-      </Animated.View>
+      <ScreenBackground />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -147,7 +82,11 @@ export default function DashboardScreen() {
               buttonText="Bắt đầu"
               buttonIcon="play"
               backgroundColor={colors.primary}
-              onPress={() => console.log('Game pressed')}
+              onPress={() =>
+                navigation.navigate('Home', {
+                  screen: 'Game',
+                })
+              }
               illustration={require('../../../assets/images/bin.png')}
             />
             <GameCard
@@ -161,11 +100,22 @@ export default function DashboardScreen() {
             />
           </View>
 
+          {/* Kiểm tra định kỳ */}
+          <View style={styles.section}>
+            <SectionHeader
+              title="Kiểm tra định kỳ"
+              onLinkPress={() => navigation.navigate('ScheduledExam')}
+            />
+            <ScheduledExamCard
+              exam={MOCK_SCHEDULED_EXAMS[0] ?? null}
+              onPress={() => navigation.navigate('ScheduledExam')}
+            />
+          </View>
+
           {/* Bài tập kiểm tra */}
           <View style={styles.section}>
             <SectionHeader
               title="Bài tập kiểm tra"
-              linkText="Xem tất cả"
               onLinkPress={() => navigation.navigate('QuizList')}
             />
 
@@ -204,7 +154,7 @@ export default function DashboardScreen() {
           {/* Mục tiêu tuần & Kiểm tra hàng ngày */}
           <View style={styles.statsRow}>
             {/* Weekly Goal Card */}
-            <Surface style={styles.weeklyGoalCard} elevation={1}>
+            <View style={styles.weeklyGoalCard}>
               <View style={styles.weeklyGoalHeader}>
                 <Text variant="titleSmall" style={styles.weeklyGoalTitle}>
                   Mục tiêu tuần
@@ -219,7 +169,7 @@ export default function DashboardScreen() {
               <Text variant="bodySmall" style={styles.weeklyGoalSubtitle}>
                 35/50 Tái chế
               </Text>
-            </Surface>
+            </View>
 
             {/* Daily Check Card */}
             <TouchableOpacity
@@ -263,12 +213,10 @@ export default function DashboardScreen() {
 
           {/* Tiến độ */}
           <View style={styles.section}>
-            <SectionHeader
-              title="Tiến độ"
-              linkText="Xem tất cả"
-              onLinkPress={() => console.log('View all progress')}
-            />
-            <ProgressCard items={progressData} />
+            <SectionHeader title="Tiến độ" onLinkPress={() => console.log('View all progress')} />
+            <View style={styles.progressCardWrapper}>
+              <ProgressCard items={progressData} />
+            </View>
           </View>
 
           {/* Extra padding to prevent bottom nav overlap */}
@@ -284,55 +232,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     flex: 1,
     position: 'relative',
-  },
-  // Background decorative elements
-  bgDecorativeTop: {
-    backgroundColor: '#dbe6e0',
-    borderRadius: 9999,
-    height: '40%',
-    left: '-10%',
-    opacity: 0.6,
-    position: 'absolute',
-    top: '-10%',
-    width: '70%',
-  },
-  bgDecorativeRight: {
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-    borderRadius: 9999,
-    height: '50%',
-    position: 'absolute',
-    right: '-20%',
-    top: '40%',
-    width: '80%',
-  },
-  bgDecorativeBottom: {
-    backgroundColor: '#dbe6e0',
-    borderRadius: 9999,
-    bottom: '-10%',
-    height: '40%',
-    left: '10%',
-    opacity: 0.5,
-    position: 'absolute',
-    width: '60%',
-  },
-  // Floating icons
-  floatingIcon1: {
-    position: 'absolute',
-    right: -20,
-    top: '15%',
-    zIndex: 0,
-  },
-  floatingIcon2: {
-    bottom: '20%',
-    left: -30,
-    position: 'absolute',
-    zIndex: 0,
-  },
-  floatingIcon3: {
-    left: '5%',
-    position: 'absolute',
-    top: '40%',
-    zIndex: 0,
   },
   safeArea: {
     flex: 1,
@@ -446,6 +345,13 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.sm,
     padding: spacing.base,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 1.5,
+    borderColor: 'rgba(16, 185, 129, 0.12)',
   },
   weeklyGoalHeader: {
     alignItems: 'flex-start',
@@ -477,13 +383,15 @@ const styles = StyleSheet.create({
   dailyCheckCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.xl,
-    elevation: 2,
+    elevation: 8,
     flex: 1,
     padding: spacing.base,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowColor: '#60A5FA',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(96, 165, 250, 0.15)',
   },
   dailyCheckTop: {
     alignItems: 'flex-start',
@@ -534,5 +442,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#60A5FA',
     borderRadius: borderRadius.base,
     height: '100%',
+  },
+  progressCardWrapper: {
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 8,
+    borderRadius: borderRadius.xl,
+    overflow: 'visible',
   },
 });
