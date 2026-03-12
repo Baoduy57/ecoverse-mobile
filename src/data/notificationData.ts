@@ -12,6 +12,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     iconColor: '#10B981',
     iconBgColor: '#D1FAE5',
     actionText: 'Xem tiến độ',
+    actionRoute: 'Home',
   },
   {
     id: '2',
@@ -24,6 +25,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     iconColor: '#F59E0B',
     iconBgColor: '#FEF3C7',
     actionText: 'Xem quà',
+    actionRoute: 'RewardHistory',
   },
   {
     id: '3',
@@ -36,6 +38,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     iconColor: '#EF4444',
     iconBgColor: '#FEE2E2',
     actionText: 'Xem huy hiệu',
+    actionRoute: 'Home',
   },
   {
     id: '4',
@@ -48,6 +51,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     iconColor: '#8B5CF6',
     iconBgColor: '#F5F3FF',
     actionText: 'Làm quiz',
+    actionRoute: 'QuizList',
   },
   {
     id: '5',
@@ -60,6 +64,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     iconColor: '#06B6D4',
     iconBgColor: '#CFFAFE',
     actionText: 'Chơi ngay',
+    actionRoute: 'Home',
   },
   {
     id: '6',
@@ -72,6 +77,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     iconColor: '#6366F1',
     iconBgColor: '#E0E7FF',
     actionText: 'Khám phá',
+    actionRoute: 'AIScanner',
   },
   {
     id: '7',
@@ -83,6 +89,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     icon: 'fire',
     iconColor: '#F97316',
     iconBgColor: '#FFEDD5',
+    actionRoute: 'Home',
   },
   {
     id: '8',
@@ -94,6 +101,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     icon: 'currency-usd',
     iconColor: '#FBBF24',
     iconBgColor: '#FEF3C7',
+    actionRoute: 'RewardHistory',
   },
 ];
 

@@ -1,12 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Animated,
-  LayoutAnimation,
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, LayoutAnimation } from 'react-native';
 import { Text, Switch } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -16,9 +9,9 @@ import type { AppStackParamList } from '@navigation/AppNavigator';
 import { useAuthStore } from '@store/authStore';
 import { useSettingsStore, BG_TRACKS } from '@store/settingsStore';
 import { audioService } from '@services/audioService';
+import ScreenBackground from '../../../components/common/ScreenBackground';
 import { colors, spacing, borderRadius } from '@theme';
 import * as Notifications from 'expo-notifications';
-
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -52,13 +45,12 @@ export default function SettingsScreen() {
   // Master switch: any category enabled = master on
   const masterSoundEnabled = bgMusicEnabled || sfxInteractionEnabled || sfxFeedbackEnabled;
 
-  const currentTrackIndex = BG_TRACKS.findIndex((t) => t.key === currentBgTrack);
-
+  const currentTrackIndex = BG_TRACKS.findIndex(t => t.key === currentBgTrack);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
   const toggleSoundExpanded = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setSoundExpanded((v) => !v);
+    setSoundExpanded(v => !v);
   };
 
   const handleMasterSound = (value: boolean) => {
@@ -127,25 +119,6 @@ export default function SettingsScreen() {
     });
   };
 
-  // ─── Floating animations ──────────────────────────────────────────────────
-  const floatAnim1 = useRef(new Animated.Value(0)).current;
-  const floatAnim2 = useRef(new Animated.Value(0)).current;
-  const floatAnim3 = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const makeLoop = (anim: Animated.Value, toValue: number, duration: number) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(anim, { toValue, duration, useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0, duration, useNativeDriver: true }),
-        ])
-      ).start();
-
-    makeLoop(floatAnim1, -20, 3000);
-    makeLoop(floatAnim2, -15, 4000);
-    makeLoop(floatAnim3, -10, 2500);
-  }, []);
-
   const handleBack = () => navigation.goBack();
   const handleHelp = () => console.log('Navigate to Help');
   const handleLogout = async () => await logout();
@@ -153,21 +126,7 @@ export default function SettingsScreen() {
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      {/* Background decorative */}
-      <View style={styles.bgDecorativeTop} />
-      <View style={styles.bgDecorativeRight} />
-      <View style={styles.bgDecorativeBottom} />
-
-      {/* Floating icons */}
-      <Animated.View style={[styles.floatingIcon1, { transform: [{ translateY: floatAnim1 }] }]}>
-        <MaterialCommunityIcons name="leaf" size={100} color="rgba(129, 199, 132, 0.3)" />
-      </Animated.View>
-      <Animated.View style={[styles.floatingIcon2, { transform: [{ translateY: floatAnim2 }] }]}>
-        <MaterialCommunityIcons name="recycle" size={80} color="rgba(129, 199, 132, 0.3)" />
-      </Animated.View>
-      <Animated.View style={[styles.floatingIcon3, { transform: [{ translateY: floatAnim3 }] }]}>
-        <MaterialCommunityIcons name="cloud" size={60} color="rgba(144, 202, 249, 0.4)" />
-      </Animated.View>
+      <ScreenBackground />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
@@ -181,19 +140,27 @@ export default function SettingsScreen() {
           <View style={styles.backButton} />
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
           <View style={styles.settingsContainer}>
-
             {/* ── Sound Section ────────────────────────────────────────── */}
             <View style={styles.soundCard}>
               {/* Row header (tap to expand) */}
-              <TouchableOpacity style={styles.soundHeader} onPress={toggleSoundExpanded} activeOpacity={0.75}>
+              <TouchableOpacity
+                style={styles.soundHeader}
+                onPress={toggleSoundExpanded}
+                activeOpacity={0.75}
+              >
                 <View style={styles.settingLeft}>
                   <View style={[styles.iconContainer, { backgroundColor: '#E8F5E9' }]}>
                     <MaterialCommunityIcons name="music-note" size={24} color={colors.primary} />
                   </View>
                   <View style={styles.settingTextContainer}>
-                    <Text variant="titleSmall" style={styles.settingTitle}>Âm thanh game</Text>
+                    <Text variant="titleSmall" style={styles.settingTitle}>
+                      Âm thanh game
+                    </Text>
                     <Text variant="bodySmall" style={styles.settingSubtitle}>
                       {masterSoundEnabled ? 'Đang bật' : 'Đã tắt'}
                     </Text>
@@ -223,8 +190,15 @@ export default function SettingsScreen() {
                   {/* Nhạc nền */}
                   <View style={[styles.subRow, !masterSoundEnabled && styles.disabledRow]}>
                     <View style={styles.settingLeft}>
-                      <MaterialCommunityIcons name="music" size={20} color={colors.primary} style={styles.subIcon} />
-                      <Text variant="bodyMedium" style={styles.subLabel}>Nhạc nền</Text>
+                      <MaterialCommunityIcons
+                        name="music"
+                        size={20}
+                        color={colors.primary}
+                        style={styles.subIcon}
+                      />
+                      <Text variant="bodyMedium" style={styles.subLabel}>
+                        Nhạc nền
+                      </Text>
                     </View>
                     <Switch
                       disabled={!masterSoundEnabled}
@@ -238,16 +212,28 @@ export default function SettingsScreen() {
                   {bgMusicEnabled && masterSoundEnabled && (
                     <View style={styles.trackPicker}>
                       <TouchableOpacity onPress={handlePrevTrack} style={styles.trackArrow}>
-                        <MaterialCommunityIcons name="chevron-left" size={22} color={colors.primary} />
+                        <MaterialCommunityIcons
+                          name="chevron-left"
+                          size={22}
+                          color={colors.primary}
+                        />
                       </TouchableOpacity>
                       <View style={styles.trackLabelWrap}>
-                        <MaterialCommunityIcons name="music-circle" size={16} color={colors.primary} />
+                        <MaterialCommunityIcons
+                          name="music-circle"
+                          size={16}
+                          color={colors.primary}
+                        />
                         <Text style={styles.trackLabel} numberOfLines={1}>
                           {BG_TRACKS[currentTrackIndex]?.label ?? currentBgTrack}
                         </Text>
                       </View>
                       <TouchableOpacity onPress={handleNextTrack} style={styles.trackArrow}>
-                        <MaterialCommunityIcons name="chevron-right" size={22} color={colors.primary} />
+                        <MaterialCommunityIcons
+                          name="chevron-right"
+                          size={22}
+                          color={colors.primary}
+                        />
                       </TouchableOpacity>
                     </View>
                   )}
@@ -255,8 +241,15 @@ export default function SettingsScreen() {
                   {/* Tương tác */}
                   <View style={[styles.subRow, !masterSoundEnabled && styles.disabledRow]}>
                     <View style={styles.settingLeft}>
-                      <MaterialCommunityIcons name="hand-pointing-up" size={20} color={colors.secondary} style={styles.subIcon} />
-                      <Text variant="bodyMedium" style={styles.subLabel}>Tương tác</Text>
+                      <MaterialCommunityIcons
+                        name="hand-pointing-up"
+                        size={20}
+                        color={colors.secondary}
+                        style={styles.subIcon}
+                      />
+                      <Text variant="bodyMedium" style={styles.subLabel}>
+                        Tương tác
+                      </Text>
                     </View>
                     <Switch
                       disabled={!masterSoundEnabled}
@@ -269,8 +262,15 @@ export default function SettingsScreen() {
                   {/* Phản hồi */}
                   <View style={[styles.subRow, !masterSoundEnabled && styles.disabledRow]}>
                     <View style={styles.settingLeft}>
-                      <MaterialCommunityIcons name="check-circle" size={20} color="#66BB6A" style={styles.subIcon} />
-                      <Text variant="bodyMedium" style={styles.subLabel}>Phản hồi đúng/sai</Text>
+                      <MaterialCommunityIcons
+                        name="check-circle"
+                        size={20}
+                        color="#66BB6A"
+                        style={styles.subIcon}
+                      />
+                      <Text variant="bodyMedium" style={styles.subLabel}>
+                        Phản hồi đúng/sai
+                      </Text>
                     </View>
                     <Switch
                       disabled={!masterSoundEnabled}
@@ -291,7 +291,9 @@ export default function SettingsScreen() {
                     <MaterialCommunityIcons name="bell" size={24} color={colors.secondary} />
                   </View>
                   <View style={styles.settingTextContainer}>
-                    <Text variant="titleSmall" style={styles.settingTitle}>Thông báo</Text>
+                    <Text variant="titleSmall" style={styles.settingTitle}>
+                      Thông báo
+                    </Text>
                     <Text variant="bodySmall" style={styles.settingSubtitle}>
                       Hiện thị trên màn hình khóa
                     </Text>
@@ -320,10 +322,16 @@ export default function SettingsScreen() {
             <TouchableOpacity style={styles.settingItem} onPress={handleHelp}>
               <View style={styles.settingLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: '#E1BEE7' }]}>
-                  <MaterialCommunityIcons name="help-circle" size={24} color={colors.accentPurple} />
+                  <MaterialCommunityIcons
+                    name="help-circle"
+                    size={24}
+                    color={colors.accentPurple}
+                  />
                 </View>
                 <View style={styles.settingTextContainer}>
-                  <Text variant="titleSmall" style={styles.settingTitle}>Trợ giúp & Phản hồi</Text>
+                  <Text variant="titleSmall" style={styles.settingTitle}>
+                    Trợ giúp & Phản hồi
+                  </Text>
                 </View>
               </View>
               <MaterialCommunityIcons name="chevron-right" size={24} color={colors.text.disabled} />
@@ -332,7 +340,9 @@ export default function SettingsScreen() {
 
           {/* Version */}
           <View style={styles.versionContainer}>
-            <Text variant="bodySmall" style={styles.versionText}>Phiên bản 1.0.3 (Build 204)</Text>
+            <Text variant="bodySmall" style={styles.versionText}>
+              Phiên bản 1.0.3 (Build 204)
+            </Text>
           </View>
 
           {/* Logout */}
@@ -354,38 +364,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     position: 'relative',
   },
-  bgDecorativeTop: {
-    position: 'absolute',
-    top: '-10%',
-    left: '-10%',
-    width: '70%',
-    height: '40%',
-    backgroundColor: '#dbe6e0',
-    borderRadius: 9999,
-    opacity: 0.6,
-  },
-  bgDecorativeRight: {
-    position: 'absolute',
-    top: '40%',
-    right: '-20%',
-    width: '80%',
-    height: '50%',
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-    borderRadius: 9999,
-  },
-  bgDecorativeBottom: {
-    position: 'absolute',
-    bottom: '-10%',
-    left: '10%',
-    width: '60%',
-    height: '40%',
-    backgroundColor: '#dbe6e0',
-    borderRadius: 9999,
-    opacity: 0.5,
-  },
-  floatingIcon1: { position: 'absolute', top: '15%', right: -20, zIndex: 0 },
-  floatingIcon2: { position: 'absolute', bottom: '20%', left: -30, zIndex: 0 },
-  floatingIcon3: { position: 'absolute', top: '40%', left: '5%', zIndex: 0 },
   safeArea: { flex: 1, zIndex: 10 },
   header: {
     flexDirection: 'row',

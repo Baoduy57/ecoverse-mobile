@@ -6,11 +6,14 @@ import { EditAvatarScreen, SettingsScreen } from '../screens/profile';
 import { RewardHistoryScreen } from '../screens/reward';
 import { DragDropGamePlayScreen, GameResultDetailScreen } from '../screens/game';
 import { QuizListScreen, QuizQuestionScreen, QuizResultScreen } from '../screens/quiz';
+import { ScheduledExamScreen, ExamQuestionScreen, ExamResultScreen } from '../screens/exam';
 import { NotificationScreen } from '../screens/notification';
 import { QuizAnswer, QuizAnswerDetail } from '../types/quiz';
+import { HomeTabParamList } from '../screens/home/HomeScreen';
+import { NavigatorScreenParams } from '@react-navigation/native';
 
 export type AppStackParamList = {
-  Home: undefined;
+  Home: NavigatorScreenParams<HomeTabParamList>;
   AIScanner: undefined;
   EditAvatar: undefined;
   Settings: undefined;
@@ -29,6 +32,16 @@ export type AppStackParamList = {
     answers: QuizAnswer[];
   };
   QuizAnswerDetail: { answerDetails: QuizAnswerDetail[] };
+  ScheduledExam: undefined;
+  ExamQuestion: { examId: string };
+  ExamResult: {
+    examId: string;
+    totalQuestions: number;
+    correctAnswers: number;
+    wrongAnswers: number;
+    totalPoints: number;
+    answers: QuizAnswer[];
+  };
 };
 
 const Stack = createStackNavigator<AppStackParamList>();
@@ -107,6 +120,27 @@ export default function AppNavigator() {
       <Stack.Screen
         name="QuizResult"
         component={QuizResultScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="ExamQuestion"
+        component={ExamQuestionScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="ExamResult"
+        component={ExamResultScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="ScheduledExam"
+        component={ScheduledExamScreen}
         options={{
           presentation: 'card',
         }}

@@ -4,7 +4,7 @@ import { QuizDifficulty, QuizStatus, QuizMission, QuizQuestion } from '../types/
 export const MOCK_QUIZ_MISSIONS: QuizMission[] = [
   {
     id: '1',
-    title: 'Recycling Basics',
+    title: 'Cơ bản về rác tái chế',
     difficulty: QuizDifficulty.STARTER,
     icon: 'recycle',
     iconColor: '#4CAF50',
@@ -15,8 +15,8 @@ export const MOCK_QUIZ_MISSIONS: QuizMission[] = [
   },
   {
     id: '2',
-    title: 'Ocean Cleanup',
-    difficulty: QuizDifficulty.AI_GENERATED,
+    title: 'Dọn dẹp đại dương',
+    difficulty: QuizDifficulty.MANUAL,
     icon: 'waves',
     iconColor: '#2196F3',
     bgColor: '#E3F2FD',
@@ -26,7 +26,7 @@ export const MOCK_QUIZ_MISSIONS: QuizMission[] = [
   },
   {
     id: '3',
-    title: 'Compost Hero',
+    title: 'Anh hùng phân bón',
     difficulty: QuizDifficulty.MANUAL,
     icon: 'sprout',
     iconColor: '#FF9800',
@@ -37,7 +37,7 @@ export const MOCK_QUIZ_MISSIONS: QuizMission[] = [
   },
   {
     id: '4',
-    title: 'Solar Power',
+    title: 'Năng lượng mặt trời',
     difficulty: QuizDifficulty.HARD,
     icon: 'white-balance-sunny',
     iconColor: '#FFC107',
@@ -48,7 +48,7 @@ export const MOCK_QUIZ_MISSIONS: QuizMission[] = [
   },
   {
     id: '5',
-    title: 'Waste Reduction',
+    title: 'Giảm thiểu chất thải',
     difficulty: QuizDifficulty.STARTER,
     icon: 'delete-empty',
     iconColor: '#9C27B0',
@@ -59,8 +59,8 @@ export const MOCK_QUIZ_MISSIONS: QuizMission[] = [
   },
   {
     id: '6',
-    title: 'Water Conservation',
-    difficulty: QuizDifficulty.AI_GENERATED,
+    title: 'Bảo tồn nước',
+    difficulty: QuizDifficulty.MANUAL,
     icon: 'water',
     iconColor: '#00BCD4',
     bgColor: '#E0F7FA',
@@ -76,16 +76,16 @@ export const MOCK_QUIZ_QUESTIONS: QuizQuestion[] = [
     id: 'q1',
     questionNumber: 1,
     totalQuestions: 10,
-    question: 'Where does this aluminum can go?',
+    question: 'Nhôm này có thể được sử dụng ở đâu?',
     imageUrl: 'https://images.unsplash.com/photo-1615974683735-1db4e38c4113?w=400',
     options: [
-      { id: 'opt1', text: 'Trash Bin', icon: 'delete' },
-      { id: 'opt2', text: 'Recycling Bin', icon: 'recycle' },
-      { id: 'opt3', text: 'Compost', icon: 'flower' },
+      { id: 'opt1', text: 'Thùng rác', icon: 'delete' },
+      { id: 'opt2', text: 'Thùng tái chế', icon: 'recycle' },
+      { id: 'opt3', text: 'Phân hữu cơ', icon: 'flower' },
     ],
     correctOptionId: 'opt2',
     points: 10,
-    explanation: 'Aluminum cans can be recycled infinitely without losing quality.',
+    explanation: 'Lon nhôm có thể được tái chế vô thời hạn mà không làm giảm chất lượng.',
   },
   {
     id: 'q2',

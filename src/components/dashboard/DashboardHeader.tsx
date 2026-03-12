@@ -3,6 +3,8 @@ import { View, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '@/theme';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
+import { HomeTabParamList } from '@/screens/home/HomeScreen';
 
 interface DashboardHeaderProps {
   userName: string;
@@ -21,13 +23,17 @@ export default function DashboardHeader({
   notificationCount = 0,
   onNotificationPress,
 }: DashboardHeaderProps) {
+  const navigation = useNavigation<NavigationProp<HomeTabParamList>>();
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
-        <View style={styles.avatarContainer}>
-          <Image source={avatarSource} style={styles.avatar} />
-          <View style={styles.avatarBorder} />
-        </View>
+        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+          <View style={styles.avatarContainer}>
+            <Image source={avatarSource} style={styles.avatar} />
+            <View style={styles.avatarBorder} />
+          </View>
+        </TouchableOpacity>
+
         <View>
           <Text style={styles.greeting}>Xin chào,</Text>
           <Text style={styles.username}>{userName}</Text>

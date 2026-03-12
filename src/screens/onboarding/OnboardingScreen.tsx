@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../../navigation/AuthNavigator';
+import ScreenBackground from '../../components/common/ScreenBackground';
 import { colors } from '../../theme';
 
 type OnboardingScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Onboarding'>;
@@ -124,42 +125,6 @@ export default function OnboardingScreen({}: OnboardingScreenProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
-  // Background floating animations
-  const floatAnim1 = useRef(new Animated.Value(0)).current;
-  const floatAnim2 = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim1, {
-          toValue: -20,
-          duration: 3000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim1, {
-          toValue: 0,
-          duration: 3000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim2, {
-          toValue: -15,
-          duration: 4000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim2, {
-          toValue: 0,
-          duration: 4000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, []);
-
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0 && viewableItems[0].index !== null) {
       setCurrentIndex(viewableItems[0].index);
@@ -208,18 +173,7 @@ export default function OnboardingScreen({}: OnboardingScreenProps) {
 
   return (
     <View style={styles.wrapper}>
-      {/* Background Decorative Elements */}
-      <View style={styles.bgDecorativeTop} />
-      <View style={styles.bgDecorativeBottom} />
-
-      {/* Floating Icons */}
-      <Animated.View style={[styles.floatingIcon1, { transform: [{ translateY: floatAnim1 }] }]}>
-        <MaterialCommunityIcons name="leaf" size={80} color="rgba(76, 175, 80, 0.15)" />
-      </Animated.View>
-
-      <Animated.View style={[styles.floatingIcon2, { transform: [{ translateY: floatAnim2 }] }]}>
-        <MaterialCommunityIcons name="recycle" size={70} color="rgba(76, 175, 80, 0.15)" />
-      </Animated.View>
+      <ScreenBackground />
 
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
@@ -286,38 +240,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.onboardingBg,
     flex: 1,
     position: 'relative',
-  },
-  // Background decorative elements
-  bgDecorativeTop: {
-    backgroundColor: 'rgba(76, 175, 80, 0.08)',
-    borderRadius: 9999,
-    height: '50%',
-    position: 'absolute',
-    right: '-15%',
-    top: '-15%',
-    width: '80%',
-  },
-  bgDecorativeBottom: {
-    backgroundColor: 'rgba(129, 199, 132, 0.12)',
-    borderRadius: 9999,
-    bottom: '-20%',
-    height: '45%',
-    left: '-10%',
-    position: 'absolute',
-    width: '70%',
-  },
-  // Floating icons
-  floatingIcon1: {
-    position: 'absolute',
-    right: 20,
-    top: '25%',
-    zIndex: 0,
-  },
-  floatingIcon2: {
-    bottom: '30%',
-    left: 15,
-    position: 'absolute',
-    zIndex: 0,
   },
   container: {
     backgroundColor: 'transparent',

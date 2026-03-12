@@ -1,121 +1,15 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import {
-  View,
-  StyleSheet,
-  Animated,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-} from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import ScreenBackground from '../../components/common/ScreenBackground';
 import { colors, spacing, borderRadius } from '../../theme';
 import { RewardCard, ConfirmRedeemDialog, SuccessDialog } from '../../components/reward';
 import type { IReward } from '../../types';
-import { RewardCategory } from '../../types';
 import { useRewardStore } from '../../store/rewardStore';
-
-// Mock data for testing
-const MOCK_REWARDS: IReward[] = [
-  {
-    id: '1',
-    title: 'Voucher Shopee 50K',
-    description: 'Mã giảm giá Shopee trị giá 50.000đ',
-    image: '',
-    pointsCost: 500,
-    category: RewardCategory.VOUCHER,
-    stock: 10,
-    isAvailable: true,
-    icon: 'ticket-percent',
-    iconColor: '#FF6B00',
-  },
-  {
-    id: '2',
-    title: 'Balo thân thiện môi trường',
-    description: 'Balo làm từ vải tái chế',
-    image: '',
-    pointsCost: 1200,
-    category: RewardCategory.MERCHANDISE,
-    stock: 5,
-    isAvailable: true,
-    icon: 'bag-personal',
-    iconColor: '#4CAF50',
-  },
-  {
-    id: '3',
-    title: 'Bình nước Inox',
-    description: 'Bình giữ nhiệt cao cấp 500ml',
-    image: '',
-    pointsCost: 800,
-    category: RewardCategory.MERCHANDISE,
-    stock: 15,
-    isAvailable: true,
-    icon: 'bottle-tonic',
-    iconColor: '#2196F3',
-  },
-  {
-    id: '4',
-    title: 'Voucher The Coffee House',
-    description: 'Mã giảm giá 30.000đ tại The Coffee House',
-    image: '',
-    pointsCost: 300,
-    category: RewardCategory.VOUCHER,
-    stock: 20,
-    isAvailable: true,
-    icon: 'coffee',
-    iconColor: '#795548',
-  },
-  {
-    id: '5',
-    title: 'Bộ dụng cụ học tập',
-    description: 'Bút, sổ tay từ giấy tái chế',
-    image: '',
-    pointsCost: 450,
-    category: RewardCategory.MERCHANDISE,
-    stock: 8,
-    isAvailable: true,
-    icon: 'pencil-box',
-    iconColor: '#9C27B0',
-  },
-  {
-    id: '6',
-    title: 'Quyên góp trồng cây',
-    description: 'Trồng 1 cây xanh cho môi trường',
-    image: '',
-    pointsCost: 600,
-    category: RewardCategory.DONATION,
-    stock: 100,
-    isAvailable: true,
-    icon: 'tree',
-    iconColor: '#4CAF50',
-  },
-  {
-    id: '7',
-    title: 'Voucher CGV 2D',
-    description: 'Vé xem phim 2D tại CGV',
-    image: '',
-    pointsCost: 900,
-    category: RewardCategory.VOUCHER,
-    stock: 0,
-    isAvailable: false,
-    icon: 'movie',
-    iconColor: '#F44336',
-  },
-  {
-    id: '8',
-    title: 'Túi vải canvas',
-    description: 'Túi vải đa năng thân thiện môi trường',
-    image: '',
-    pointsCost: 350,
-    category: RewardCategory.MERCHANDISE,
-    stock: 12,
-    isAvailable: true,
-    icon: 'shopping',
-    iconColor: '#FF9800',
-  },
-];
+import { MOCK_REWARDS } from '../../data';
 
 export default function RewardScreen() {
   const navigation = useNavigation();
@@ -139,59 +33,6 @@ export default function RewardScreen() {
     }, [fetchRewards])
   );
   */
-
-  // Animations
-  const floatAnim1 = useRef(new Animated.Value(0)).current;
-  const floatAnim2 = useRef(new Animated.Value(0)).current;
-  const floatAnim3 = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    // Floating animation for decorative icons
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim1, {
-          toValue: -20,
-          duration: 3000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim1, {
-          toValue: 0,
-          duration: 3000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim2, {
-          toValue: -15,
-          duration: 4000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim2, {
-          toValue: 0,
-          duration: 4000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim3, {
-          toValue: -10,
-          duration: 2500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim3, {
-          toValue: 0,
-          duration: 2500,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, []);
 
   const handleRedeemPress = (id: string) => {
     const reward = displayRewards.find(r => r.id === id);
@@ -226,23 +67,7 @@ export default function RewardScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Background Decorative Elements */}
-      <View style={styles.bgDecorativeTop} />
-      <View style={styles.bgDecorativeRight} />
-      <View style={styles.bgDecorativeBottom} />
-
-      {/* Floating Icons */}
-      <Animated.View style={[styles.floatingIcon1, { transform: [{ translateY: floatAnim1 }] }]}>
-        <MaterialCommunityIcons name="leaf" size={100} color="rgba(129, 199, 132, 0.3)" />
-      </Animated.View>
-
-      <Animated.View style={[styles.floatingIcon2, { transform: [{ translateY: floatAnim2 }] }]}>
-        <MaterialCommunityIcons name="recycle" size={80} color="rgba(129, 199, 132, 0.3)" />
-      </Animated.View>
-
-      <Animated.View style={[styles.floatingIcon3, { transform: [{ translateY: floatAnim3 }] }]}>
-        <MaterialCommunityIcons name="cloud" size={60} color="rgba(144, 202, 249, 0.4)" />
-      </Animated.View>
+      <ScreenBackground />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
@@ -274,14 +99,6 @@ export default function RewardScreen() {
               <MaterialCommunityIcons name="gift-outline" size={18} color={colors.text.white} />
               <Text style={styles.tabTextActive}>Quà tặng</Text>
             </TouchableOpacity>
-            <View style={[styles.tab, styles.tabInactive]}>
-              <MaterialCommunityIcons
-                name="medal-outline"
-                size={18}
-                color={colors.text.secondary}
-              />
-              <Text style={styles.tabTextInactive}>Huy hiệu</Text>
-            </View>
           </View>
         </View>
 
@@ -349,55 +166,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     flex: 1,
     position: 'relative',
-  },
-  // Background decorative elements
-  bgDecorativeTop: {
-    backgroundColor: '#dbe6e0',
-    borderRadius: 9999,
-    height: '40%',
-    left: '-10%',
-    opacity: 0.6,
-    position: 'absolute',
-    top: '-10%',
-    width: '70%',
-  },
-  bgDecorativeRight: {
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-    borderRadius: 9999,
-    height: '50%',
-    position: 'absolute',
-    right: '-20%',
-    top: '40%',
-    width: '80%',
-  },
-  bgDecorativeBottom: {
-    backgroundColor: '#dbe6e0',
-    borderRadius: 9999,
-    bottom: '-10%',
-    height: '40%',
-    left: '10%',
-    opacity: 0.5,
-    position: 'absolute',
-    width: '60%',
-  },
-  // Floating icons
-  floatingIcon1: {
-    position: 'absolute',
-    right: -20,
-    top: '15%',
-    zIndex: 0,
-  },
-  floatingIcon2: {
-    bottom: '20%',
-    left: -30,
-    position: 'absolute',
-    zIndex: 0,
-  },
-  floatingIcon3: {
-    left: '5%',
-    position: 'absolute',
-    top: '40%',
-    zIndex: 0,
   },
   safeArea: {
     flex: 1,

@@ -3,14 +3,15 @@ import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { colors, spacing, borderRadius } from '../../theme';
 import ScreenBackground from '../../components/common/ScreenBackground';
 import { MOCK_NOTIFICATIONS, getTimeAgo } from '../../data/notificationData';
 import type { Notification, NotificationType } from '../../types/notification';
+import type { AppStackParamList } from '../../navigation/AppNavigator';
 
 export default function NotificationScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
 
   const handleMarkAsRead = (id: string) => {
@@ -21,6 +22,13 @@ export default function NotificationScreen() {
 
   const handleMarkAllAsRead = () => {
     setNotifications(prev => prev.map(notif => ({ ...notif, isRead: true })));
+  };
+
+  const handleNotificationPress = (notification: Notification) => {
+    handleMarkAsRead(notification.id);
+    if (!notification.actionRoute) return;
+    const route = notification.actionRoute as keyof AppStackParamList;
+    navigation.navigate(route as any);
   };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -81,7 +89,7 @@ export default function NotificationScreen() {
                     styles.notificationCard,
                     !notification.isRead && styles.notificationCardUnread,
                   ]}
-                  onPress={() => handleMarkAsRead(notification.id)}
+                  onPress={() => handleNotificationPress(notification)}
                   activeOpacity={0.7}
                 >
                   {/* Icon */}
@@ -124,7 +132,11 @@ export default function NotificationScreen() {
                       </View>
 
                       {notification.actionText && (
-                        <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
+                        <TouchableOpacity
+                          style={styles.actionButton}
+                          activeOpacity={0.7}
+                          onPress={() => handleNotificationPress(notification)}
+                        >
                           <Text style={styles.actionButtonText}>{notification.actionText}</Text>
                           <MaterialCommunityIcons
                             name="chevron-right"
