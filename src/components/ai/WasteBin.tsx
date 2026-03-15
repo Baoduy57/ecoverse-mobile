@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Platform, Animated } from 'react-native';
+import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { WasteType } from '@/types/wasteClassification';
-import { colors } from '@/theme';
 
 interface WasteBinProps {
   wasteType: WasteType;
@@ -10,41 +11,93 @@ interface WasteBinProps {
 }
 
 export default function WasteBin({ wasteType, isHighlighted }: WasteBinProps) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.spring(scaleAnim, {
+      toValue: isHighlighted ? 1.15 : 1,
+      useNativeDriver: true,
+      tension: 160,
+      friction: 8,
+    }).start();
+  }, [isHighlighted]);
+
   return (
+    // Outer plain View handles border/shadow (static, no driver conflict)
     <View
       style={[
-        styles.bin,
+        styles.container,
         {
-          backgroundColor: wasteType.color,
-          borderWidth: isHighlighted ? 4 : 0,
-          borderColor: isHighlighted ? colors.accent : 'transparent',
-          transform: [{ scale: isHighlighted ? 1.12 : 1 }],
+          borderColor: isHighlighted ? wasteType.color : 'transparent',
+          borderWidth: 3,
+          ...Platform.select({
+            ios: {
+              shadowColor: wasteType.color,
+              shadowOpacity: isHighlighted ? 0.55 : 0.15,
+              shadowOffset: { width: 0, height: 4 },
+              shadowRadius: 10,
+            },
+            android: { elevation: isHighlighted ? 10 : 5 },
+          }),
         },
       ]}
     >
-      <MaterialCommunityIcons name={wasteType.icon as any} size={44} color="#FFFFFF" />
+      {/* Inner Animated.View handles only native-driver scale */}
+      <Animated.View style={[styles.innerScale, { transform: [{ scale: scaleAnim }] }]}>
+        {/* Icon area with gradient */}
+        <LinearGradient
+          colors={[wasteType.color, wasteType.color + 'CC']}
+          style={styles.iconArea}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          {isHighlighted && <View style={styles.glowPulse} />}
+          <MaterialCommunityIcons name={wasteType.icon as any} size={42} color="#FFFFFF" />
+        </LinearGradient>
+
+        {/* Label */}
+        <View style={[styles.labelArea, { backgroundColor: wasteType.color + '18' }]}>
+          <Text style={[styles.binLabel, { color: wasteType.color }]} numberOfLines={2}>
+            {wasteType.name}
+          </Text>
+        </View>
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bin: {
+  container: {
     alignItems: 'center',
-    borderRadius: 16,
-    height: 88,
-    justifyContent: 'center',
+    borderRadius: 20,
     overflow: 'hidden',
-    width: 80,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
+    width: '100%',
+  },
+  innerScale: {
+    width: '100%',
+  },
+  iconArea: {
+    alignItems: 'center',
+    height: 82,
+    justifyContent: 'center',
+    width: '100%',
+  },
+  glowPulse: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF30',
+  },
+  labelArea: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 4,
+    paddingVertical: 9,
+    width: '100%',
+  },
+  binLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    lineHeight: 14,
+    textAlign: 'center',
   },
 });

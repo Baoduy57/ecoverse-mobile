@@ -16,6 +16,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { DragDropGame } from '../../components/ai';
+import ScreenBackground from '../../components/common/ScreenBackground';
 import { WasteClassification } from '@/types/wasteClassification';
 import { analyzeAndClassifyWaste } from '@/services/api/vision';
 import { colors } from '@/theme';
@@ -185,11 +186,9 @@ export default function AIScannerScreen() {
   // Initial State
   if (gameState === 'initial') {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={['#FFFFFF', '#F1F8E9', '#E8F5E9']}
-          style={StyleSheet.absoluteFill}
-        />
+      <View style={[styles.container, styles.lightBg]}>
+        <ScreenBackground />
+
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <View style={styles.header}>
             <Button
@@ -207,26 +206,48 @@ export default function AIScannerScreen() {
           <View style={styles.content}>
             <View style={styles.logoWrapper}>
               <LinearGradient
-                colors={colors.gradient.primary as unknown as [string, string, ...string[]]}
+                colors={['#4CAF50', '#2196F3', '#9C27B0']}
                 style={styles.logoGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
                 <MaterialCommunityIcons name="robot-industrial" size={72} color="#FFFFFF" />
               </LinearGradient>
-              <View style={styles.logoBadge}>
-                <Text style={styles.logoBadgeText}>EcoBot</Text>
-              </View>
+              <LinearGradient
+                colors={['#FF9800', '#FFB74D']}
+                style={styles.logoBadge}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <MaterialCommunityIcons name="star" size={12} color="#FFFFFF" />
+                <Text style={styles.logoBadgeText}>EcoBot AI</Text>
+              </LinearGradient>
             </View>
 
             <Text variant="headlineMedium" style={styles.title}>
-              Quét AI phân loại rác
+              Quét AI phân loại rác ♻️
             </Text>
 
             <Text variant="bodyLarge" style={styles.subtitle}>
-              Chụp ảnh vật thể để AI nhận diện và phân loại rác thải. Hãy kéo vào đúng thùng để nhận
-              xu!
+              Chụp ảnh vật thể để AI nhận diện và phân loại rác thải. Kéo vào đúng thùng để nhận xu!
+              🪙
             </Text>
+
+            {/* Feature chips */}
+            <View style={styles.featureRow}>
+              <View style={[styles.featureChip, { backgroundColor: '#E8F5E9' }]}>
+                <MaterialCommunityIcons name="robot" size={14} color="#4CAF50" />
+                <Text style={[styles.featureChipText, { color: '#4CAF50' }]}>AI thông minh</Text>
+              </View>
+              <View style={[styles.featureChip, { backgroundColor: '#FFF3E0' }]}>
+                <MaterialCommunityIcons name="lightning-bolt" size={14} color="#FF9800" />
+                <Text style={[styles.featureChipText, { color: '#FF9800' }]}>Siêu nhanh</Text>
+              </View>
+              <View style={[styles.featureChip, { backgroundColor: '#EDE7F6' }]}>
+                <MaterialCommunityIcons name="medal" size={14} color="#9C27B0" />
+                <Text style={[styles.featureChipText, { color: '#9C27B0' }]}>Nhận xu</Text>
+              </View>
+            </View>
 
             <View style={styles.buttons}>
               <Button
@@ -343,12 +364,12 @@ export default function AIScannerScreen() {
   // Analyzing State
   if (gameState === 'analyzing') {
     return (
-      <View style={styles.container}>
-        <LinearGradient colors={['#FFFFFF', '#E8F5E9']} style={StyleSheet.absoluteFill} />
+      <View style={[styles.container, styles.lightBg]}>
+        <ScreenBackground />
         <SafeAreaView style={styles.analyzingContainer}>
           <Animated.View style={[styles.analyzingIcon, { transform: [{ scale: pulseAnim }] }]}>
             <LinearGradient
-              colors={colors.gradient.primary as unknown as [string, string, ...string[]]}
+              colors={['#4CAF50', '#2196F3', '#9C27B0']}
               style={styles.analyzingGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -359,11 +380,16 @@ export default function AIScannerScreen() {
             </LinearGradient>
           </Animated.View>
           <Text variant="headlineSmall" style={styles.analyzingTitle}>
-            AI đang phân tích...
+            🤖 AI đang phân tích...
           </Text>
           <Text variant="bodyMedium" style={styles.analyzingSubtitle}>
-            Đang nhận diện loại rác thải
+            Đang nhận diện loại rác thải ✨
           </Text>
+          <View style={styles.analyzingDotsRow}>
+            {['#4CAF50', '#FF9800', '#2196F3'].map((c, i) => (
+              <View key={i} style={[styles.analyzingDot, { backgroundColor: c }]} />
+            ))}
+          </View>
         </SafeAreaView>
       </View>
     );
@@ -372,8 +398,15 @@ export default function AIScannerScreen() {
   // Game State
   if (gameState === 'game' && classification) {
     return (
-      <View style={styles.container}>
-        <LinearGradient colors={['#FFFFFF', '#F8FDF8']} style={StyleSheet.absoluteFill} />
+      <View style={[styles.container, styles.lightBg]}>
+        <ScreenBackground />
+        {/* Fun top bar accent */}
+        <LinearGradient
+          colors={[classification.suggestedType.color, classification.suggestedType.color + '88']}
+          style={styles.gameTopAccent}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        />
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <View style={styles.gameHeader}>
             <Button
@@ -386,25 +419,21 @@ export default function AIScannerScreen() {
             >
               Quay lại
             </Button>
-            <Surface
+            <View
               style={[
                 styles.categoryBadge,
-                { backgroundColor: classification.suggestedType.color + '18' },
+                { backgroundColor: classification.suggestedType.color + '20' },
               ]}
-              elevation={0}
             >
               <MaterialCommunityIcons
                 name={classification.suggestedType.icon as any}
                 size={18}
                 color={classification.suggestedType.color}
               />
-              <Text
-                variant="labelLarge"
-                style={[styles.badgeText, { color: classification.suggestedType.color }]}
-              >
+              <Text style={[styles.badgeText, { color: classification.suggestedType.color }]}>
                 {classification.suggestedType.name.toUpperCase()}
               </Text>
-            </Surface>
+            </View>
           </View>
 
           <DragDropGame
@@ -453,10 +482,6 @@ const styles = StyleSheet.create({
   backButtonLabel: {
     color: colors.text.primary,
     fontSize: 15,
-  },
-  badgeText: {
-    fontWeight: '700',
-    letterSpacing: 0.5,
   },
   bottomLeft: {
     borderBottomLeftRadius: 28,
@@ -515,13 +540,16 @@ const styles = StyleSheet.create({
   },
   categoryBadge: {
     alignItems: 'center',
-    borderColor: 'transparent',
     borderRadius: 24,
-    borderWidth: 1.5,
     flexDirection: 'row',
     gap: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
+  },
+  badgeText: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   centerContainer: {
     alignItems: 'center',
@@ -540,6 +568,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  lightBg: {
+    backgroundColor: '#F2FAF4',
   },
   content: {
     alignItems: 'center',
@@ -582,16 +613,18 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   logoBadge: {
-    backgroundColor: colors.primary + '20',
+    alignItems: 'center',
     borderRadius: 20,
+    flexDirection: 'row',
+    gap: 5,
     marginTop: 12,
     paddingHorizontal: 14,
-    paddingVertical: 4,
+    paddingVertical: 5,
   },
   logoBadgeText: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
     letterSpacing: 0.5,
   },
   logoGradient: {
@@ -681,9 +714,46 @@ const styles = StyleSheet.create({
   subtitle: {
     color: colors.text.secondary,
     lineHeight: 24,
-    marginBottom: 40,
+    marginBottom: 32,
     paddingHorizontal: 8,
     textAlign: 'center',
+  },
+  featureRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginBottom: 32,
+  },
+  featureChip: {
+    alignItems: 'center',
+    borderRadius: 20,
+    flexDirection: 'row',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  featureChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  gameTopAccent: {
+    height: 5,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  analyzingDotsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
+  },
+  analyzingDot: {
+    borderRadius: 8,
+    height: 12,
+    width: 12,
   },
   title: {
     color: colors.text.primary,

@@ -22,48 +22,35 @@ interface ProgressCardProps {
 export default function ProgressCard({ items }: ProgressCardProps) {
   return (
     <View style={styles.container}>
-      {items.map((item, index) => (
+      {items.map(item => (
         <View key={item.id} style={styles.progressCard}>
-          {/* Left side with icon and title */}
-          <View style={styles.leftSection}>
+          {/* Header row: icon + text + circular indicator */}
+          <View style={styles.headerRow}>
             <View style={[styles.iconContainer, { backgroundColor: item.iconBgColor }]}>
-              <MaterialCommunityIcons name={item.icon as any} size={28} color={item.iconColor} />
+              <MaterialCommunityIcons name={item.icon as any} size={26} color={item.iconColor} />
             </View>
             <View style={styles.textContainer}>
               <Text style={styles.title}>{item.title}</Text>
               <Text style={[styles.value, { color: item.barColor }]}>{item.value}</Text>
             </View>
-          </View>
-
-          {/* Right side with circular progress */}
-          <View style={styles.rightSection}>
-            <View style={styles.circularProgressContainer}>
-              <View style={[styles.circularProgressBg, { borderColor: item.iconBgColor }]}>
+            {/* Clean circular ring indicator */}
+            <View style={[styles.circleRing, { borderColor: item.barColor }]}>
+              <View style={[styles.circleInner, { backgroundColor: item.iconBgColor }]}>
                 <Text style={[styles.percentageText, { color: item.barColor }]}>
                   {Math.round(item.progress * 100)}%
                 </Text>
               </View>
-              {/* Progress arc indicator */}
-              <View
-                style={[
-                  styles.progressArc,
-                  {
-                    borderColor: item.barColor,
-                    transform: [{ rotate: `${item.progress * 360}deg` }],
-                  },
-                ]}
-              />
             </View>
           </View>
 
-          {/* Full width progress bar at bottom */}
+          {/* Full-width progress bar */}
           <View style={styles.progressBarContainer}>
             <View style={[styles.progressBarBg, { backgroundColor: item.iconBgColor }]}>
               <View
                 style={[
                   styles.progressBarFill,
                   {
-                    width: `${item.progress * 100}%`,
+                    width: `${item.progress * 100}%` as any,
                     backgroundColor: item.barColor,
                   },
                 ]}
@@ -89,17 +76,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 5,
-    position: 'relative',
   },
-  leftSection: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     marginBottom: spacing.md,
   },
   iconContainer: {
-    width: 56,
-    height: 56,
+    width: 52,
+    height: 52,
     borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
@@ -113,55 +99,39 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: colors.text.primary,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   value: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
-  rightSection: {
-    position: 'absolute',
-    right: spacing.base,
-    top: spacing.base,
-  },
-  circularProgressContainer: {
-    width: 60,
-    height: 60,
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  circularProgressBg: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  circleRing: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     borderWidth: 3,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+  },
+  circleInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   percentageText: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '800',
   },
-  progressArc: {
-    position: 'absolute',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 3,
-    borderTopColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: 'transparent',
-  },
   progressBarContainer: {
-    marginTop: spacing.xs,
+    // no margin top needed; headerRow already has marginBottom
   },
   progressBarBg: {
-    height: 6,
+    height: 7,
     borderRadius: borderRadius.full,
     overflow: 'hidden',
   },

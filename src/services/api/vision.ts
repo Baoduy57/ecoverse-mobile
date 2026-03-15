@@ -30,10 +30,14 @@ export async function analyzeImageWithVision(imageBase64: string): Promise<strin
           features: [
             {
               type: 'LABEL_DETECTION',
-              maxResults: 10,
+              maxResults: 15,
             },
             {
               type: 'OBJECT_LOCALIZATION',
+              maxResults: 10,
+            },
+            {
+              type: 'WEB_DETECTION',
               maxResults: 5,
             },
           ],
@@ -43,11 +47,30 @@ export async function analyzeImageWithVision(imageBase64: string): Promise<strin
 
     const response = await axios.post<VisionResponse>(VISION_API_URL, requestBody);
 
-    const annotations = response.data?.responses?.[0]?.labelAnnotations;
+    const resp = response.data?.responses?.[0];
+    const annotations = resp?.labelAnnotations ?? [];
+    // Also include object names from OBJECT_LOCALIZATION for better accuracy
+    const objectLabels: string[] =
+      (resp as any)?.localizedObjectAnnotations?.map((o: any) => (o?.name ?? '').toLowerCase()) ??
+      [];
+    // Web best guess labels
+    const webLabels: string[] =
+      (resp as any)?.webDetection?.bestGuessLabels?.map((l: any) =>
+        (l?.label ?? '').toLowerCase()
+      ) ?? [];
 
-    if (!Array.isArray(annotations)) return [];
+    if (!Array.isArray(annotations) || annotations.length === 0) {
+      // Merge object + web labels if vision labels empty
+      const merged = [...new Set([...objectLabels, ...webLabels])];
+      return merged.length > 0 ? merged : [];
+    }
 
-    return annotations.map(label => label?.description?.toLowerCase()).filter(Boolean);
+    const visionLabels = annotations
+      .map(label => label?.description?.toLowerCase())
+      .filter(Boolean);
+
+    // Merge all sources, deduplicate
+    return [...new Set([...visionLabels, ...objectLabels, ...webLabels])];
   } catch (error) {
     console.error('Vision API Error:', error);
     return mockVisionAnalysis(imageBase64);
@@ -56,23 +79,31 @@ export async function analyzeImageWithVision(imageBase64: string): Promise<strin
 
 /**
  * Mock function để test khi chưa có API key
+ * Returns labels based on imageBase64 hash (deterministic) instead of random
  */
 function mockVisionAnalysis(imageBase64: string): string[] {
-  // Simulate random waste items
   const mockLabels = [
-    ['bottle', 'plastic', 'container', 'beverage'],
-    ['apple', 'fruit', 'food', 'organic'],
-    ['battery', 'electronics', 'power'],
-    ['paper', 'document', 'cardboard', 'office'],
-    ['plastic bag', 'shopping', 'packaging'],
+    ['bottle', 'plastic bottle', 'plastic', 'container', 'beverage'],
+    ['apple', 'fruit', 'food', 'organic', 'fresh produce'],
+    ['battery', 'electronics', 'power', 'hazardous'],
+    ['toilet paper', 'paper roll', 'paper product', 'tissue paper', 'roll'],
+    ['newspaper', 'paper', 'cardboard', 'packaging'],
+    ['plastic bag', 'bag', 'wrapper'],
+    ['glass bottle', 'glass', 'container'],
   ];
-
-  const randomIndex = Math.floor(Math.random() * mockLabels.length);
-  return mockLabels[randomIndex];
+  // Use last chars of base64 as a deterministic index
+  const lastChars = imageBase64.slice(-8);
+  let hash = 0;
+  for (let i = 0; i < lastChars.length; i++) {
+    hash = (hash * 31 + lastChars.charCodeAt(i)) & 0xffff;
+  }
+  return mockLabels[hash % mockLabels.length];
 }
 
 /**
  * Phân loại rác dựa trên labels từ Vision API
+ * Uses weighted scoring: longer keyword matches score higher, preventing
+ * short keywords like "tissue" from overriding specific matches like "paper towel"
  */
 export function classifyWaste(labels?: string[] | null): WasteType {
   if (!Array.isArray(labels) || labels.length === 0) {
@@ -83,19 +114,22 @@ export function classifyWaste(labels?: string[] | null): WasteType {
 
   WASTE_TYPES.forEach(wasteType => {
     if (!wasteType || !Array.isArray(wasteType.keywords)) return;
-
     scores[wasteType.id] = 0;
 
     labels.forEach(label => {
       if (!label || typeof label !== 'string') return;
-
       const labelLower = label.toLowerCase();
+
       wasteType.keywords.forEach(keyword => {
         if (!keyword || typeof keyword !== 'string') return;
-
         const keywordLower = keyword.toLowerCase();
-        if (labelLower.includes(keywordLower) || keywordLower.includes(labelLower)) {
-          scores[wasteType.id]++;
+
+        if (labelLower === keywordLower) {
+          // Exact match scores highest — longer keywords score more (prevents "tissue" overriding "paper towel")
+          scores[wasteType.id] += 2 + keywordLower.length / 5;
+        } else if (labelLower.includes(keywordLower) || keywordLower.includes(labelLower)) {
+          // Partial match — prefer longer keyword word to reduce false positives
+          scores[wasteType.id] += 1 + keywordLower.length / 10;
         }
       });
     });
@@ -155,7 +189,7 @@ export async function analyzeAndClassifyWaste(
 
 /** Map label tiếng Anh sang tên tiếng Việt */
 const LABEL_TO_VIETNAMESE: Record<string, string> = {
-  bottle: 'Chai nhựa',
+  bottle: 'Chai',
   plastic: 'Nhựa',
   container: 'Hộp đựng',
   paper: 'Giấy',
@@ -169,9 +203,19 @@ const LABEL_TO_VIETNAMESE: Record<string, string> = {
   bag: 'Túi',
   'plastic bag': 'Túi nilon',
   towel: 'Giấy lau',
-  'paper towel': 'Cuộn giấy',
+  'paper towel': 'Cuộn giấy lau',
+  'toilet paper': 'Cuộn giấy vệ sinh',
+  'tissue paper': 'Giấy thấm',
+  'paper roll': 'Cuộn giấy',
+  roll: 'Cuộn',
   document: 'Tài liệu giấy',
   packaging: 'Bao bì',
+  glass: 'Thủy tinh',
+  metal: 'Kim loại',
+  newspaper: 'Báo',
+  bulb: 'Đèn',
+  'plastic bottle': 'Chai nhựa',
+  'glass bottle': 'Chai thủy tinh',
 };
 
 /**
