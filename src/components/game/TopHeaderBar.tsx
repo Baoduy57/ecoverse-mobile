@@ -60,6 +60,23 @@ function StatItem({ icon, value, color }: StatItemProps) {
 }
 
 const styles = StyleSheet.create({
+    avatar: {
+        borderRadius: 20,
+        height: 40,
+        width: 40,
+    },
+    avatarContainer: {
+        width: 40, // Scaled 1.2x
+        height: 40,
+    },
+    avatarPlaceholder: {
+        alignItems: 'center',
+        backgroundColor: colors.background,
+        justifyContent: 'center',
+    },
+    backButton: {
+        padding: 6, // Scaled
+    },
     container: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -70,14 +87,6 @@ const styles = StyleSheet.create({
         elevation: 0, // Explicitly remove Android shadow
         shadowOpacity: 0, // Explicitly remove iOS shadow
         borderBottomWidth: 0, // Ensure no border
-    },
-    backButton: {
-        padding: 6, // Scaled
-    },
-    statsRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 20,
     },
     statItem: {
         flexDirection: 'row',
@@ -92,18 +101,9 @@ const styles = StyleSheet.create({
         fontSize: 19, // Scaled 1.2x
         fontWeight: '700',
     },
-    avatarContainer: {
-        width: 40, // Scaled 1.2x
-        height: 40,
-    },
-    avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-    },
-    avatarPlaceholder: {
-        backgroundColor: colors.background,
-        justifyContent: 'center',
+    statsRow: {
         alignItems: 'center',
+        flexDirection: 'row',
+        gap: 20,
     },
 });

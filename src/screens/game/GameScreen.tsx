@@ -317,13 +317,13 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
+  gameContent: {
+    backgroundColor: 'transparent',
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
     zIndex: 10,
-  },
-  gameContent: {
-    flex: 1,
-    backgroundColor: 'transparent',
   },
   scrollContent: {
     paddingBottom: 50,

@@ -122,102 +122,102 @@ export default function RewardHistoryItem({
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    position: 'relative',
-    marginBottom: spacing.sm,
-  },
-  wrapperFirst: {
-    marginTop: spacing.xs,
-  },
-  wrapperLast: {
-    marginBottom: spacing.lg,
-  },
-  timelineLine: {
-    position: 'absolute',
-    left: 23,
-    top: 52,
-    bottom: -spacing.sm,
-    width: 2,
-    backgroundColor: colors.divider,
-    borderRadius: 1,
-  },
   container: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.xl,
-    padding: spacing.base,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    borderLeftWidth: 4,
+    backgroundColor: colors.surface,
     borderLeftColor: colors.primary,
+    borderLeftWidth: 4,
+    borderRadius: borderRadius.xl,
+    elevation: 3,
+    flexDirection: 'row',
+    gap: spacing.md,
+    padding: spacing.base,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
-    elevation: 3,
   },
-  imageContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    backgroundColor: colors.background,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+  date: {
+    color: colors.text.secondary,
+    fontSize: 13,
   },
   iconPlaceholder: {
-    width: '100%',
+    alignItems: 'center',
     height: '100%',
     justifyContent: 'center',
-    alignItems: 'center',
+    width: '100%',
+  },
+  image: {
+    height: '100%',
+    resizeMode: 'cover',
+    width: '100%',
+  },
+  imageContainer: {
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.lg,
+    height: 56,
+    overflow: 'hidden',
+    width: 56,
   },
   info: {
     flex: 1,
     gap: 4,
     minWidth: 0,
   },
-  title: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
   metaRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
-  date: {
-    fontSize: 13,
-    color: colors.text.secondary,
-  },
-  statusBadge: {
     flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
     gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: borderRadius.base,
-    marginTop: 2,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
   },
   pointsContainer: {
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
+  pointsUnit: {
+    color: colors.text.secondary,
+    fontSize: 12,
+  },
   pointsValue: {
+    color: colors.status.error,
     fontSize: 16,
     fontWeight: '700',
-    color: colors.status.error,
   },
-  pointsUnit: {
+  statusBadge: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: borderRadius.base,
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 2,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+  },
+  statusText: {
     fontSize: 12,
-    color: colors.text.secondary,
+    fontWeight: '600',
+  },
+  timelineLine: {
+    backgroundColor: colors.divider,
+    borderRadius: 1,
+    bottom: -spacing.sm,
+    left: 23,
+    position: 'absolute',
+    top: 52,
+    width: 2,
+  },
+  title: {
+    color: colors.text.primary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  wrapper: {
+    marginBottom: spacing.sm,
+    position: 'relative',
+  },
+  wrapperFirst: {
+    marginTop: spacing.xs,
+  },
+  wrapperLast: {
+    marginBottom: spacing.lg,
   },
 });

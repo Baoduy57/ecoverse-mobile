@@ -271,112 +271,112 @@ export default function LeaderboardScreen() {
 }
 
 const styles = StyleSheet.create({
+  activeTabText: {
+    color: colors.text.white,
+  },
   container: {
     backgroundColor: colors.background,
     flex: 1,
     position: 'relative',
   },
+  header: {
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.sm,
+  },
+  rankingList: {
+    paddingHorizontal: spacing.base,
+  },
   safeArea: {
     flex: 1,
     zIndex: 10,
   },
-  header: {
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
+  scrollContent: {
+    paddingBottom: 100,
   },
-  titleRow: {
+  scrollView: {
+    flex: 1,
+  },
+  sectionCount: {
+    color: colors.text.secondary,
+    fontSize: 13,
+  },
+  sectionHeader: {
+    alignItems: 'baseline',
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.xs,
   },
-  titleIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: 'rgba(76, 175, 80, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
+  sectionTitle: {
     color: colors.text.primary,
+    fontSize: 16,
+    fontWeight: '600',
   },
   subtitle: {
-    fontSize: 13,
     color: colors.text.secondary,
+    fontSize: 13,
     marginTop: 2,
   },
-  tabContainer: {
+  tab: {
+    alignItems: 'center',
+    borderRadius: borderRadius.lg,
+    flex: 1,
     flexDirection: 'row',
-    marginHorizontal: spacing.base,
-    marginBottom: spacing.md,
+    gap: spacing.xs,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    zIndex: 1,
+  },
+  tabContainer: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.xl,
+    elevation: 2,
+    flexDirection: 'row',
+    marginBottom: spacing.md,
+    marginHorizontal: spacing.base,
     padding: 4,
     position: 'relative',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
-    elevation: 2,
   },
   tabIndicator: {
-    position: 'absolute',
-    top: 4,
-    left: 4,
-    height: '100%',
     backgroundColor: colors.primary,
     borderRadius: borderRadius.lg,
+    elevation: 3,
+    height: '100%',
+    left: 4,
+    position: 'absolute',
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 3,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-    zIndex: 1,
+    top: 4,
   },
   tabText: {
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text.secondary,
   },
-  activeTabText: {
-    color: colors.text.white,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.sm,
-    paddingTop: spacing.xs,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+  title: {
     color: colors.text.primary,
+    fontSize: 22,
+    fontWeight: '700',
   },
-  sectionCount: {
-    fontSize: 13,
-    color: colors.text.secondary,
+  titleIconWrap: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(76, 175, 80, 0.12)',
+    borderRadius: 14,
+    height: 48,
+    justifyContent: 'center',
+    width: 48,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-  rankingList: {
-    paddingHorizontal: spacing.base,
+  titleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.md,
   },
 });

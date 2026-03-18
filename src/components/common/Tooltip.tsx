@@ -128,42 +128,42 @@ export default function Tooltip({ children, content }: TooltipProps) {
 }
 
 const styles = StyleSheet.create({
+    arrow: {
+        backgroundColor: 'transparent',
+        borderBottomColor: colors.primaryLight,
+        borderBottomWidth: TOOLTIP_ARROW_HEIGHT,
+        borderLeftColor: 'transparent',
+        borderLeftWidth: 8,
+        borderRightColor: 'transparent',
+        borderRightWidth: 8,
+        borderStyle: 'solid',
+        height: 0,
+        width: 0,
+    },
     overlay: {
         flex: 1,
     },
-    tooltipContainer: {
-        position: 'absolute',
-        alignItems: 'center',
-    },
-    arrow: {
-        width: 0,
-        height: 0,
-        backgroundColor: 'transparent',
-        borderStyle: 'solid',
-        borderLeftWidth: 8,
-        borderRightWidth: 8,
-        borderBottomWidth: TOOLTIP_ARROW_HEIGHT,
-        borderLeftColor: 'transparent',
-        borderRightColor: 'transparent',
-        borderBottomColor: colors.primaryLight,
-    },
     tooltip: {
         backgroundColor: colors.primaryLight,
+        borderRadius: 8,
+        elevation: 8,
+        maxWidth: TOOLTIP_MAX_WIDTH,
         paddingHorizontal: 16,
         paddingVertical: 10,
-        borderRadius: 8,
-        maxWidth: TOOLTIP_MAX_WIDTH,
-        elevation: 8,
         shadowColor: colors.shadow,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 6,
     },
+    tooltipContainer: {
+        alignItems: 'center',
+        position: 'absolute',
+    },
     tooltipText: {
         color: colors.text.white,
         fontSize: 13,
+        fontWeight: '600',
         lineHeight: 19,
         textAlign: 'center',
-        fontWeight: '600',
     },
 });

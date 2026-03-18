@@ -1,9 +1,46 @@
 import axios from 'axios';
 import { WASTE_TYPES, WasteType, WasteClassification } from '@/types/wasteClassification';
+import { useApiStatusStore } from '@/store/apiStatusStore';
 
 // Đọc API key từ environment variable
 const VISION_API_KEY = process.env.EXPO_PUBLIC_VISION_API_KEY || 'YOUR_GOOGLE_CLOUD_VISION_API_KEY';
 const VISION_API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`;
+const HAS_VISION_API_KEY =
+  !!VISION_API_KEY && VISION_API_KEY !== 'YOUR_GOOGLE_CLOUD_VISION_API_KEY';
+
+const ALLOW_VISION_MOCK_FALLBACK = process.env.EXPO_PUBLIC_ENABLE_VISION_MOCK === 'true';
+
+export type VisionErrorCode =
+  | 'AI_API_NOT_CONFIGURED'
+  | 'AI_NETWORK_UNAVAILABLE'
+  | 'AI_SERVICE_MAINTENANCE'
+  | 'AI_SERVICE_ERROR';
+
+export class VisionServiceError extends Error {
+  code: VisionErrorCode;
+
+  constructor(code: VisionErrorCode, message: string) {
+    super(message);
+    this.name = 'VisionServiceError';
+    this.code = code;
+  }
+}
+
+function notifyVisionIncident(code: VisionErrorCode) {
+  const apiStatus = useApiStatusStore.getState();
+
+  if (code === 'AI_NETWORK_UNAVAILABLE') {
+    apiStatus.showNetworkError();
+    return;
+  }
+
+  if (code === 'AI_API_NOT_CONFIGURED' || code === 'AI_SERVICE_MAINTENANCE') {
+    apiStatus.showMaintenance();
+    return;
+  }
+
+  apiStatus.showServerError();
+}
 
 interface VisionLabel {
   description: string;
@@ -20,6 +57,19 @@ interface VisionResponse {
  * Phân tích ảnh bằng Google Cloud Vision API
  */
 export async function analyzeImageWithVision(imageBase64: string): Promise<string[]> {
+  if (!HAS_VISION_API_KEY) {
+    if (ALLOW_VISION_MOCK_FALLBACK) {
+      return mockVisionAnalysis(imageBase64);
+    }
+
+    notifyVisionIncident('AI_API_NOT_CONFIGURED');
+
+    throw new VisionServiceError(
+      'AI_API_NOT_CONFIGURED',
+      'AI Scanner chưa được cấu hình API. Vui lòng cập nhật API key hoặc thử lại sau.'
+    );
+  }
+
   try {
     const requestBody = {
       requests: [
@@ -45,7 +95,9 @@ export async function analyzeImageWithVision(imageBase64: string): Promise<strin
       ],
     };
 
-    const response = await axios.post<VisionResponse>(VISION_API_URL, requestBody);
+    const response = await axios.post<VisionResponse>(VISION_API_URL, requestBody, {
+      timeout: 25000,
+    });
 
     const resp = response.data?.responses?.[0];
     const annotations = resp?.labelAnnotations ?? [];
@@ -71,9 +123,53 @@ export async function analyzeImageWithVision(imageBase64: string): Promise<strin
 
     // Merge all sources, deduplicate
     return [...new Set([...visionLabels, ...objectLabels, ...webLabels])];
-  } catch (error) {
+  } catch (error: any) {
     console.error('Vision API Error:', error);
-    return mockVisionAnalysis(imageBase64);
+
+    if (ALLOW_VISION_MOCK_FALLBACK) {
+      return mockVisionAnalysis(imageBase64);
+    }
+
+    const statusCode = error?.response?.status;
+    const errorCode = `${error?.code || ''}`;
+    const errorMessage = `${error?.message || ''}`.toLowerCase();
+
+    if (statusCode === 503) {
+      notifyVisionIncident('AI_SERVICE_MAINTENANCE');
+      throw new VisionServiceError(
+        'AI_SERVICE_MAINTENANCE',
+        'Dich vu AI dang duoc bao tri. Vui long quay lai sau.'
+      );
+    }
+
+    if (
+      errorCode === 'ERR_NETWORK' ||
+      errorCode === 'ENOTFOUND' ||
+      errorCode === 'ECONNABORTED' ||
+      errorMessage.includes('network') ||
+      errorMessage.includes('timeout')
+    ) {
+      notifyVisionIncident('AI_NETWORK_UNAVAILABLE');
+      throw new VisionServiceError(
+        'AI_NETWORK_UNAVAILABLE',
+        'Khong the ket noi den dich vu AI. Vui long kiem tra mang va thu lai.'
+      );
+    }
+
+    if (statusCode && statusCode >= 500) {
+      notifyVisionIncident('AI_SERVICE_ERROR');
+      throw new VisionServiceError(
+        'AI_SERVICE_ERROR',
+        'He thong AI dang ban. Vui long thu lai sau.'
+      );
+    }
+
+    notifyVisionIncident('AI_SERVICE_ERROR');
+
+    throw new VisionServiceError(
+      'AI_SERVICE_ERROR',
+      'Khong the phan tich anh luc nay. Vui long thu lai sau.'
+    );
   }
 }
 

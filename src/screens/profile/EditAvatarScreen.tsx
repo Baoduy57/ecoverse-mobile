@@ -224,23 +224,44 @@ export default function EditAvatarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.background,
-    flex: 1,
-    position: 'relative',
-  },
-  safeArea: {
-    flex: 1,
-    zIndex: 10,
-  },
-  header: {
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    borderBottomWidth: 0,
+  avatarGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    justifyContent: 'center',
+  },
+  avatarGridContainer: {
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
+  },
+  avatarOption: {
+    alignItems: 'center',
+    borderColor: 'transparent',
+    borderRadius: borderRadius.lg,
+    borderWidth: 3,
+    elevation: 2,
+    height: 90,
+    justifyContent: 'center',
+    position: 'relative',
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    width: 90,
+  },
+  avatarOptionImage: {
+    borderRadius: borderRadius.md,
+    height: '100%',
+    width: '100%',
+  },
+  avatarOptionSelected: {
+    borderColor: colors.primary,
+    borderWidth: 4,
+    elevation: 4,
+    shadowOpacity: 0.2,
+  },
+  avatarPreviewContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing['2xl'],
   },
   backButton: {
     alignItems: 'center',
@@ -248,37 +269,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 40,
   },
-  headerTitle: {
-    color: colors.text.primary,
-    fontWeight: 'bold',
-  },
-  scrollContent: {
-    paddingBottom: spacing['2xl'],
-  },
   combinedSection: {
     backgroundColor: 'transparent',
     paddingBottom: spacing.xl,
   },
-  avatarPreviewContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing['2xl'],
-  },
-  largeAvatarContainer: {
-    borderRadius: borderRadius.full,
+  confirmButton: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.xl,
     elevation: 5,
-    height: 140,
-    padding: 8,
-    position: 'relative',
-    shadowColor: colors.shadow,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    width: 140,
   },
-  largeAvatar: {
-    borderRadius: borderRadius.full,
-    height: '100%',
-    width: '100%',
+  confirmButtonContent: {
+    paddingVertical: spacing.sm,
+  },
+  confirmButtonLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  container: {
+    backgroundColor: colors.background,
+    flex: 1,
+    position: 'relative',
   },
   editBadge: {
     alignItems: 'center',
@@ -297,6 +312,66 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     width: 36,
+  },
+  footer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopWidth: 0,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.base,
+  },
+  header: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderBottomWidth: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+  },
+  headerTitle: {
+    color: colors.text.primary,
+    fontWeight: 'bold',
+  },
+  largeAvatar: {
+    borderRadius: borderRadius.full,
+    height: '100%',
+    width: '100%',
+  },
+  largeAvatarContainer: {
+    borderRadius: borderRadius.full,
+    elevation: 5,
+    height: 140,
+    padding: 8,
+    position: 'relative',
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    width: 140,
+  },
+  safeArea: {
+    flex: 1,
+    zIndex: 10,
+  },
+  scrollContent: {
+    paddingBottom: spacing['2xl'],
+  },
+  sectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginBottom: spacing.base,
+  },
+  sectionTitle: {
+    color: colors.text.primary,
+    fontWeight: 'bold',
+  },
+  selectedCheckmark: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.full,
+    position: 'absolute',
+    right: -8,
+    top: -8,
   },
   uploadButton: {
     alignItems: 'center',
@@ -317,80 +392,5 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 15,
     fontWeight: '600',
-  },
-  avatarGridContainer: {
-    paddingHorizontal: spacing.base,
-  },
-  sectionHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.xs,
-    marginBottom: spacing.base,
-  },
-  sectionTitle: {
-    color: colors.text.primary,
-    fontWeight: 'bold',
-  },
-  avatarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    justifyContent: 'center',
-  },
-  avatarOption: {
-    alignItems: 'center',
-    borderColor: 'transparent',
-    borderRadius: borderRadius.lg,
-    borderWidth: 3,
-    elevation: 2,
-    height: 90,
-    justifyContent: 'center',
-    position: 'relative',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    width: 90,
-  },
-  avatarOptionSelected: {
-    borderColor: colors.primary,
-    borderWidth: 4,
-    elevation: 4,
-    shadowOpacity: 0.2,
-  },
-  avatarOptionImage: {
-    borderRadius: borderRadius.md,
-    height: '100%',
-    width: '100%',
-  },
-  selectedCheckmark: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.full,
-    position: 'absolute',
-    right: -8,
-    top: -8,
-  },
-  footer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderTopWidth: 0,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.base,
-  },
-  confirmButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.xl,
-    elevation: 5,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  confirmButtonContent: {
-    paddingVertical: spacing.sm,
-  },
-  confirmButtonLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.5,
   },
 });

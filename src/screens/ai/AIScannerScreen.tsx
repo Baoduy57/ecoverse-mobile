@@ -18,7 +18,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { DragDropGame } from '../../components/ai';
 import ScreenBackground from '../../components/common/ScreenBackground';
 import { WasteClassification } from '@/types/wasteClassification';
-import { analyzeAndClassifyWaste } from '@/services/api/vision';
+import { analyzeAndClassifyWaste, VisionServiceError } from '@/services/api/vision';
 import { colors } from '@/theme';
 import { useNavigation } from '@react-navigation/native';
 
@@ -147,9 +147,16 @@ export default function AIScannerScreen() {
       const result = await analyzeAndClassifyWaste(uri, base64);
       setClassification(result);
       setGameState('game');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Analyze error:', error);
-      Alert.alert('Lỗi', 'Không thể phân tích ảnh. Vui lòng thử lại.');
+
+      if (error instanceof VisionServiceError) {
+        // Vision service already maps these errors to apiStatusStore incident overlay.
+      } else {
+        // Fallback for unexpected non-vision errors.
+        Alert.alert('Lỗi', 'Không thể phân tích ảnh. Vui lòng thử lại.');
+      }
+
       setGameState('initial');
     }
   };
@@ -458,6 +465,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
+  analyzingDot: {
+    borderRadius: 8,
+    height: 12,
+    width: 12,
+  },
+  analyzingDotsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
+  },
   analyzingGradient: {
     alignItems: 'center',
     borderRadius: 60,
@@ -482,6 +499,11 @@ const styles = StyleSheet.create({
   backButtonLabel: {
     color: colors.text.primary,
     fontSize: 15,
+  },
+  badgeText: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   bottomLeft: {
     borderBottomLeftRadius: 28,
@@ -546,11 +568,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  badgeText: {
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
   centerContainer: {
     alignItems: 'center',
     backgroundColor: colors.background,
@@ -569,9 +586,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  lightBg: {
-    backgroundColor: '#F2FAF4',
-  },
   content: {
     alignItems: 'center',
     flex: 1,
@@ -584,12 +598,38 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 36,
   },
+  featureChip: {
+    alignItems: 'center',
+    borderRadius: 20,
+    flexDirection: 'row',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  featureChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  featureRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+    marginBottom: 32,
+  },
   gameHeader: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  gameTopAccent: {
+    height: 5,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
   header: {
     paddingHorizontal: 16,
@@ -611,6 +651,9 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 24,
     paddingVertical: 14,
+  },
+  lightBg: {
+    backgroundColor: '#F2FAF4',
   },
   logoBadge: {
     alignItems: 'center',
@@ -697,6 +740,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: 280,
   },
+
   scanLine: {
     backgroundColor: colors.primary,
     height: 2,
@@ -717,43 +761,6 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     paddingHorizontal: 8,
     textAlign: 'center',
-  },
-  featureRow: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginBottom: 32,
-  },
-  featureChip: {
-    alignItems: 'center',
-    borderRadius: 20,
-    flexDirection: 'row',
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  featureChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-
-  gameTopAccent: {
-    height: 5,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-  },
-  analyzingDotsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
-  },
-  analyzingDot: {
-    borderRadius: 8,
-    height: 12,
-    width: 12,
   },
   title: {
     color: colors.text.primary,
