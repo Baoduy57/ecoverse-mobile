@@ -67,14 +67,22 @@ export default function WasteBin({ wasteType, isHighlighted }: WasteBinProps) {
 }
 
 const styles = StyleSheet.create({
+  binLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    lineHeight: 14,
+    textAlign: 'center',
+  },
   container: {
     alignItems: 'center',
     borderRadius: 20,
     overflow: 'hidden',
     width: '100%',
   },
-  innerScale: {
-    width: '100%',
+  glowPulse: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF30',
   },
   iconArea: {
     alignItems: 'center',
@@ -82,9 +90,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
   },
-  glowPulse: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#FFFFFF30',
+  innerScale: {
+    width: '100%',
   },
   labelArea: {
     alignItems: 'center',
@@ -92,12 +99,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 9,
     width: '100%',
-  },
-  binLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-    lineHeight: 14,
-    textAlign: 'center',
   },
 });

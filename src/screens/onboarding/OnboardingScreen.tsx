@@ -236,15 +236,31 @@ export default function OnboardingScreen({}: OnboardingScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    backgroundColor: colors.onboardingBg,
-    flex: 1,
-    position: 'relative',
+  button: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+  },
+  buttonContent: {
+    paddingVertical: 8,
   },
   container: {
     backgroundColor: 'transparent',
     flex: 1,
     zIndex: 10,
+  },
+  description: {
+    color: colors.text.secondary,
+    lineHeight: 24,
+    paddingHorizontal: 16,
+    textAlign: 'center',
+  },
+  dot: {
+    borderRadius: 4,
+    height: 8,
+  },
+  footer: {
+    paddingBottom: 32,
+    paddingHorizontal: 32,
   },
   header: {
     alignItems: 'center',
@@ -254,9 +270,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
+  iconBackground: {
+    alignItems: 'center',
+    borderRadius: 100,
+    height: 200,
+    justifyContent: 'center',
+    width: 200,
+  },
+  iconContainer: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  iconSurface: {
+    alignItems: 'center',
+    borderRadius: 60,
+    height: 120,
+    justifyContent: 'center',
+    width: 120,
+  },
   logoImage: {
     height: 45,
     width: 45,
+  },
+  pagination: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    paddingVertical: 20,
   },
   skipButton: {
     opacity: 0.5,
@@ -267,25 +309,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 32,
     width,
-  },
-  iconContainer: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-  },
-  iconBackground: {
-    alignItems: 'center',
-    borderRadius: 100,
-    height: 200,
-    justifyContent: 'center',
-    width: 200,
-  },
-  iconSurface: {
-    alignItems: 'center',
-    borderRadius: 60,
-    height: 120,
-    justifyContent: 'center',
-    width: 120,
   },
   textContainer: {
     alignItems: 'center',
@@ -299,32 +322,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  description: {
-    color: colors.text.secondary,
-    lineHeight: 24,
-    paddingHorizontal: 16,
-    textAlign: 'center',
-  },
-  pagination: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'center',
-    paddingVertical: 20,
-  },
-  dot: {
-    borderRadius: 4,
-    height: 8,
-  },
-  footer: {
-    paddingBottom: 32,
-    paddingHorizontal: 32,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-  },
-  buttonContent: {
-    paddingVertical: 8,
+  wrapper: {
+    backgroundColor: colors.onboardingBg,
+    flex: 1,
+    position: 'relative',
   },
 });

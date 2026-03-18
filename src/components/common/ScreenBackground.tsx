@@ -77,38 +77,34 @@ export default function ScreenBackground() {
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 0,
-  },
-  bgDecorativeTop: {
-    position: 'absolute',
-    top: '-10%',
-    left: '-10%',
-    width: '70%',
-    height: '40%',
+  bgDecorativeBottom: {
     backgroundColor: '#dbe6e0',
     borderRadius: 9999,
-    opacity: 0.7,
+    bottom: '-10%',
+    height: '40%',
+    left: '10%',
+    opacity: 0.6,
+    position: 'absolute',
+    width: '60%',
   },
   bgDecorativeRight: {
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    borderRadius: 9999,
+    height: '50%',
     position: 'absolute',
     right: '-20%',
     top: '40%',
     width: '80%',
-    height: '50%',
-    backgroundColor: 'rgba(76, 175, 80, 0.15)',
-    borderRadius: 9999,
   },
-  bgDecorativeBottom: {
-    position: 'absolute',
-    bottom: '-10%',
-    left: '10%',
-    width: '60%',
-    height: '40%',
+  bgDecorativeTop: {
     backgroundColor: '#dbe6e0',
     borderRadius: 9999,
-    opacity: 0.6,
+    height: '40%',
+    left: '-10%',
+    opacity: 0.7,
+    position: 'absolute',
+    top: '-10%',
+    width: '70%',
   },
   floatingIcon1: {
     position: 'absolute',
@@ -117,15 +113,19 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   floatingIcon2: {
-    position: 'absolute',
     bottom: '20%',
     left: -30,
+    position: 'absolute',
     zIndex: 0,
   },
   floatingIcon3: {
-    position: 'absolute',
     left: '5%',
+    position: 'absolute',
     top: '40%',
+    zIndex: 0,
+  },
+  wrapper: {
+    ...StyleSheet.absoluteFillObject,
     zIndex: 0,
   },
 });

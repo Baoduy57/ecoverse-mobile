@@ -8,6 +8,7 @@ import { DragDropGamePlayScreen, GameResultDetailScreen } from '../screens/game'
 import { QuizListScreen, QuizQuestionScreen, QuizResultScreen } from '../screens/quiz';
 import { ScheduledExamScreen, ExamQuestionScreen, ExamResultScreen } from '../screens/exam';
 import { NotificationScreen } from '../screens/notification';
+import { DevApiTestScreen } from '../screens/dev';
 import { QuizAnswer, QuizAnswerDetail } from '../types/quiz';
 import { HomeTabParamList } from '../screens/home/HomeScreen';
 import { NavigatorScreenParams } from '@react-navigation/native';
@@ -42,6 +43,7 @@ export type AppStackParamList = {
     totalPoints: number;
     answers: QuizAnswer[];
   };
+  DevApiTest: undefined;
 };
 
 const Stack = createStackNavigator<AppStackParamList>();
@@ -141,6 +143,13 @@ export default function AppNavigator() {
       <Stack.Screen
         name="ScheduledExam"
         component={ScheduledExamScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="DevApiTest"
+        component={DevApiTestScreen}
         options={{
           presentation: 'card',
         }}

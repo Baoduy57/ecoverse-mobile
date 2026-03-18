@@ -121,6 +121,7 @@ export default function SettingsScreen() {
 
   const handleBack = () => navigation.goBack();
   const handleHelp = () => console.log('Navigate to Help');
+  const handleDevTest = () => navigation.navigate('DevApiTest');
   const handleLogout = async () => await logout();
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -345,6 +346,14 @@ export default function SettingsScreen() {
             </Text>
           </View>
 
+          {/* Dev Test */}
+          <View style={styles.devTestContainer}>
+            <TouchableOpacity style={styles.devTestButton} onPress={handleDevTest}>
+              <MaterialCommunityIcons name="flask-outline" size={20} color={colors.primary} />
+              <Text style={styles.devTestText}> Dev Test API</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Logout */}
           <View style={styles.logoutContainer}>
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -360,92 +369,92 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: colors.background,
+    flex: 1,
     position: 'relative',
   },
   safeArea: { flex: 1, zIndex: 10 },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'transparent',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    backgroundColor: 'transparent',
   },
   backButton: {
-    width: 40,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.full,
     height: 40,
     justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.surface,
+    width: 40,
   },
-  headerTitle: { fontWeight: 'bold', color: colors.text.primary },
+  headerTitle: { color: colors.text.primary, fontWeight: 'bold' },
   scrollContent: { paddingVertical: spacing.lg },
-  settingsContainer: { paddingHorizontal: spacing.base, gap: spacing.xs },
+  settingsContainer: { gap: spacing.xs, paddingHorizontal: spacing.base },
 
   // Generic setting row (Help button)
   settingItem: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.base,
-    paddingHorizontal: spacing.base,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.xl,
+    elevation: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: spacing.xs,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.base,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
-    elevation: 1,
   },
-  settingLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: spacing.md },
+  settingLeft: { alignItems: 'center', flexDirection: 'row', flex: 1, gap: spacing.md },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.full,
-    justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: borderRadius.full,
+    height: 48,
+    justifyContent: 'center',
+    width: 48,
   },
   settingTextContainer: { flex: 1 },
-  settingTitle: { fontWeight: '600', color: colors.text.primary },
+  settingTitle: { color: colors.text.primary, fontWeight: '600' },
   settingSubtitle: { color: colors.text.secondary, marginTop: 2 },
 
   // ── Sound card ──────────────────────────────────────────────────────────────
   soundCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.xl,
+    elevation: 1,
     marginBottom: spacing.xs,
+    overflow: 'hidden',
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
-    elevation: 1,
-    overflow: 'hidden',
   },
   soundHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: spacing.base,
     paddingHorizontal: spacing.base,
+    paddingVertical: spacing.base,
   },
-  soundHeaderRight: { flexDirection: 'row', alignItems: 'center' },
+  soundHeaderRight: { alignItems: 'center', flexDirection: 'row' },
   soundSubItems: { paddingBottom: spacing.sm },
   divider: {
-    height: 1,
     backgroundColor: colors.background,
-    marginHorizontal: spacing.base,
+    height: 1,
     marginBottom: spacing.xs,
+    marginHorizontal: spacing.base,
   },
   subRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
   },
   disabledRow: { opacity: 0.4 },
   subIcon: { marginRight: -spacing.xs },
@@ -453,83 +462,101 @@ const styles = StyleSheet.create({
 
   // Track picker
   trackPicker: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: spacing.base,
-    marginBottom: spacing.sm,
     backgroundColor: colors.background,
     borderRadius: borderRadius.lg,
-    paddingVertical: spacing.xs,
+    flexDirection: 'row',
     gap: spacing.xs,
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+    marginHorizontal: spacing.base,
+    paddingVertical: spacing.xs,
   },
   trackArrow: {
     padding: spacing.xs,
   },
   trackLabelWrap: {
+    alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     gap: 6,
+    justifyContent: 'center',
   },
   trackLabel: {
     color: colors.primary,
-    fontWeight: '600',
     fontSize: 13,
+    fontWeight: '600',
   },
 
   // Notification card
   notificationCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.xl,
+    elevation: 1,
     marginBottom: spacing.xs,
+    overflow: 'hidden',
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
-    elevation: 1,
-    overflow: 'hidden',
   },
   settingItemInner: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: spacing.base,
     paddingHorizontal: spacing.base,
+    paddingVertical: spacing.base,
   },
   testNotifButton: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
-    marginHorizontal: spacing.base,
-    marginBottom: spacing.base,
     backgroundColor: colors.primary,
     borderRadius: borderRadius.lg,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    justifyContent: 'center',
+    marginBottom: spacing.base,
+    marginHorizontal: spacing.base,
+    paddingVertical: spacing.md,
   },
-  testNotifText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  testNotifText: { color: '#fff', fontSize: 14, fontWeight: '600' },
 
   // Version & Logout
   versionContainer: { alignItems: 'center', paddingVertical: spacing.xl },
   versionText: { color: colors.text.secondary },
-  logoutContainer: { paddingHorizontal: spacing.base, paddingTop: spacing.md },
-  logoutButton: {
-    flexDirection: 'row',
+  devTestContainer: { paddingHorizontal: spacing.base, paddingBottom: spacing.md },
+  devTestButton: {
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
     backgroundColor: colors.surface,
+    borderColor: colors.primary,
     borderRadius: borderRadius.xl,
     borderWidth: 1.5,
-    borderColor: '#FFEBEE',
+    elevation: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
-    elevation: 1,
   },
-  logoutText: { color: colors.status.error, fontWeight: '600', fontSize: 15 },
+  devTestText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+  logoutContainer: { paddingHorizontal: spacing.base, paddingTop: spacing.md },
+  logoutButton: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderColor: '#FFEBEE',
+    borderRadius: borderRadius.xl,
+    borderWidth: 1.5,
+    elevation: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  logoutText: { color: colors.status.error, fontSize: 15, fontWeight: '600' },
 });

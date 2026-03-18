@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { useFonts } from 'expo-font';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAudioBootstrap } from './src/hooks/useAudioBootstrap';
+import ApiIncidentOverlay from './src/components/common/ApiIncidentOverlay';
 
 function AppContent() {
   const { isAuthenticated } = useAuth();
@@ -32,6 +33,7 @@ export default function App() {
         <AuthProvider>
           <PaperProvider theme={paperLightTheme}>
             <AppContent />
+            <ApiIncidentOverlay />
           </PaperProvider>
         </AuthProvider>
       </SafeAreaProvider>

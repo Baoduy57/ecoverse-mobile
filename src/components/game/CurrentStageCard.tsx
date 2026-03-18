@@ -95,10 +95,10 @@ export default function CurrentStageCard({ stage, onPlay }: CurrentStageCardProp
 
 const styles = StyleSheet.create({
     container: {
-        marginHorizontal: 16,
-        marginVertical: 12,
         borderRadius: 16,
         elevation: 4,
+        marginHorizontal: 16,
+        marginVertical: 12,
         shadowColor: colors.shadow,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
@@ -106,82 +106,82 @@ const styles = StyleSheet.create({
     },
     content: {
         flexDirection: 'row',
-        padding: 20,
         gap: 16,
+        padding: 20,
+    },
+    description: {
+        color: colors.text.white,
+        flex: 1,
+        fontSize: 14,
+        lineHeight: 20,
+        opacity: 0.95,
+    },
+    label: {
+        color: colors.text.white,
+        fontSize: 10,
+        fontWeight: '600',
+        letterSpacing: 1,
+        opacity: 0.8,
     },
     leftSection: {
         flex: 0.4,
         justifyContent: 'space-between',
+    },
+    mascotText: {
+        fontSize: 24,
+    },
+    playButton: {
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        backgroundColor: colors.surface,
+        borderRadius: 24,
+        elevation: 2,
+        flexDirection: 'row',
+        gap: 8,
+        justifyContent: 'center',
+        marginTop: 12,
+        paddingHorizontal: 24,
+        paddingVertical: 14,
+    },
+    playText: {
+        color: colors.primary,
+        fontSize: 16,
+        fontWeight: '800',
     },
     rightSection: {
         flex: 0.6,
         justifyContent: 'center',
         position: 'relative',
     },
-    topicIconContainer: {
-        position: 'absolute',
-        top: 0,
-        right: 0,
-    },
     speechBubble: {
-        flexDirection: 'row',
         alignItems: 'center',
+        flexDirection: 'row',
         gap: 8,
         marginBottom: 12,
     },
-    mascotText: {
-        fontSize: 24,
-    },
-    label: {
-        fontSize: 10,
-        fontWeight: '600',
-        color: colors.text.white,
-        opacity: 0.8,
-        letterSpacing: 1,
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: colors.text.white,
-        marginTop: 4,
-    },
-    playButton: {
-        flexDirection: 'row',
+    statItem: {
         alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.surface,
-        paddingHorizontal: 24,
-        paddingVertical: 14,
-        borderRadius: 24,
-        marginTop: 12,
-        gap: 8,
-        alignSelf: 'flex-start',
-        elevation: 2,
+        flexDirection: 'row',
+        gap: 6,
     },
-    playText: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: colors.primary,
-    },
-    description: {
-        fontSize: 14,
-        lineHeight: 20,
+    statText: {
         color: colors.text.white,
-        opacity: 0.95,
-        flex: 1,
+        fontSize: 12,
+        fontWeight: '600',
+        opacity: 0.9,
     },
     statsContainer: {
         gap: 8,
     },
-    statItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    statText: {
-        fontSize: 12,
-        fontWeight: '600',
+    title: {
         color: colors.text.white,
-        opacity: 0.9,
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginTop: 4,
+    },
+    topicIconContainer: {
+        position: 'absolute',
+        right: 0,
+        top: 0,
     },
 });

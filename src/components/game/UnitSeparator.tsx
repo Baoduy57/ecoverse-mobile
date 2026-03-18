@@ -81,13 +81,13 @@ export default function UnitSeparator({ y, width, unitIndex }: UnitSeparatorProp
 
 const styles = StyleSheet.create({
     container: {
-        position: 'absolute',
-        left: 0,
         height: 60,
+        left: 0,
+        position: 'absolute',
     },
     iconContainer: {
+        height: 28,
         position: 'absolute',
         width: 28,
-        height: 28,
     },
 });

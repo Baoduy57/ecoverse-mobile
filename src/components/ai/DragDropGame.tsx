@@ -435,10 +435,10 @@ const styles = StyleSheet.create({
 
   // ── Object card ───────────────────────────────────────────────────────
   objectCardShadow: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     overflow: 'hidden',
     width: 210,
-    backgroundColor: '#FFFFFF',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -465,17 +465,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   objectImage: {
+    backgroundColor: '#F5F5F5',
     height: 145,
     width: 210,
-    backgroundColor: '#F5F5F5',
   },
   dragHintRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 6,
     justifyContent: 'center',
-    paddingVertical: 10,
     paddingHorizontal: 14,
+    paddingVertical: 10,
   },
   dragHintText: {
     fontSize: 13,
@@ -510,8 +510,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
     paddingBottom: 4,
+    paddingHorizontal: 4,
   },
   binWrapper: {
     alignItems: 'center',
@@ -543,8 +543,8 @@ const styles = StyleSheet.create({
       android: { elevation: 18 },
     }),
   },
-  fcSuccess: { borderColor: colors.status.success, borderWidth: 3, backgroundColor: '#FFFFFF' },
-  fcError: { borderColor: colors.status.error, borderWidth: 3, backgroundColor: '#FFFFFF' },
+  fcSuccess: { backgroundColor: '#FFFFFF', borderColor: colors.status.success, borderWidth: 3 },
+  fcError: { backgroundColor: '#FFFFFF', borderColor: colors.status.error, borderWidth: 3 },
   feedbackIconCircle: {
     alignItems: 'center',
     borderRadius: 60,

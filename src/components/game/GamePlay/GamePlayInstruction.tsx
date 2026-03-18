@@ -46,30 +46,30 @@ export default function GamePlayInstruction({ feedbackAnimation }: GamePlayInstr
 }
 
 const styles = StyleSheet.create({
+  feedbackOverlay: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+  },
+  feedbackText: {
+    color: colors.status.success,
+    fontSize: 24,
+    fontWeight: '800',
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  },
   instructionContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     position: 'relative',
-    minHeight: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   instructionText: {
+    color: colors.primary,
     fontSize: 18,
     fontWeight: '700',
-    color: colors.primary,
-    textAlign: 'center',
-  },
-  feedbackOverlay: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  feedbackText: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.status.success,
-    marginTop: spacing.sm,
     textAlign: 'center',
   },
 });

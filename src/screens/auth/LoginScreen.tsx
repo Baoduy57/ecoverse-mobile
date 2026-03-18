@@ -184,59 +184,44 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  buttonOverlay: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
   container: {
     backgroundColor: colors.background,
     flex: 1,
     position: 'relative',
   },
-  safeArea: {
-    flex: 1,
-    zIndex: 10,
-  },
   flex: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: spacing['2xl'],
-    paddingVertical: spacing['4xl'],
+  forgotPassword: {
+    color: colors.text.secondary,
+    fontWeight: 'bold',
+  },
+  forgotPasswordContainer: {
+    alignSelf: 'flex-end',
+    marginTop: -spacing.sm,
+  },
+  form: {
+    gap: spacing.lg,
   },
   header: {
     alignItems: 'center',
     marginBottom: spacing['3xl'],
   },
-  logoContainer: {
-    marginBottom: spacing.base,
-  },
-  logoImage: {
-    height: 170,
-    width: 170,
-  },
-  title: {
+  input: {
     color: colors.text.primary,
-    fontWeight: 'bold',
-    letterSpacing: -0.5,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    color: colors.text.secondary,
+    fontSize: 16,
     fontWeight: '700',
-  },
-  form: {
-    gap: spacing.lg,
-  },
-  inputWrapper: {
-    backgroundColor: colors.surface,
-    borderColor: 'transparent',
-    borderRadius: borderRadius.xl,
-    borderWidth: 2,
-    elevation: 2,
-    position: 'relative',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    height: 56,
+    paddingLeft: spacing['4xl'] + spacing.sm,
+    paddingRight: spacing['4xl'] + spacing.sm,
   },
   inputIconLeft: {
     bottom: 0,
@@ -254,21 +239,17 @@ const styles = StyleSheet.create({
     top: 0,
     zIndex: 1,
   },
-  input: {
-    color: colors.text.primary,
-    fontSize: 16,
-    fontWeight: '700',
-    height: 56,
-    paddingLeft: spacing['4xl'] + spacing.sm,
-    paddingRight: spacing['4xl'] + spacing.sm,
-  },
-  forgotPasswordContainer: {
-    alignSelf: 'flex-end',
-    marginTop: -spacing.sm,
-  },
-  forgotPassword: {
-    color: colors.text.secondary,
-    fontWeight: 'bold',
+  inputWrapper: {
+    backgroundColor: colors.surface,
+    borderColor: 'transparent',
+    borderRadius: borderRadius.xl,
+    borderWidth: 2,
+    elevation: 2,
+    position: 'relative',
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
   loginButton: {
     borderRadius: borderRadius.xl,
@@ -280,13 +261,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 12,
   },
-  loginButtonPressed: {
-    elevation: 3,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    transform: [{ translateY: 4 }],
-  },
   loginButtonGradient: {
     alignItems: 'center',
     height: 56,
@@ -294,13 +268,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
-  buttonOverlay: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: 0,
+  loginButtonPressed: {
+    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    transform: [{ translateY: 4 }],
   },
   loginButtonText: {
     color: colors.surface,
@@ -308,5 +281,32 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 0.5,
     zIndex: 1,
+  },
+  logoContainer: {
+    marginBottom: spacing.base,
+  },
+  logoImage: {
+    height: 170,
+    width: 170,
+  },
+  safeArea: {
+    flex: 1,
+    zIndex: 10,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: spacing['2xl'],
+    paddingVertical: spacing['4xl'],
+  },
+  subtitle: {
+    color: colors.text.secondary,
+    fontWeight: '700',
+  },
+  title: {
+    color: colors.text.primary,
+    fontWeight: 'bold',
+    letterSpacing: -0.5,
+    marginBottom: spacing.xs,
   },
 });

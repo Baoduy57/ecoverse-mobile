@@ -325,8 +325,8 @@ export default function DragDropGamePlayScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: colors.background,
+    flex: 1,
     position: 'relative',
   },
   safeArea: {

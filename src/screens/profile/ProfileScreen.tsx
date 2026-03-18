@@ -165,35 +165,16 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.background,
-    flex: 1,
-    position: 'relative',
+  achievementCount: {
+    color: colors.primary,
+    fontWeight: '600',
   },
-  safeArea: {
-    flex: 1,
-    zIndex: 10,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: spacing['2xl'],
-  },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  achievementsList: {
+    gap: spacing.xs,
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
   },
-  avatarSection: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  avatarContainer: {
-    marginBottom: spacing.base,
-    position: 'relative',
+  achievementsSection: {
+    marginBottom: spacing.xl,
   },
   avatar: {
     backgroundColor: '#FFE0B2',
@@ -201,27 +182,18 @@ const styles = StyleSheet.create({
     height: 120,
     width: 120,
   },
-  onlineBadge: {
+  avatarContainer: {
+    marginBottom: spacing.base,
+    position: 'relative',
+  },
+  avatarSection: {
     alignItems: 'center',
-    backgroundColor: colors.status.success,
-    borderColor: colors.background,
-    borderRadius: borderRadius.full,
-    borderWidth: 3,
-    bottom: 4,
-    height: 28,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: 4,
-    width: 28,
+    paddingVertical: spacing.xl,
   },
-  name: {
-    color: colors.text.primary,
-    fontWeight: 'bold',
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    color: colors.text.secondary,
-    marginBottom: spacing.lg,
+  container: {
+    backgroundColor: colors.background,
+    flex: 1,
+    position: 'relative',
   },
   editButton: {
     backgroundColor: colors.primary,
@@ -237,33 +209,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  statsSection: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.xl,
-    paddingHorizontal: spacing.base,
-  },
-  achievementsSection: {
-    marginBottom: spacing.xl,
-  },
-  sectionHeader: {
+  header: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.base,
     paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
   },
-  sectionTitle: {
+  infoBold: {
     color: colors.text.primary,
     fontWeight: 'bold',
-  },
-  achievementCount: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  achievementsList: {
-    gap: spacing.xs,
-    paddingHorizontal: spacing.base,
   },
   infoSection: {
     alignItems: 'center',
@@ -276,8 +231,53 @@ const styles = StyleSheet.create({
   infoText: {
     color: colors.text.secondary,
   },
-  infoBold: {
+  name: {
     color: colors.text.primary,
     fontWeight: 'bold',
+    marginBottom: spacing.xs,
+  },
+  onlineBadge: {
+    alignItems: 'center',
+    backgroundColor: colors.status.success,
+    borderColor: colors.background,
+    borderRadius: borderRadius.full,
+    borderWidth: 3,
+    bottom: 4,
+    height: 28,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 4,
+    width: 28,
+  },
+  safeArea: {
+    flex: 1,
+    zIndex: 10,
+  },
+  scrollContent: {
+    paddingBottom: spacing['2xl'],
+  },
+  scrollView: {
+    flex: 1,
+  },
+  sectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.base,
+    paddingHorizontal: spacing.base,
+  },
+  sectionTitle: {
+    color: colors.text.primary,
+    fontWeight: 'bold',
+  },
+  statsSection: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.base,
+  },
+  subtitle: {
+    color: colors.text.secondary,
+    marginBottom: spacing.lg,
   },
 });

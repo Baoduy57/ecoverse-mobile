@@ -64,79 +64,79 @@ export default function ProgressCard({ items }: ProgressCardProps) {
 }
 
 const styles = StyleSheet.create({
+  circleInner: {
+    alignItems: 'center',
+    borderRadius: 20,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  circleRing: {
+    alignItems: 'center',
+    borderRadius: 26,
+    borderWidth: 3,
+    height: 52,
+    justifyContent: 'center',
+    width: 52,
+  },
   container: {
     gap: spacing.md,
   },
-  progressCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.xl,
-    padding: spacing.base,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 5,
-  },
   headerRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     gap: spacing.md,
     marginBottom: spacing.md,
   },
   iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: borderRadius.lg,
-    justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: borderRadius.lg,
+    elevation: 3,
+    height: 52,
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.text.primary,
-    marginBottom: 3,
-  },
-  value: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  circleRing: {
     width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  circleInner: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   percentageText: {
     fontSize: 11,
     fontWeight: '800',
   },
+  progressBarBg: {
+    borderRadius: borderRadius.full,
+    height: 7,
+    overflow: 'hidden',
+  },
   progressBarContainer: {
     // no margin top needed; headerRow already has marginBottom
   },
-  progressBarBg: {
-    height: 7,
-    borderRadius: borderRadius.full,
-    overflow: 'hidden',
-  },
   progressBarFill: {
-    height: '100%',
     borderRadius: borderRadius.full,
+    height: '100%',
+  },
+  progressCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    elevation: 5,
+    padding: spacing.base,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+  },
+  textContainer: {
+    flex: 1,
+  },
+  title: {
+    color: colors.text.primary,
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 3,
+  },
+  value: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
