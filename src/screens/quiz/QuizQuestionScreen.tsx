@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +23,16 @@ export default function QuizQuestionScreen() {
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [totalPoints, setTotalPoints] = useState(0);
 
+  const delayRef = useRef<NodeJS.Timeout | null>(null);
+  const advanceRef = useRef<(() => void) | null>(null);
+  const isAnsweringRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (delayRef.current) clearTimeout(delayRef.current);
+    };
+  }, []);
+
   const currentQuestion = MOCK_QUIZ_QUESTIONS[currentQuestionIndex];
 
   const handleSelectOption = (optionId: string) => {
@@ -32,6 +42,8 @@ export default function QuizQuestionScreen() {
 
   const handleNextQuestion = () => {
     if (!selectedOption) return;
+    if (isAnsweringRef.current) return;
+    isAnsweringRef.current = true;
 
     const isCorrect = selectedOption === currentQuestion.correctOptionId;
     const points = isCorrect ? currentQuestion.points : 0;
@@ -43,34 +55,49 @@ export default function QuizQuestionScreen() {
       isCorrect,
       timeSpent: 0,
     };
-    setAnswers([...answers, answer]);
-    setTotalPoints(totalPoints + points);
+    
+    const newAnswers = [...answers, answer];
+    const newPoints = totalPoints + points;
+    
+    setAnswers(newAnswers);
+    setTotalPoints(newPoints);
 
     // Show feedback
     setShowFeedback(true);
 
-    // Move to next question or show results
-    setTimeout(() => {
+    const advance = () => {
+      isAnsweringRef.current = false;
       if (currentQuestionIndex < MOCK_QUIZ_QUESTIONS.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
         setSelectedOption(null);
         setShowFeedback(false);
       } else {
         // Navigate to results
-        const finalAnswers = [...answers, answer];
-        const correctCount = finalAnswers.filter(a => a.isCorrect).length;
-        const wrongCount = finalAnswers.length - correctCount;
+        const correctCount = newAnswers.filter(a => a.isCorrect).length;
+        const wrongCount = newAnswers.length - correctCount;
 
         navigation.navigate('QuizResult', {
           quizId,
           totalQuestions: MOCK_QUIZ_QUESTIONS.length,
           correctAnswers: correctCount,
           wrongAnswers: wrongCount,
-          totalPoints: totalPoints + points,
-          answers: finalAnswers,
+          totalPoints: newPoints,
+          answers: newAnswers,
         });
       }
-    }, 1500);
+    };
+
+    // Move to next question or show results automatically
+    delayRef.current = setTimeout(advance, 1500);
+    advanceRef.current = advance;
+  };
+
+  const handleNextFromFeedback = () => {
+    if (delayRef.current) clearTimeout(delayRef.current);
+    if (advanceRef.current) {
+      advanceRef.current();
+      advanceRef.current = null;
+    }
   };
 
   const isCorrectOption = (optionId: string) => {
@@ -259,7 +286,7 @@ export default function QuizQuestionScreen() {
             {/* Next Button inside feedback */}
             <TouchableOpacity
               style={styles.feedbackNextButton}
-              onPress={handleNextQuestion}
+              onPress={handleNextFromFeedback}
               activeOpacity={0.8}
             >
               <Text style={styles.feedbackNextButtonText}>NEXT QUESTION</Text>

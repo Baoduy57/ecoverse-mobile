@@ -23,7 +23,7 @@ export default function ProgressCard({ items }: ProgressCardProps) {
   return (
     <View style={styles.container}>
       {items.map(item => (
-        <View key={item.id} style={styles.progressCard}>
+        <View key={item.id} style={[styles.progressCard, { borderColor: item.barColor }]}>
           {/* Header row: icon + text + circular indicator */}
           <View style={styles.headerRow}>
             <View style={[styles.iconContainer, { backgroundColor: item.iconBgColor }]}>
@@ -90,14 +90,9 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     alignItems: 'center',
-    borderRadius: borderRadius.lg,
-    elevation: 3,
+    borderRadius: 18,
     height: 52,
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     width: 52,
   },
   percentageText: {
@@ -118,13 +113,9 @@ const styles = StyleSheet.create({
   },
   progressCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.xl,
-    elevation: 5,
+    borderRadius: 24,
+    borderWidth: 3,
     padding: spacing.base,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
   },
   textContainer: {
     flex: 1,

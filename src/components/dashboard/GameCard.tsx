@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   card: {
-    borderRadius: borderRadius.xl,
+    borderRadius: 28, // rounder
     elevation: 8,
     flex: 1,
     minHeight: 224,
@@ -179,13 +179,14 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text.white,
-    fontWeight: 'bold',
-    letterSpacing: -0.3,
-    lineHeight: 22,
+    fontWeight: '900',
+    fontSize: 22,
+    letterSpacing: -0.5,
+    lineHeight: 28,
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   // Button
   buttonContainer: {
@@ -198,19 +199,20 @@ const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.full,
-    elevation: 4,
+    borderRadius: 30, // fully rounded pill
+    elevation: 6,
     flexDirection: 'row',
-    gap: spacing.xs,
+    gap: spacing.sm,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
+    paddingVertical: 12, // thicker
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
   },
   buttonText: {
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
 });

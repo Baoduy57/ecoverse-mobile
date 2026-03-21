@@ -68,6 +68,16 @@ export default function ExamQuestionScreen() {
     };
   }, [answers, totalPoints, submitExam]);
 
+  const delayRef = useRef<NodeJS.Timeout | null>(null);
+  const advanceRef = useRef<(() => void) | null>(null);
+  const isAnsweringRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (delayRef.current) clearTimeout(delayRef.current);
+    };
+  }, []);
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60)
       .toString()
@@ -85,6 +95,8 @@ export default function ExamQuestionScreen() {
 
   const handleNext = () => {
     if (!selectedOption) return;
+    if (isAnsweringRef.current) return;
+    isAnsweringRef.current = true;
 
     const isCorrect = selectedOption === currentQuestion.correctOptionId;
     const points = isCorrect ? currentQuestion.points : 0;
@@ -102,7 +114,8 @@ export default function ExamQuestionScreen() {
     setTotalPoints(newPoints);
     setShowFeedback(true);
 
-    setTimeout(() => {
+    const advance = () => {
+      isAnsweringRef.current = false;
       if (currentIndex < questions.length - 1) {
         setCurrentIndex(currentIndex + 1);
         setSelectedOption(null);
@@ -110,7 +123,18 @@ export default function ExamQuestionScreen() {
       } else {
         submitExam(newAnswers, newPoints);
       }
-    }, 1200);
+    };
+
+    delayRef.current = setTimeout(advance, 1200);
+    advanceRef.current = advance;
+  };
+
+  const handleNextFromFeedback = () => {
+    if (delayRef.current) clearTimeout(delayRef.current);
+    if (advanceRef.current) {
+      advanceRef.current();
+      advanceRef.current = null;
+    }
   };
 
   const isCorrectOption = (optionId: string) =>
@@ -284,7 +308,7 @@ export default function ExamQuestionScreen() {
             </View>
             <TouchableOpacity
               style={styles.feedbackNextButton}
-              onPress={handleNext}
+              onPress={handleNextFromFeedback}
               activeOpacity={0.8}
             >
               <Text style={styles.feedbackNextButtonText}>

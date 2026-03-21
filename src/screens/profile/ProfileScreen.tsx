@@ -12,7 +12,7 @@ import type { HomeTabParamList } from '../home/HomeScreen';
 import { useAuthStore } from '@store/authStore';
 import { StatsCard, AchievementBadge } from '@/components/profile';
 import ScreenBackground from '../../components/common/ScreenBackground';
-import { colors, spacing, borderRadius } from '@theme';
+import { colors, spacing } from '@theme';
 
 type NavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<HomeTabParamList, 'Profile'>,
@@ -70,13 +70,15 @@ export default function ProfileScreen() {
 
           {/* Avatar Section */}
           <View style={styles.avatarSection}>
-            <View style={styles.avatarContainer}>
-              <Image
-                source={require('../../../assets/images/default-avatar.jpg')}
-                style={styles.avatar}
-              />
+            <View style={styles.avatarWrapper}>
+              <View style={styles.avatarContainer}>
+                <Image
+                  source={require('../../../assets/images/default-avatar.jpg')}
+                  style={styles.avatar}
+                />
+              </View>
               <View style={styles.onlineBadge}>
-                <MaterialCommunityIcons name="check" size={16} color={colors.surface} />
+                <MaterialCommunityIcons name="star" size={20} color="#FFF" />
               </View>
             </View>
 
@@ -150,7 +152,7 @@ export default function ProfileScreen() {
 
           {/* Additional Info */}
           <View style={styles.infoSection}>
-            <MaterialCommunityIcons name="chess-knight" size={20} color={colors.text.secondary} />
+            <MaterialCommunityIcons name="shield-check" size={24} color="#0284C7" />
             <Text variant="bodyMedium" style={styles.infoText}>
               Đã liên kết với phụ huynh! <Text style={styles.infoBold}>Bố Nam</Text>
             </Text>
@@ -167,10 +169,11 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   achievementCount: {
     color: colors.primary,
-    fontWeight: '600',
+    fontWeight: '800',
+    fontSize: 14,
   },
   achievementsList: {
-    gap: spacing.xs,
+    gap: spacing.sm, // slight increase for circular badges
     paddingHorizontal: spacing.base,
   },
   achievementsSection: {
@@ -178,17 +181,27 @@ const styles = StyleSheet.create({
   },
   avatar: {
     backgroundColor: '#FFE0B2',
-    borderRadius: borderRadius.full,
-    height: 120,
-    width: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    height: 110,
+    width: 110,
   },
   avatarContainer: {
-    marginBottom: spacing.base,
+    padding: 4,
+    borderRadius: 70,
+    borderWidth: 3,
+    borderStyle: 'dashed',
+    borderColor: colors.primary,
+  },
+  avatarWrapper: {
     position: 'relative',
+    marginBottom: spacing.md,
   },
   avatarSection: {
     alignItems: 'center',
-    paddingVertical: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
   },
   container: {
     backgroundColor: colors.background,
@@ -197,17 +210,19 @@ const styles = StyleSheet.create({
   },
   editButton: {
     backgroundColor: colors.primary,
-    borderRadius: borderRadius.xl,
-    elevation: 5,
-    minWidth: 200,
+    borderRadius: 30, // Pill shape
+    elevation: 6,
+    minWidth: 220,
+    paddingVertical: 2,
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
   },
   editButtonLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   header: {
     alignItems: 'center',
@@ -217,37 +232,51 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   infoBold: {
-    color: colors.text.primary,
-    fontWeight: 'bold',
+    color: '#0C4A6E', // very dark blue
+    fontWeight: '900',
   },
   infoSection: {
     alignItems: 'center',
+    backgroundColor: '#E0F2FE', // light blue friendly bg
+    borderColor: '#BAE6FD',
+    borderRadius: 20,
+    borderWidth: 2,
     flexDirection: 'row',
     gap: spacing.sm,
     justifyContent: 'center',
     marginBottom: spacing.xl,
+    marginHorizontal: spacing.xl,
     paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
   },
   infoText: {
-    color: colors.text.secondary,
+    color: '#0369A1',
+    fontSize: 14,
+    fontWeight: '700',
   },
   name: {
     color: colors.text.primary,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '900',
     marginBottom: spacing.xs,
   },
   onlineBadge: {
     alignItems: 'center',
-    backgroundColor: colors.status.success,
-    borderColor: colors.background,
-    borderRadius: borderRadius.full,
+    backgroundColor: '#10B981', // emerald green
+    borderColor: '#FFFFFF',
+    borderRadius: 20,
     borderWidth: 3,
-    bottom: 4,
-    height: 28,
+    bottom: -4,
+    elevation: 4,
+    height: 38,
     justifyContent: 'center',
     position: 'absolute',
-    right: 4,
-    width: 28,
+    right: 0,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    width: 38,
   },
   safeArea: {
     flex: 1,
