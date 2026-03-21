@@ -250,17 +250,13 @@ const styles = StyleSheet.create({
   },
   quizCard: {
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: 'rgba(139, 92, 246, 0.1)',
-    borderRadius: 20,
-    borderWidth: 2,
-    elevation: 6,
+    backgroundColor: '#F5F3FF', // Light purple
+    borderColor: '#8B5CF6',
+    borderRadius: 24,
+    borderWidth: 3,
     flexDirection: 'row',
     padding: spacing.base,
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    elevation: 0, // Flat design
   },
   quizLeftSection: {
     marginRight: spacing.md,
@@ -340,18 +336,14 @@ const styles = StyleSheet.create({
   // Weekly Goal Card
   weeklyGoalCard: {
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: 'rgba(16, 185, 129, 0.12)',
-    borderRadius: borderRadius.xl,
-    borderWidth: 1.5,
-    elevation: 8,
+    backgroundColor: '#ECFDF5', // Light emerald
+    borderColor: '#10B981',
+    borderRadius: 24,
+    borderWidth: 3,
+    elevation: 0,
     flex: 1,
     gap: spacing.sm,
     padding: spacing.base,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
   },
   weeklyGoalHeader: {
     alignItems: 'flex-start',
@@ -381,17 +373,13 @@ const styles = StyleSheet.create({
   },
   // Daily Check Card
   dailyCheckCard: {
-    backgroundColor: colors.surface,
-    borderColor: 'rgba(96, 165, 250, 0.15)',
-    borderRadius: borderRadius.xl,
-    borderWidth: 1.5,
-    elevation: 8,
+    backgroundColor: '#EFF6FF', // Light blue
+    borderColor: '#3B82F6',
+    borderRadius: 24,
+    borderWidth: 3,
+    elevation: 0,
     flex: 1,
     padding: spacing.base,
-    shadowColor: '#60A5FA',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
   },
   dailyCheckTop: {
     alignItems: 'flex-start',
@@ -432,24 +420,20 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   dailyProgressBar: {
-    backgroundColor: '#E2E8F0',
-    borderRadius: borderRadius.base,
-    height: 6,
+    backgroundColor: '#BFDBFE', // Darker blue base
+    borderRadius: 10,
+    height: 8,
     overflow: 'hidden',
     width: '100%',
   },
   dailyProgressFill: {
-    backgroundColor: '#60A5FA',
-    borderRadius: borderRadius.base,
+    backgroundColor: '#3B82F6', // Blue fill
+    borderRadius: 10,
     height: '100%',
   },
   progressCardWrapper: {
-    borderRadius: borderRadius.xl,
-    elevation: 8,
+    borderRadius: 24,
+    elevation: 0,
     overflow: 'visible',
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.16,
-    shadowRadius: 16,
   },
 });

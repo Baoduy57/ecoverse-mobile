@@ -27,9 +27,21 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
       activeOpacity={0.7}
     >
       <View
-        style={[styles.badge, { backgroundColor: isLocked ? colors.text.disabled : iconColor }]}
+        style={[
+          styles.badge,
+          isLocked
+            ? styles.lockedBadge
+            : {
+                backgroundColor: iconColor,
+                shadowColor: iconColor,
+              },
+        ]}
       >
-        <MaterialCommunityIcons name={isLocked ? 'lock' : icon} size={32} color={colors.surface} />
+        <MaterialCommunityIcons
+          name={isLocked ? 'lock' : icon}
+          size={isLocked ? 28 : 34}
+          color={isLocked ? '#A0AEC0' : colors.surface}
+        />
       </View>
       <Text
         variant="labelSmall"
@@ -45,27 +57,37 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
 const styles = StyleSheet.create({
   badge: {
     alignItems: 'center',
-    borderRadius: borderRadius.md,
-    elevation: 3,
-    height: 64,
+    borderRadius: 35, // Full circle
+    elevation: 6,
+    height: 70,
     justifyContent: 'center',
     marginBottom: spacing.sm,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    width: 64,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    width: 70,
   },
   container: {
     alignItems: 'center',
     marginHorizontal: spacing.sm,
-    width: 80,
+    width: 84, // Slightly wider for bigger badges
+  },
+  lockedBadge: {
+    backgroundColor: '#F7FAFC', // Very light gray bg
+    borderColor: '#CBD5E0', // Medium border
+    borderStyle: 'dashed',
+    borderWidth: 2,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   lockedTitle: {
-    color: colors.text.disabled,
+    color: '#A0AEC0',
+    fontWeight: '600',
   },
   title: {
     color: colors.text.primary,
+    fontSize: 12,
+    fontWeight: '700',
     textAlign: 'center',
   },
 });

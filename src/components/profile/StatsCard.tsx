@@ -13,14 +13,14 @@ interface StatsCardProps {
 
 export const StatsCard: React.FC<StatsCardProps> = ({ icon, iconColor, label, value }) => {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: iconColor + '10', borderColor: iconColor + '30' }]}>
       <View style={[styles.iconContainer, { backgroundColor: iconColor + '20' }]}>
-        <MaterialCommunityIcons name={icon} size={24} color={iconColor} />
+        <MaterialCommunityIcons name={icon} size={28} color={iconColor} />
       </View>
       <Text variant="labelSmall" style={styles.label}>
         {label}
       </Text>
-      <Text variant="titleMedium" style={styles.value}>
+      <Text variant="titleMedium" style={[styles.value, { color: iconColor }]}>
         {value}
       </Text>
     </View>
@@ -30,19 +30,15 @@ export const StatsCard: React.FC<StatsCardProps> = ({ icon, iconColor, label, va
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    elevation: 2,
+    borderRadius: 20, // Playful rounded corners
+    borderWidth: 2,
+    elevation: 0, // Flat design with colors
     flex: 1,
-    padding: spacing.base,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    padding: spacing.md,
   },
   iconContainer: {
     alignItems: 'center',
-    borderRadius: borderRadius.full,
+    borderRadius: 24,
     height: 48,
     justifyContent: 'center',
     marginBottom: spacing.sm,
@@ -50,11 +46,13 @@ const styles = StyleSheet.create({
   },
   label: {
     color: colors.text.secondary,
+    fontSize: 10,
+    fontWeight: '800',
     marginBottom: spacing.xs,
     textTransform: 'uppercase',
   },
   value: {
-    color: colors.text.primary,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '900',
   },
 });
