@@ -14,11 +14,11 @@ interface ApiStatusState {
   incident: ApiIncident | null;
   showIncident: (incident: Omit<ApiIncident, 'updatedAt'>) => void;
   hideIncident: () => void;
-  showSlowRequest: () => void;
-  showTimeout: () => void;
-  showMaintenance: () => void;
-  showNetworkError: () => void;
-  showServerError: () => void;
+  showSlowRequest: (title?: string, message?: string) => void;
+  showTimeout: (title?: string, message?: string) => void;
+  showMaintenance: (title?: string, message?: string) => void;
+  showNetworkError: (title?: string, message?: string) => void;
+  showServerError: (title?: string, message?: string) => void;
 }
 
 const INCIDENT_PRIORITY: Record<ApiIncidentType, number> = {
@@ -51,47 +51,47 @@ export const useApiStatusStore = create<ApiStatusState>((set, get) => ({
     set({ incident: null });
   },
 
-  showSlowRequest: () => {
+  showSlowRequest: (title, message) => {
     get().showIncident({
       type: 'slow_request',
-      title: 'Đang xử lý yêu cầu',
-      message: 'Hệ thống đang phản hồi chậm. Vui lòng chờ trong giây lát.',
+      title: title || 'Đang xử lý yêu cầu',
+      message: message || 'Hệ thống đang phản hồi chậm. Vui lòng chờ trong giây lát.',
       canDismiss: true,
     });
   },
 
-  showTimeout: () => {
+  showTimeout: (title, message) => {
     get().showIncident({
       type: 'timeout',
-      title: 'Kết nối đang quá tải',
-      message: 'Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại sau ít phút.',
+      title: title || 'Kết nối đang quá tải',
+      message: message || 'Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại sau ít phút.',
       canDismiss: true,
     });
   },
 
-  showMaintenance: () => {
+  showMaintenance: (title, message) => {
     get().showIncident({
       type: 'maintenance',
-      title: 'Chức năng đang bảo trì',
-      message: 'Máy chủ đang bảo trì tạm thời. Vui lòng quay lại sau.',
+      title: title || 'Chức năng đang bảo trì',
+      message: message || 'Máy chủ đang bảo trì tạm thời. Vui lòng quay lại sau.',
       canDismiss: true,
     });
   },
 
-  showNetworkError: () => {
+  showNetworkError: (title, message) => {
     get().showIncident({
       type: 'network',
-      title: 'Không thể kết nối',
-      message: 'Thiết bị chưa kết nối mạng hoặc tín hiệu không ổn định.',
+      title: title || 'Không thể kết nối',
+      message: message || 'Thiết bị chưa kết nối mạng hoặc tín hiệu không ổn định.',
       canDismiss: true,
     });
   },
 
-  showServerError: () => {
+  showServerError: (title, message) => {
     get().showIncident({
       type: 'server',
-      title: 'Hệ thống đang bận',
-      message: 'Máy chủ đang gặp sự cố tạm thời. Vui lòng thử lại sau.',
+      title: title || 'Hệ thống đang bận',
+      message: message || 'Máy chủ đang gặp sự cố tạm thời. Vui lòng thử lại sau.',
       canDismiss: true,
     });
   },

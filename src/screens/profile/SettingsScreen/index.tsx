@@ -121,7 +121,6 @@ export default function SettingsScreen() {
 
   const handleBack = () => navigation.goBack();
   const handleHelp = () => console.log('Navigate to Help');
-  const handleDevTest = () => navigation.navigate('DevApiTest');
   const handleLogout = async () => await logout();
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -346,13 +345,7 @@ export default function SettingsScreen() {
             </Text>
           </View>
 
-          {/* Dev Test */}
-          <View style={styles.devTestContainer}>
-            <TouchableOpacity style={styles.devTestButton} onPress={handleDevTest}>
-              <MaterialCommunityIcons name="flask-outline" size={20} color={colors.primary} />
-              <Text style={styles.devTestText}> Dev Test API</Text>
-            </TouchableOpacity>
-          </View>
+
 
           {/* Logout */}
           <View style={styles.logoutContainer}>
@@ -523,24 +516,7 @@ const styles = StyleSheet.create({
   // Version & Logout
   versionContainer: { alignItems: 'center', paddingVertical: spacing.xl },
   versionText: { color: colors.text.secondary },
-  devTestContainer: { paddingHorizontal: spacing.base, paddingBottom: spacing.md },
-  devTestButton: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: colors.primary,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1.5,
-    elevation: 1,
-    flexDirection: 'row',
-    gap: spacing.xs,
-    justifyContent: 'center',
-    paddingVertical: spacing.md,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  devTestText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+
   logoutContainer: { paddingHorizontal: spacing.base, paddingTop: spacing.md },
   logoutButton: {
     alignItems: 'center',

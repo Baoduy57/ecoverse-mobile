@@ -14,6 +14,7 @@ export type VisionErrorCode =
   | 'AI_API_NOT_CONFIGURED'
   | 'AI_NETWORK_UNAVAILABLE'
   | 'AI_SERVICE_MAINTENANCE'
+  | 'AI_REQUEST_TIMEOUT'
   | 'AI_SERVICE_ERROR';
 
 export class VisionServiceError extends Error {
@@ -26,20 +27,37 @@ export class VisionServiceError extends Error {
   }
 }
 
-function notifyVisionIncident(code: VisionErrorCode) {
+function notifyVisionIncident(code: VisionErrorCode, customMessage?: string) {
   const apiStatus = useApiStatusStore.getState();
 
-  if (code === 'AI_NETWORK_UNAVAILABLE') {
-    apiStatus.showNetworkError();
-    return;
+  switch (code) {
+    case 'AI_NETWORK_UNAVAILABLE':
+      apiStatus.showNetworkError(
+        'Lỗi mạng (Scanner)',
+        customMessage || 'Không thể kết nối đến máy chủ AI. Vui lòng kiểm tra kết nối mạng (Wifi/4G).'
+      );
+      break;
+    case 'AI_REQUEST_TIMEOUT':
+      apiStatus.showTimeout(
+        'Quét ảnh quá lâu',
+        customMessage || 'Máy chủ AI phản hồi chậm. Vui lòng kiểm tra lại đường truyền và thử lại.'
+      );
+      break;
+    case 'AI_API_NOT_CONFIGURED':
+    case 'AI_SERVICE_MAINTENANCE':
+      apiStatus.showMaintenance(
+        'Bảo trì Scanner',
+        customMessage || 'Hệ thống nhận diện hình ảnh đang được bảo trì. Vui lòng quay lại sau.'
+      );
+      break;
+    case 'AI_SERVICE_ERROR':
+    default:
+      apiStatus.showServerError(
+        'Lỗi dịch vụ AI',
+        customMessage || 'Dịch vụ phân tích hình ảnh đang gặp sự cố. Vui lòng thử lại sau ít phút.'
+      );
+      break;
   }
-
-  if (code === 'AI_API_NOT_CONFIGURED' || code === 'AI_SERVICE_MAINTENANCE') {
-    apiStatus.showMaintenance();
-    return;
-  }
-
-  apiStatus.showServerError();
 }
 
 interface VisionLabel {
@@ -138,21 +156,27 @@ export async function analyzeImageWithVision(imageBase64: string): Promise<strin
       notifyVisionIncident('AI_SERVICE_MAINTENANCE');
       throw new VisionServiceError(
         'AI_SERVICE_MAINTENANCE',
-        'Dich vu AI dang duoc bao tri. Vui long quay lai sau.'
+        'Dịch vụ AI đang được bảo trì. Vui lòng quay lại sau.'
+      );
+    }
+
+    if (errorCode === 'ECONNABORTED' || errorMessage.includes('timeout')) {
+      notifyVisionIncident('AI_REQUEST_TIMEOUT');
+      throw new VisionServiceError(
+        'AI_REQUEST_TIMEOUT',
+        'Yêu cầu quét ảnh mất quá nhiều thời gian. Vui lòng thử lại.'
       );
     }
 
     if (
       errorCode === 'ERR_NETWORK' ||
       errorCode === 'ENOTFOUND' ||
-      errorCode === 'ECONNABORTED' ||
-      errorMessage.includes('network') ||
-      errorMessage.includes('timeout')
+      errorMessage.includes('network')
     ) {
       notifyVisionIncident('AI_NETWORK_UNAVAILABLE');
       throw new VisionServiceError(
         'AI_NETWORK_UNAVAILABLE',
-        'Khong the ket noi den dich vu AI. Vui long kiem tra mang va thu lai.'
+        'Không thể kết nối đến dịch vụ AI. Vui lòng kiểm tra mạng và thử lại.'
       );
     }
 
@@ -160,7 +184,7 @@ export async function analyzeImageWithVision(imageBase64: string): Promise<strin
       notifyVisionIncident('AI_SERVICE_ERROR');
       throw new VisionServiceError(
         'AI_SERVICE_ERROR',
-        'He thong AI dang ban. Vui long thu lai sau.'
+        'Hệ thống AI đang bận. Vui lòng thử lại sau.'
       );
     }
 
@@ -168,7 +192,7 @@ export async function analyzeImageWithVision(imageBase64: string): Promise<strin
 
     throw new VisionServiceError(
       'AI_SERVICE_ERROR',
-      'Khong the phan tich anh luc nay. Vui long thu lai sau.'
+      'Không thể phân tích ảnh lúc này. Vui lòng thử lại sau.'
     );
   }
 }
