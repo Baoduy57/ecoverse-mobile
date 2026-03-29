@@ -21,9 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 export default function LoginScreen() {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [studentId, setStudentId] = useState('');
 
   // Animations
   const scaleAnim = useRef(new Animated.Value(0.3)).current;
@@ -48,7 +46,7 @@ export default function LoginScreen() {
   }, []);
 
   const handleLogin = () => {
-    console.log('Login:', email);
+    console.log('Login:', studentId);
 
     // Button press animation
     Animated.sequence([
@@ -114,47 +112,14 @@ export default function LoginScreen() {
                   <MaterialCommunityIcons name="account" size={24} color={colors.text.disabled} />
                 </View>
                 <RNTextInput
-                  placeholder="Tên tài khoản"
-                  value={email}
-                  onChangeText={setEmail}
+                  placeholder="Mã học sinh"
+                  value={studentId}
+                  onChangeText={setStudentId}
                   style={styles.input}
                   placeholderTextColor={colors.text.disabled}
                   autoCapitalize="none"
                 />
               </View>
-
-              {/* Password Input */}
-              <View style={styles.inputWrapper}>
-                <View style={styles.inputIconLeft}>
-                  <MaterialCommunityIcons name="lock" size={24} color={colors.text.disabled} />
-                </View>
-                <RNTextInput
-                  placeholder="Mật khẩu"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  style={styles.input}
-                  placeholderTextColor={colors.text.disabled}
-                  autoCapitalize="none"
-                />
-                <TouchableOpacity
-                  style={styles.inputIconRight}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <MaterialCommunityIcons
-                    name={showPassword ? 'eye-off' : 'eye'}
-                    size={24}
-                    color={colors.text.disabled}
-                  />
-                </TouchableOpacity>
-              </View>
-
-              {/* Forgot Password */}
-              <TouchableOpacity style={styles.forgotPasswordContainer}>
-                <Text variant="bodySmall" style={styles.forgotPassword}>
-                  Quên mật khẩu?
-                </Text>
-              </TouchableOpacity>
 
               {/* Login Button */}
               <Pressable
@@ -200,14 +165,7 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  forgotPassword: {
-    color: colors.text.secondary,
-    fontWeight: 'bold',
-  },
-  forgotPasswordContainer: {
-    alignSelf: 'flex-end',
-    marginTop: -spacing.sm,
-  },
+
   form: {
     gap: spacing.lg,
   },

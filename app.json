@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "eco-mobile",
+    "name": "Ecoverse",
     "slug": "eco-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/logo_eco.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "plugins": [
@@ -32,7 +32,7 @@
       "expo-font"
     ],
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/images/logo_eco.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -45,7 +45,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/images/logo_eco.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
