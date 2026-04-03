@@ -16,6 +16,7 @@ export interface WasteItem {
   nameEn: string;
   type: WasteType;
   icon: string;
+  image?: any; // Dành cho ảnh thực tế (chèn require() hoặc URL)
   description: string;
   hint?: string; // Gợi ý như "RỬA SẠCH TRƯỚC"
 }

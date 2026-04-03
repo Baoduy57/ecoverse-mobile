@@ -70,7 +70,7 @@ export default function DragDropGamePlayScreen() {
   const BINS_BOTTOM_THRESHOLD = SCREEN_HEIGHT - 220;
   const isAnimatingRef = useRef(false);
   const handleAnswerRef = useRef<(type: WasteType, binIndex: number, releaseY: number) => void>(
-    () => {}
+    () => { }
   );
 
   useEffect(() => {
@@ -303,6 +303,8 @@ export default function DragDropGamePlayScreen() {
           combo={combo}
           score={score}
           onPause={() => navigation.goBack()}
+          currentQuestionIndex={currentQuestionIndex + 1}
+          totalQuestions={questions.length}
         />
 
         <GamePlayInstruction feedbackAnimation={feedbackAnimation} />
