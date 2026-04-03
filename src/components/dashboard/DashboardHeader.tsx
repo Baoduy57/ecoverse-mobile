@@ -4,7 +4,7 @@ import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '@/theme';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
-import { HomeTabParamList } from '@/screens/home/HomeScreen';
+import { HomeTabParamList } from '@/navigation/TabNavigator';
 
 interface DashboardHeaderProps {
   userName: string;

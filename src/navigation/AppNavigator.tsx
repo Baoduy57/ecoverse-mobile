@@ -1,6 +1,6 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import { HomeScreen } from '../screens/home';
+
 import { AIScannerScreen } from '../screens/ai';
 import { EditAvatarScreen, SettingsScreen } from '../screens/profile';
 import { RewardHistoryScreen } from '../screens/reward';
@@ -10,7 +10,7 @@ import { ScheduledExamScreen, ExamQuestionScreen, ExamResultScreen } from '../sc
 import { NotificationScreen } from '../screens/notification';
 import { DevApiTestScreen } from '../screens/dev';
 import { QuizAnswer, QuizAnswerDetail } from '../types/quiz';
-import { HomeTabParamList } from '../screens/home/HomeScreen';
+import TabNavigator, { HomeTabParamList } from './TabNavigator';
 import { NavigatorScreenParams } from '@react-navigation/native';
 
 export type AppStackParamList = {
@@ -55,7 +55,7 @@ export default function AppNavigator() {
         headerShown: false,
       }}
     >
-      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="Home" component={TabNavigator} />
       <Stack.Screen
         name="AIScanner"
         component={AIScannerScreen}
