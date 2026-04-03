@@ -17,6 +17,7 @@ import {
   GamePlayItemCard,
   GamePlayBins,
   GamePlayResult,
+  GamePlayPauseModal,
 } from '../../components/game/GamePlay';
 import ScreenBackground from '../../components/common/ScreenBackground';
 
@@ -44,6 +45,7 @@ export default function DragDropGamePlayScreen() {
   const [timer, setTimer] = useState(levelConfig.timeLimit);
   const [isGameOver, setIsGameOver] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [answeredQuestions, setAnsweredQuestions] = useState<
     Array<{ item: WasteItem; userAnswer: WasteType; isCorrect: boolean }>
   >([]);
@@ -75,7 +77,7 @@ export default function DragDropGamePlayScreen() {
   );
 
   useEffect(() => {
-    if (isGameOver || showResult) return;
+    if (isGameOver || showResult || isPaused) return;
     const interval = setInterval(() => {
       setTimer(prev => {
         if (prev <= 1) {
@@ -86,7 +88,7 @@ export default function DragDropGamePlayScreen() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isGameOver, showResult, currentQuestionIndex]);
+  }, [isGameOver, showResult, isPaused, currentQuestionIndex]);
 
   useEffect(() => {
     pan.setValue({ x: 0, y: 0 });
@@ -343,7 +345,8 @@ export default function DragDropGamePlayScreen() {
           timeLimit={levelConfig.timeLimit}
           combo={combo}
           score={score}
-          onPause={() => navigation.goBack()}
+          onPause={() => setIsPaused(true)}
+          onSettings={() => setIsPaused(true)}
           currentQuestionIndex={currentQuestionIndex + 1}
           totalQuestions={questions.length}
         />
@@ -362,6 +365,19 @@ export default function DragDropGamePlayScreen() {
         />
 
         <GamePlayBins highlightedBin={highlightedBin} binScaleAnims={binScaleAnims} />
+
+        <GamePlayPauseModal
+          visible={isPaused}
+          onResume={() => setIsPaused(false)}
+          onReplay={() => {
+            setIsPaused(false);
+            handlePlayAgain();
+          }}
+          onGoHome={() => {
+            setIsPaused(false);
+            handleGoHome();
+          }}
+        />
       </SafeAreaView>
     </View>
   );
