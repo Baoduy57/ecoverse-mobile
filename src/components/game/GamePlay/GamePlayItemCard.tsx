@@ -13,6 +13,7 @@ interface GamePlayItemCardProps {
   item: WasteItem;
   pan: Animated.ValueXY;
   scale: Animated.Value;
+  opacity: Animated.Value;
   panHandlers: object;
   feedbackAnimation: Animated.Value;
   isDragging: boolean;
@@ -23,6 +24,7 @@ export default function GamePlayItemCard({
   item,
   pan,
   scale,
+  opacity,
   panHandlers,
   feedbackAnimation,
   isDragging,
@@ -35,6 +37,7 @@ export default function GamePlayItemCard({
         style={[
           styles.draggableItem,
           {
+            opacity,
             transform: [{ translateX: pan.x }, { translateY: pan.y }, { scale }],
           },
         ]}
