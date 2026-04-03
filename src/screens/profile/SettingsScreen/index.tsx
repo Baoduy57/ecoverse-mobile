@@ -31,10 +31,12 @@ export default function SettingsScreen() {
     bgMusicEnabled,
     sfxInteractionEnabled,
     sfxFeedbackEnabled,
+    vibrationEnabled,
     currentBgTrack,
     setBgMusic,
     setSfxInteraction,
     setSfxFeedback,
+    setVibration,
     setBgTrack,
     loadSettings,
   } = useSettingsStore();
@@ -70,6 +72,10 @@ export default function SettingsScreen() {
   const handleInteraction = (value: boolean) => {
     setSfxInteraction(value);
     audioService.setInteractionEnabled(value);
+  };
+
+  const handleVibration = (value: boolean) => {
+    setVibration(value);
   };
 
   const handleFeedback = (value: boolean) => {
@@ -238,23 +244,22 @@ export default function SettingsScreen() {
                     </View>
                   )}
 
-                  {/* Tương tác */}
-                  <View style={[styles.subRow, !masterSoundEnabled && styles.disabledRow]}>
+                  {/* Rung */}
+                  <View style={styles.subRow}>
                     <View style={styles.settingLeft}>
                       <MaterialCommunityIcons
-                        name="hand-pointing-up"
+                        name="vibrate"
                         size={20}
                         color={colors.secondary}
                         style={styles.subIcon}
                       />
                       <Text variant="bodyMedium" style={styles.subLabel}>
-                        Tương tác
+                        Rung
                       </Text>
                     </View>
                     <Switch
-                      disabled={!masterSoundEnabled}
-                      value={sfxInteractionEnabled}
-                      onValueChange={handleInteraction}
+                      value={vibrationEnabled}
+                      onValueChange={handleVibration}
                       color={colors.primary}
                     />
                   </View>

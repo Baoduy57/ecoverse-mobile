@@ -20,6 +20,7 @@ import {
   GamePlayPauseModal,
 } from '../../components/game/GamePlay';
 import ScreenBackground from '../../components/common/ScreenBackground';
+import { useSettingsStore } from '../../store/settingsStore';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -228,7 +229,9 @@ export default function DragDropGamePlayScreen() {
           }
         });
       } else {
-        Vibration.vibrate(400);
+        if (useSettingsStore.getState().vibrationEnabled) {
+          Vibration.vibrate(400);
+        }
         const shakeSteps = [-12, 12, -10, 10, -6, 6, 0];
         const anims = shakeSteps.map(xVal =>
           Animated.timing(pan, {

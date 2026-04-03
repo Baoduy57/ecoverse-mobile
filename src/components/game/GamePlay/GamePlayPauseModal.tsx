@@ -3,6 +3,8 @@ import { View, StyleSheet, Modal, TouchableOpacity, TouchableWithoutFeedback } f
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing } from '../../../theme';
+import { useSettingsStore } from '../../../store/settingsStore';
+import { audioService } from '../../../services/audioService';
 
 interface GamePlayPauseModalProps {
     visible: boolean;
@@ -17,8 +19,28 @@ export default function GamePlayPauseModal({
     onReplay,
     onGoHome,
 }: GamePlayPauseModalProps) {
-    const [soundEnabled, setSoundEnabled] = useState(true);
-    const [vibrationEnabled, setVibrationEnabled] = useState(false);
+    const {
+        bgMusicEnabled,
+        sfxInteractionEnabled,
+        sfxFeedbackEnabled,
+        vibrationEnabled,
+        currentBgTrack,
+        setBgMusic,
+        setSfxInteraction,
+        setSfxFeedback,
+        setVibration,
+    } = useSettingsStore();
+
+    const masterSoundEnabled = bgMusicEnabled || sfxInteractionEnabled || sfxFeedbackEnabled;
+
+    const handleMasterSound = (value: boolean) => {
+        setBgMusic(value);
+        setSfxInteraction(value);
+        setSfxFeedback(value);
+        audioService.setBgMusicEnabled(value, currentBgTrack);
+        audioService.setInteractionEnabled(value);
+        audioService.setFeedbackEnabled(value);
+    };
 
     if (!visible) return null;
 
@@ -62,11 +84,11 @@ export default function GamePlayPauseModal({
                                     <Text style={styles.settingLabel}>Âm thanh</Text>
                                 </View>
                                 <TouchableOpacity
-                                    style={[styles.switchTrack, soundEnabled ? styles.switchTrackOn : styles.switchTrackOff]}
-                                    onPress={() => setSoundEnabled(!soundEnabled)}
+                                    style={[styles.switchTrack, masterSoundEnabled ? styles.switchTrackOn : styles.switchTrackOff]}
+                                    onPress={() => handleMasterSound(!masterSoundEnabled)}
                                     activeOpacity={0.8}
                                 >
-                                    <View style={[styles.switchThumb, soundEnabled ? styles.switchThumbOn : styles.switchThumbOff]} />
+                                    <View style={[styles.switchThumb, masterSoundEnabled ? styles.switchThumbOn : styles.switchThumbOff]} />
                                 </TouchableOpacity>
                             </View>
 
@@ -79,7 +101,7 @@ export default function GamePlayPauseModal({
                                 </View>
                                 <TouchableOpacity
                                     style={[styles.switchTrack, vibrationEnabled ? styles.switchTrackOn : styles.switchTrackOff]}
-                                    onPress={() => setVibrationEnabled(!vibrationEnabled)}
+                                    onPress={() => setVibration(!vibrationEnabled)}
                                     activeOpacity={0.8}
                                 >
                                     <View style={[styles.switchThumb, vibrationEnabled ? styles.switchThumbOn : styles.switchThumbOff]} />
