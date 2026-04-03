@@ -13,12 +13,14 @@ interface SettingsState {
     bgMusicEnabled: boolean;
     sfxInteractionEnabled: boolean;
     sfxFeedbackEnabled: boolean;
+    vibrationEnabled: boolean;
     currentBgTrack: string;
 
     // Actions
     setBgMusic: (value: boolean) => void;
     setSfxInteraction: (value: boolean) => void;
     setSfxFeedback: (value: boolean) => void;
+    setVibration: (value: boolean) => void;
     setBgTrack: (trackKey: string) => void;
     loadSettings: () => Promise<void>;
 }
@@ -37,6 +39,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     bgMusicEnabled: true,
     sfxInteractionEnabled: true,
     sfxFeedbackEnabled: true,
+    vibrationEnabled: true,
     currentBgTrack: BG_TRACKS[0].key,
 
     setBgMusic: (value) => {
@@ -54,6 +57,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         saveToStorage({ sfxFeedbackEnabled: value });
     },
 
+    setVibration: (value) => {
+        set({ vibrationEnabled: value });
+        saveToStorage({ vibrationEnabled: value });
+    },
+
     setBgTrack: (trackKey) => {
         set({ currentBgTrack: trackKey });
         saveToStorage({ currentBgTrack: trackKey });
@@ -68,6 +76,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
                     bgMusicEnabled: parsed.bgMusicEnabled ?? true,
                     sfxInteractionEnabled: parsed.sfxInteractionEnabled ?? true,
                     sfxFeedbackEnabled: parsed.sfxFeedbackEnabled ?? true,
+                    vibrationEnabled: parsed.vibrationEnabled ?? true,
                     currentBgTrack: parsed.currentBgTrack ?? BG_TRACKS[0].key,
                 });
             }

@@ -8,7 +8,7 @@ import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { AppStackParamList } from '@navigation/AppNavigator';
-import type { HomeTabParamList } from '../home/HomeScreen';
+import type { HomeTabParamList } from '../../navigation/TabNavigator';
 import { useAuthStore } from '@store/authStore';
 import { StatsCard, AchievementBadge } from '@/components/profile';
 import ScreenBackground from '../../components/common/ScreenBackground';

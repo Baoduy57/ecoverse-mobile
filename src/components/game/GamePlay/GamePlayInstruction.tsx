@@ -12,16 +12,6 @@ export default function GamePlayInstruction({ feedbackAnimation }: GamePlayInstr
   return (
     <View style={styles.instructionContainer}>
       <Animated.View
-        style={{
-          opacity: feedbackAnimation.interpolate({
-            inputRange: [0, 1],
-            outputRange: [1, 0],
-          }),
-        }}
-      >
-        <Text style={styles.instructionText}>Kéo vào thùng rác đúng loại!</Text>
-      </Animated.View>
-      <Animated.View
         style={[
           styles.feedbackOverlay,
           {

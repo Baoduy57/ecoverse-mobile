@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Animated, PanResponder, Dimensions } from 'react-native';
+import { View, StyleSheet, Animated, PanResponder, Dimensions, Vibration } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { colors } from '../../theme';
@@ -17,8 +17,10 @@ import {
   GamePlayItemCard,
   GamePlayBins,
   GamePlayResult,
+  GamePlayPauseModal,
 } from '../../components/game/GamePlay';
 import ScreenBackground from '../../components/common/ScreenBackground';
+import { useSettingsStore } from '../../store/settingsStore';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -44,6 +46,7 @@ export default function DragDropGamePlayScreen() {
   const [timer, setTimer] = useState(levelConfig.timeLimit);
   const [isGameOver, setIsGameOver] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [answeredQuestions, setAnsweredQuestions] = useState<
     Array<{ item: WasteItem; userAnswer: WasteType; isCorrect: boolean }>
   >([]);
@@ -60,6 +63,7 @@ export default function DragDropGamePlayScreen() {
 
   const pan = useRef(new Animated.ValueXY()).current;
   const scale = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
   const [isDragging, setIsDragging] = useState(false);
   const [highlightedBin, setHighlightedBin] = useState<WasteType | null>(null);
   const [feedbackAnimation] = useState(new Animated.Value(0));
@@ -70,11 +74,11 @@ export default function DragDropGamePlayScreen() {
   const BINS_BOTTOM_THRESHOLD = SCREEN_HEIGHT - 220;
   const isAnimatingRef = useRef(false);
   const handleAnswerRef = useRef<(type: WasteType, binIndex: number, releaseY: number) => void>(
-    () => {}
+    () => { }
   );
 
   useEffect(() => {
-    if (isGameOver || showResult) return;
+    if (isGameOver || showResult || isPaused) return;
     const interval = setInterval(() => {
       setTimer(prev => {
         if (prev <= 1) {
@@ -85,12 +89,13 @@ export default function DragDropGamePlayScreen() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isGameOver, showResult, currentQuestionIndex]);
+  }, [isGameOver, showResult, isPaused, currentQuestionIndex]);
 
   useEffect(() => {
     pan.setValue({ x: 0, y: 0 });
     scale.setValue(1);
-  }, [currentQuestionIndex, pan, scale]);
+    opacity.setValue(1);
+  }, [currentQuestionIndex, pan, scale, opacity]);
 
   useEffect(() => {
     BINS.forEach((bin, i) => {
@@ -158,8 +163,10 @@ export default function DragDropGamePlayScreen() {
 
   const resetPanAndScale = useCallback(() => {
     pan.setValue({ x: 0, y: 0 });
+    opacity.setValue(1);
     scale.setValue(1);
-  }, [pan, scale]);
+
+  }, [pan, scale, opacity]);
 
   const handleAnswer = useCallback(
     (selectedType: WasteType, binIndex: number, releaseY: number) => {
@@ -180,31 +187,51 @@ export default function DragDropGamePlayScreen() {
         Animated.parallel([
           Animated.timing(pan, { toValue: target, duration: 280, useNativeDriver: true }),
           Animated.timing(scale, { toValue: 0.4, duration: 280, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 0, duration: 180, useNativeDriver: true }),
         ]).start(() => {
           setScore(prev => prev + 300);
           setCorrectAnswers(prev => prev + 1);
           feedbackAnimation.setValue(0);
           Animated.timing(feedbackAnimation, {
             toValue: 1,
-            duration: 180,
+            duration: 500,
             useNativeDriver: true,
           }).start(() => {
             Animated.timing(feedbackAnimation, {
               toValue: 0,
-              duration: 180,
+              duration: 500,
               useNativeDriver: true,
             }).start();
           });
-          resetPanAndScale();
-          isAnimatingRef.current = false;
-          setIsAnimating(false);
+
           if (currentQuestionIndex < questions.length - 1) {
-            setTimeout(() => setCurrentQuestionIndex(prev => prev + 1), 250);
+            // Chuẩn bị sẵn Data câu tiếp theo dưới nền (tàng hình)
+            pan.setValue({ x: 0, y: 0 });
+            scale.setValue(0.9); // Bắt đầu nhỏ hơn 1 chút để tạo hiệu ứng bật lên
+            setCurrentQuestionIndex(prev => prev + 1);
+
+            // Chờ hết 1000ms của popup điểm thì mới hiện hình mới lên
+            setTimeout(() => {
+              Animated.parallel([
+                Animated.timing(opacity, { toValue: 1, duration: 250, useNativeDriver: true }),
+                Animated.spring(scale, { toValue: 1, friction: 8, tension: 50, useNativeDriver: true })
+              ]).start(() => {
+                isAnimatingRef.current = false;
+                setIsAnimating(false);
+              });
+            }, 1000);
           } else {
-            handleGameOver();
+            setTimeout(() => {
+              isAnimatingRef.current = false;
+              setIsAnimating(false);
+              handleGameOver();
+            }, 1000);
           }
         });
       } else {
+        if (useSettingsStore.getState().vibrationEnabled) {
+          Vibration.vibrate(400);
+        }
         const shakeSteps = [-12, 12, -10, 10, -6, 6, 0];
         const anims = shakeSteps.map(xVal =>
           Animated.timing(pan, {
@@ -276,6 +303,25 @@ export default function DragDropGamePlayScreen() {
     navigation.navigate('GameResultDetail', { results: formattedResults });
   };
 
+  const handlePlayAgain = () => {
+    setCurrentQuestionIndex(0);
+    setScore(0);
+    setCorrectAnswers(0);
+    setCombo(0);
+    setTimer(levelConfig.timeLimit);
+    setIsGameOver(false);
+    setShowResult(false);
+    setAnsweredQuestions([]);
+
+    pan.setValue({ x: 0, y: 0 });
+    scale.setValue(1);
+    opacity.setValue(1);
+  };
+
+  const handleGoHome = () => {
+    navigation.navigate('Home', { screen: 'Game' } as never);
+  };
+
   if (showResult) {
     return (
       <GamePlayResult
@@ -283,8 +329,8 @@ export default function DragDropGamePlayScreen() {
         correctAnswers={correctAnswers}
         totalQuestions={questions.length}
         onViewDetails={handleViewDetails}
-        onPlayAgain={() => navigation.goBack()}
-        onGoHome={() => navigation.navigate('Home' as never)}
+        onPlayAgain={handlePlayAgain}
+        onGoHome={handleGoHome}
       />
     );
   }
@@ -302,7 +348,10 @@ export default function DragDropGamePlayScreen() {
           timeLimit={levelConfig.timeLimit}
           combo={combo}
           score={score}
-          onPause={() => navigation.goBack()}
+          onPause={() => setIsPaused(true)}
+          onSettings={() => setIsPaused(true)}
+          currentQuestionIndex={currentQuestionIndex + 1}
+          totalQuestions={questions.length}
         />
 
         <GamePlayInstruction feedbackAnimation={feedbackAnimation} />
@@ -311,6 +360,7 @@ export default function DragDropGamePlayScreen() {
           item={currentQuestion.item}
           pan={pan}
           scale={scale}
+          opacity={opacity}
           panHandlers={panResponder.panHandlers}
           feedbackAnimation={feedbackAnimation}
           isDragging={isDragging}
@@ -318,6 +368,19 @@ export default function DragDropGamePlayScreen() {
         />
 
         <GamePlayBins highlightedBin={highlightedBin} binScaleAnims={binScaleAnims} />
+
+        <GamePlayPauseModal
+          visible={isPaused}
+          onResume={() => setIsPaused(false)}
+          onReplay={() => {
+            setIsPaused(false);
+            handlePlayAgain();
+          }}
+          onGoHome={() => {
+            setIsPaused(false);
+            handleGoHome();
+          }}
+        />
       </SafeAreaView>
     </View>
   );

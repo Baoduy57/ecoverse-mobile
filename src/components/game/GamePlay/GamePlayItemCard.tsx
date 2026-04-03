@@ -1,19 +1,19 @@
 import React from 'react';
-import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, StyleSheet, Animated, Dimensions, Image } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../../../theme';
 import type { WasteItem } from '../../../data/dragDropGameData';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = Math.min(SCREEN_WIDTH - spacing.lg * 4, 240);
-const ICON_SIZE = 100;
-const ICON_AREA = 150;
+const CARD_WIDTH = Math.min(SCREEN_WIDTH - spacing.xl * 2, 320); // slightly wider
+const ICON_AREA = 220;
 
 interface GamePlayItemCardProps {
   item: WasteItem;
   pan: Animated.ValueXY;
   scale: Animated.Value;
+  opacity: Animated.Value;
   panHandlers: object;
   feedbackAnimation: Animated.Value;
   isDragging: boolean;
@@ -24,6 +24,7 @@ export default function GamePlayItemCard({
   item,
   pan,
   scale,
+  opacity,
   panHandlers,
   feedbackAnimation,
   isDragging,
@@ -36,36 +37,45 @@ export default function GamePlayItemCard({
         style={[
           styles.draggableItem,
           {
+            opacity,
             transform: [{ translateX: pan.x }, { translateY: pan.y }, { scale }],
           },
         ]}
       >
         <View style={styles.itemCard}>
+          {/* Top Pill */}
           <View style={styles.itemLabelBadge}>
-            <Text style={styles.itemLabelText}>Phân loại tới!</Text>
+            <Text style={styles.itemLabelText}>PHÂN LOẠI TỚ!</Text>
           </View>
+
+          {/* Image/Icon Area */}
           <View style={styles.itemIconArea}>
-            <MaterialCommunityIcons
-              name={item.icon as any}
-              size={ICON_SIZE}
-              color={colors.text.primary}
-            />
+            {item.image ? (
+              <Image source={item.image} style={styles.imageContent} resizeMode="cover" />
+            ) : (
+              <MaterialCommunityIcons
+                name={item.icon as any}
+                size={120}
+                color={colors.text.primary}
+              />
+            )}
           </View>
+
+          {/* Texts */}
           <Text style={styles.itemName}>{item.name}</Text>
           {item.hint ? (
             <Text style={styles.itemHintText}>{item.hint}</Text>
-          ) : (
-            <Text style={styles.itemNameEn}>{item.nameEn}</Text>
-          )}
+          ) : null}
         </View>
       </Animated.View>
 
-      {!isDragging && (
+      {/* Drag Hint (underneath card) */}
+      <View style={styles.dragHintWrapper}>
         <Animated.View
           style={[
             styles.dragHint,
             {
-              opacity: hintAnimation.interpolate({
+              opacity: isDragging ? 0 : hintAnimation.interpolate({
                 inputRange: [0, 1],
                 outputRange: [0.5, 1],
               }),
@@ -73,7 +83,7 @@ export default function GamePlayItemCard({
                 {
                   translateY: hintAnimation.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [0, 8],
+                    outputRange: [0, 6],
                   }),
                 },
               ],
@@ -81,10 +91,10 @@ export default function GamePlayItemCard({
           ]}
           pointerEvents="none"
         >
-          <MaterialCommunityIcons name="gesture-swipe-down" size={28} color={colors.primary} />
-          <Text style={styles.dragHintText}>Kéo xuống</Text>
+          <MaterialCommunityIcons name="gesture-swipe" size={24} color="#66BB6A" />
+          <Text style={styles.dragHintText}>KÉO THẢ ĐỂ GHI ĐIỂM</Text>
         </Animated.View>
-      )}
+      </View>
     </View>
   );
 }
@@ -92,43 +102,52 @@ export default function GamePlayItemCard({
 const styles = StyleSheet.create({
   dragHint: {
     alignItems: 'center',
-    bottom: 48,
-    position: 'absolute',
+    flexDirection: 'row',
+    gap: spacing.xs,
   },
   dragHintText: {
-    color: colors.primary,
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: spacing.xs,
+    color: '#388E3C', // darker green
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  dragHintWrapper: {
+    alignItems: 'center',
+    height: 40,
+    justifyContent: 'center',
+    marginTop: spacing.xl,
   },
   draggableItem: {
-    height: 300,
+    alignSelf: 'center',
     width: CARD_WIDTH,
+  },
+  imageContent: {
+    borderRadius: 16,
+    height: '100%',
+    width: '100%',
   },
   itemCard: {
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: 24,
-    elevation: 6,
-    flex: 1,
-    justifyContent: 'center',
-    padding: spacing.lg,
+    borderRadius: 32, // Large rounded corners
+    elevation: 8,
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
   },
   itemContainer: {
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    paddingBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing['2xl'], // pushes entire block up
   },
   itemHintText: {
-    color: colors.text.secondary,
-    fontSize: 13,
-    fontWeight: '600',
+    color: '#757575',
+    fontSize: 16,
     marginTop: spacing.xs,
   },
   itemIconArea: {
@@ -137,32 +156,26 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     height: ICON_AREA,
     justifyContent: 'center',
-    marginBottom: spacing.md,
-    width: ICON_AREA,
+    marginBottom: spacing.lg,
+    marginTop: spacing.md,
+    width: '100%', // full width of inner padding
   },
   itemLabelBadge: {
-    backgroundColor: '#FFE082',
+    backgroundColor: '#E8F5E9',
     borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    position: 'absolute',
-    top: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   itemLabelText: {
-    color: colors.text.primary,
-    fontSize: 12,
-    fontWeight: '700',
+    color: '#2E7D32',
+    fontSize: 14,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   itemName: {
-    color: colors.text.primary,
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-    textAlign: 'center',
-  },
-  itemNameEn: {
-    color: colors.text.secondary,
-    fontSize: 14,
+    color: '#212121',
+    fontSize: 24,
+    fontWeight: '800',
     textAlign: 'center',
   },
 });

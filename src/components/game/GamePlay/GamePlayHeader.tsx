@@ -2,8 +2,8 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius } from '../../../theme';
-import { GAME_HEADER_LABELS } from '../../../data/dragDropGameData';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, spacing } from '../../../theme';
 
 const formatTime = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -19,69 +19,69 @@ interface GamePlayHeaderProps {
   score: number;
   onPause: () => void;
   onSettings?: () => void;
+  currentQuestionIndex?: number;
+  totalQuestions?: number;
 }
 
 export default function GamePlayHeader({
-  gameModeLabel,
   timer,
-  timeLimit,
   combo,
   score,
   onPause,
   onSettings,
+  currentQuestionIndex = 0,
+  totalQuestions = 1,
 }: GamePlayHeaderProps) {
-  const isTimerWarning = timer <= 10;
+  const progress = totalQuestions > 0 ? currentQuestionIndex / totalQuestions : 0;
 
   return (
     <View style={styles.headerWrapper}>
-      {/* Top row: Pause | Game Mode | Settings */}
+      {/* Top row: Close | Title | Settings */}
       <View style={styles.topRow}>
-        <TouchableOpacity style={styles.pauseButton} onPress={onPause} activeOpacity={0.8}>
-          <MaterialCommunityIcons name="pause" size={24} color={colors.primary} />
+        <TouchableOpacity style={styles.iconButton} onPress={onPause} activeOpacity={0.8}>
+          <MaterialCommunityIcons name="close" size={24} color={colors.text.primary} />
         </TouchableOpacity>
 
-        <View style={styles.gameModeBadge}>
-          <Text style={styles.gameModeText}>{gameModeLabel}</Text>
-        </View>
+        <Text style={styles.titleText}>PHÂN LOẠI RÁC</Text>
 
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={onSettings || onPause}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons name="cog" size={24} color={colors.text.secondary} />
+        <TouchableOpacity style={styles.iconButton} onPress={onSettings || onPause} activeOpacity={0.8}>
+          <MaterialCommunityIcons name="cog" size={24} color={colors.text.primary} />
         </TouchableOpacity>
       </View>
 
-      {/* Bottom row: Timer | Combo | Score */}
+      {/* Stats row: Timer | Score | Combo */}
       <View style={styles.statsRow}>
-        <View style={[styles.statCard, styles.timerCard, isTimerWarning && styles.timerWarning]}>
-          <View style={styles.statContent}>
-            <MaterialCommunityIcons
-              name="clock-outline"
-              size={20}
-              color={isTimerWarning ? colors.status.error : colors.text.secondary}
-            />
-            <Text style={[styles.statValue, isTimerWarning && styles.timerTextWarning]}>
-              {formatTime(timer)}
-            </Text>
-          </View>
-          <Text style={styles.statLabel}>{GAME_HEADER_LABELS.time}</Text>
+        {/* Timer */}
+        <View style={styles.timerPill}>
+          <MaterialCommunityIcons
+            name="timer-outline"
+            size={20}
+            color={colors.primary}
+          />
+          <Text style={styles.timerText}>{formatTime(timer)}</Text>
         </View>
 
-        <View style={styles.comboCard}>
-          <Text style={styles.comboValue}>x{combo}</Text>
-          <Text style={styles.comboLabel}>{GAME_HEADER_LABELS.combo}</Text>
+        {/* Score */}
+        <View style={styles.scoreContainer}>
+          <Text style={styles.scoreLabel}>ĐIỂM SỐ</Text>
+          <Text style={styles.scoreValue}>{score.toLocaleString()}</Text>
         </View>
 
-        <View style={[styles.statCard, styles.scoreCard]}>
-          <View style={styles.statContent}>
-            <Text style={styles.scoreValue}>{score.toLocaleString()}</Text>
-            <View style={styles.trophyWrap}>
-              <MaterialCommunityIcons name="trophy" size={20} color={colors.text.white} />
-            </View>
-          </View>
-          <Text style={styles.scoreStatLabel}>{GAME_HEADER_LABELS.score}</Text>
+        {/* Combo */}
+        <View style={[styles.comboPill, combo > 0 && styles.comboPillActive]}>
+          <Text style={[styles.comboText, combo > 0 && styles.comboTextActive]}>Combo x{combo}</Text>
+        </View>
+      </View>
+
+      {/* Progress Bar */}
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBackground}>
+          <LinearGradient
+            colors={['#81C784', '#4CAF50']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.progressFill, { width: `${Math.max(5, progress * 100)}%` }]}
+          />
         </View>
       </View>
     </View>
@@ -89,151 +89,96 @@ export default function GamePlayHeader({
 }
 
 const styles = StyleSheet.create({
-  comboCard: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
+  comboPill: {
+    backgroundColor: '#E8F5E9',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
-  comboLabel: {
-    color: '#FF9800',
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
+  comboPillActive: {
+    backgroundColor: '#81C784',
   },
-  comboValue: {
-    color: '#FF9800',
-    fontSize: 28,
-    fontWeight: '800',
+  comboText: {
+    color: '#81C784',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
-  gameModeBadge: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.full,
-    elevation: 2,
-    flex: 1,
-    justifyContent: 'center',
-    marginHorizontal: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  gameModeText: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: '700',
+  comboTextActive: {
+    color: colors.text.white,
   },
   headerWrapper: {
-    backgroundColor: '#E8F5E9',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    elevation: 3,
-    paddingBottom: spacing.md,
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
+    paddingBottom: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
   },
-  pauseButton: {
+  iconButton: {
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: colors.primary,
+    backgroundColor: '#E0E0E0',
     borderRadius: 22,
-    borderWidth: 2,
-    elevation: 2,
     height: 44,
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
     width: 44,
   },
-  scoreCard: {
-    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+  progressBackground: {
+    backgroundColor: '#E0E0E0',
+    borderRadius: 6,
+    height: 8,
+    overflow: 'hidden',
+    width: '100%',
   },
-  scoreStatLabel: {
-    color: colors.primary,
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
+  progressContainer: {
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.xs,
+  },
+  progressFill: {
+    borderRadius: 6,
+    height: '100%',
+  },
+  scoreContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scoreLabel: {
+    color: '#757575',
+    fontSize: 12,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
   scoreValue: {
-    color: colors.primary,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  settingsButton: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 22,
-    elevation: 2,
-    height: 44,
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    width: 44,
-  },
-  statCard: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    elevation: 2,
-    flex: 1,
-    padding: spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  statContent: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  statLabel: {
-    color: colors.text.secondary,
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  statValue: {
-    color: colors.text.primary,
-    fontSize: 20,
-    fontWeight: '700',
+    color: '#2E7D32',
+    fontSize: 32,
+    fontWeight: '900',
+    lineHeight: 36,
   },
   statsRow: {
-    alignItems: 'stretch',
+    alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.sm,
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
   },
-  timerCard: {
-    backgroundColor: 'rgba(244, 67, 54, 0.08)',
+  timerPill: {
+    alignItems: 'center',
+    backgroundColor: '#DcedC8',
+    borderRadius: 20,
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
-  timerTextWarning: {
-    color: colors.status.error,
+  timerText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
-  timerWarning: {
-    backgroundColor: 'rgba(244, 67, 54, 0.12)',
+  titleText: {
+    color: '#1B5E20',
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   topRow: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  trophyWrap: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 14,
-    height: 28,
-    justifyContent: 'center',
-    width: 28,
   },
 });
