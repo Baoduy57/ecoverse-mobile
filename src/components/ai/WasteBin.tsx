@@ -1,8 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Platform, Animated } from 'react-native';
+import { View, StyleSheet, Animated } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { WasteType } from '@/types/wasteClassification';
 
 interface WasteBinProps {
@@ -23,81 +22,87 @@ export default function WasteBin({ wasteType, isHighlighted }: WasteBinProps) {
   }, [isHighlighted]);
 
   return (
-    // Outer plain View handles border/shadow (static, no driver conflict)
-    <View
+    <Animated.View
       style={[
-        styles.container,
-        {
-          borderColor: isHighlighted ? wasteType.color : 'transparent',
-          borderWidth: 3,
-          ...Platform.select({
-            ios: {
-              shadowColor: wasteType.color,
-              shadowOpacity: isHighlighted ? 0.55 : 0.15,
-              shadowOffset: { width: 0, height: 4 },
-              shadowRadius: 10,
-            },
-            android: { elevation: isHighlighted ? 10 : 5 },
-          }),
-        },
+        styles.binWrapper,
+        { transform: [{ translateY: isHighlighted ? -8 : 0 }, { scale: scaleAnim }] },
       ]}
     >
-      {/* Inner Animated.View handles only native-driver scale */}
-      <Animated.View style={[styles.innerScale, { transform: [{ scale: scaleAnim }] }]}>
-        {/* Icon area with gradient */}
-        <LinearGradient
-          colors={[wasteType.color, wasteType.color + 'CC']}
-          style={styles.iconArea}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          {isHighlighted && <View style={styles.glowPulse} />}
-          <MaterialCommunityIcons name={wasteType.icon as any} size={42} color="#FFFFFF" />
-        </LinearGradient>
+      <View style={styles.trashCanShape}>
+        {/* Lid */}
+        <View style={[styles.lid, { backgroundColor: wasteType.color }]} />
 
-        {/* Label */}
-        <View style={[styles.labelArea, { backgroundColor: wasteType.color + '18' }]}>
-          <Text style={[styles.binLabel, { color: wasteType.color }]} numberOfLines={2}>
-            {wasteType.name}
-          </Text>
+        {/* Body */}
+        <View style={[styles.body, { backgroundColor: wasteType.color }]}>
+          {/* Two-tone top overlay to make top half lighter */}
+          <View style={styles.twoToneOverlay} />
+
+          <View style={styles.iconContainer}>
+            <MaterialCommunityIcons name={wasteType.icon as any} size={30} color="#FFFFFF" />
+          </View>
         </View>
-      </Animated.View>
-    </View>
+      </View>
+
+      {/* Label outside, below the shape */}
+      <Text style={[styles.binLabel, { color: wasteType.color }]} numberOfLines={2}>
+        {wasteType.name.toUpperCase()}
+      </Text>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   binLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 0.2,
-    lineHeight: 14,
+    marginTop: 6,
     textAlign: 'center',
+    lineHeight: 12,
   },
-  container: {
+  binWrapper: {
     alignItems: 'center',
-    borderRadius: 20,
-    overflow: 'hidden',
     width: '100%',
   },
-  glowPulse: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#FFFFFF30',
+  body: {
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    elevation: 4,
+    height: '80%',
+    overflow: 'hidden', 
+    width: '88%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
   },
-  iconArea: {
+  iconContainer: {
     alignItems: 'center',
-    height: 82,
+    flex: 1,
     justifyContent: 'center',
-    width: '100%',
   },
-  innerScale: {
+  lid: {
+    borderRadius: 8,
+    elevation: 3,
+    height: '14%',
+    marginBottom: '2%',
     width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  labelArea: {
+  trashCanShape: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 4,
-    paddingVertical: 9,
+    aspectRatio: 0.75, // Taller than wide
+    justifyContent: 'flex-start',
     width: '100%',
+  },
+  twoToneOverlay: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)', // lightens the top half
+    height: '50%',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
 });
