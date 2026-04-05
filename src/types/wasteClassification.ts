@@ -150,7 +150,7 @@ export const WASTE_TYPES: WasteType[] = [
   },
   {
     id: 'general',
-    name: 'Rác thông thường',
+    name: 'Rác khác',
     icon: 'delete',
     color: '#9E9E9E',
     description: 'Rác thải khó phân hủy, không tái chế được',
