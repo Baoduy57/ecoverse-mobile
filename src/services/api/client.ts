@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'ax
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { APP_CONFIG } from '../../constants/config';
 import { useApiStatusStore } from '../../store/apiStatusStore';
+import { useAuthStore } from '../../store/authStore';
 
 type RequestMetadata = {
   id: number;
@@ -41,7 +42,7 @@ const clearRequestWarning = (config?: RequestConfigWithMetadata) => {
 
 // Tạo axios instance
 const apiClient: AxiosInstance = axios.create({
-  baseURL: process.env.API_BASE_URL || 'https://api.ecoverse.com',
+  baseURL: process.env.EXPO_PUBLIC_API_URL || 'https://ecoverse.com.name.vn/api',
   timeout: APP_CONFIG.API_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
@@ -94,9 +95,9 @@ apiClient.interceptors.response.use(
     clearRequestWarning(error.config as RequestConfigWithMetadata | undefined);
 
     if (error.response?.status === 401) {
-      // Token hết hạn - redirect to login
-      await AsyncStorage.removeItem(APP_CONFIG.STORAGE_KEYS.TOKEN);
-      // TODO: Navigate to login screen
+      // Token hết hạn - force logout to clear storage and redirect
+      // Delay import or use require to avoid circular dependency if needed
+      useAuthStore.getState().logout();
     }
 
     if (error.code === 'ERR_CANCELED') {

@@ -14,14 +14,15 @@ import {
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuthStore } from '@store/authStore';
 import ScreenBackground from '../../components/common/ScreenBackground';
 import { colors, spacing, borderRadius } from '@theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { studentLogin, isLoading } = useAuthStore();
   const [studentId, setStudentId] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Animations
   const scaleAnim = useRef(new Animated.Value(0.3)).current;
@@ -45,8 +46,13 @@ export default function LoginScreen() {
     ]).start();
   }, []);
 
-  const handleLogin = () => {
-    console.log('Login:', studentId);
+  const handleLogin = async () => {
+    setErrorMessage('');
+    const trimmedId = studentId.trim();
+    if (!trimmedId) {
+      setErrorMessage('Vui lòng nhập Mã học sinh');
+      return;
+    }
 
     // Button press animation
     Animated.sequence([
@@ -62,7 +68,11 @@ export default function LoginScreen() {
       }),
     ]).start();
 
-    login();
+    try {
+      await studentLogin(trimmedId);
+    } catch (error: any) {
+      setErrorMessage('Mã học sinh không hợp lệ');
+    }
   };
 
   return (
@@ -107,7 +117,7 @@ export default function LoginScreen() {
             {/* Form Section */}
             <View style={styles.form}>
               {/* Username Input */}
-              <View style={styles.inputWrapper}>
+              <View style={[styles.inputWrapper, errorMessage ? styles.inputError : null]}>
                 <View style={styles.inputIconLeft}>
                   <MaterialCommunityIcons name="account" size={24} color={colors.text.disabled} />
                 </View>
@@ -120,6 +130,13 @@ export default function LoginScreen() {
                   autoCapitalize="none"
                 />
               </View>
+
+              {/* Error Message */}
+              {errorMessage ? (
+                <Animated.View style={{ opacity: fadeAnim }}>
+                  <Text style={styles.errorText}>{errorMessage}</Text>
+                </Animated.View>
+              ) : null}
 
               {/* Login Button */}
               <Pressable
@@ -162,6 +179,14 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
+  errorText: {
+    color: colors.status.error,
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: -spacing.sm,
+    paddingHorizontal: spacing.sm,
+    textAlign: 'center',
+  },
   flex: {
     flex: 1,
   },
@@ -188,6 +213,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     zIndex: 1,
+  },
+  inputError: {
+    borderColor: colors.status.error,
+    borderWidth: 1.5,
   },
   inputIconRight: {
     bottom: 0,

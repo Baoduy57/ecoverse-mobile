@@ -11,8 +11,7 @@ interface AuthState {
   error: string | null;
 
   // Actions
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  studentLogin: (student_code: string) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
   clearError: () => void;
@@ -25,51 +24,54 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  login: async (email: string, password: string) => {
+
+
+  studentLogin: async (student_code: string) => {
     try {
       set({ isLoading: true, error: null });
-      const response: IAuthResponse = await authApi.login({ email, password });
+      const rawResponse: any = await authApi.studentLogin({ student_code });
+      
+      // Khắc phục nhanh các dạng mapping trả về từ API backend
+      const responseData = rawResponse.data || rawResponse;
+      const extractedToken = responseData.access_token || responseData.token;
+      
+      // Map user_info sang chuẩn IUser của app
+      const apiUser = responseData.user_info || responseData.user || {};
+      const mappedUser = {
+        ...apiUser,
+        id: apiUser.student_id || apiUser.id,
+        name: apiUser.full_name || apiUser.name,
+        avatar: apiUser.avatar_url || apiUser.avatar,
+        points: apiUser.points || 0,
+        grade: apiUser.grade,
+        // Lưu lại token refresh nếu có
+        refreshToken: responseData.refresh_token,
+      };
 
-      await storageService.saveToken(response.token);
-      await storageService.saveUser(response.user);
+      if (!extractedToken) {
+        console.error('API Response missing token:', rawResponse);
+        throw new Error('Đăng nhập thất bại: Máy chủ không trả về token hợp lệ. Xem log để biết chi tiết.');
+      }
+
+      await storageService.saveToken(extractedToken);
+      await storageService.saveUser(mappedUser); // Contains student ID mapped from API
 
       set({
-        user: response.user,
-        token: response.token,
+        user: mappedUser,
+        token: extractedToken,
         isAuthenticated: true,
         isLoading: false,
       });
     } catch (error: any) {
       set({
-        error: error.message || 'Đăng nhập thất bại',
+        error: error.message || 'Đăng nhập học sinh thất bại',
         isLoading: false,
       });
       throw error;
     }
   },
 
-  register: async (email: string, password: string, name: string) => {
-    try {
-      set({ isLoading: true, error: null });
-      const response: IAuthResponse = await authApi.register({ email, password, name });
 
-      await storageService.saveToken(response.token);
-      await storageService.saveUser(response.user);
-
-      set({
-        user: response.user,
-        token: response.token,
-        isAuthenticated: true,
-        isLoading: false,
-      });
-    } catch (error: any) {
-      set({
-        error: error.message || 'Đăng ký thất bại',
-        isLoading: false,
-      });
-      throw error;
-    }
-  },
 
   logout: async () => {
     // Mock logout - chỉ clear local data

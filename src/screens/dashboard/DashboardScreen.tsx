@@ -19,10 +19,13 @@ import { colors, spacing, borderRadius } from '@theme';
 import { getUnreadCount } from '../../data/notificationData';
 import { MOCK_SCHEDULED_EXAMS } from '../../data/examData';
 
+import { useAuthStore } from '../../store/authStore';
+
 type DashboardNavigationProp = StackNavigationProp<AppStackParamList>;
 
 export default function DashboardScreen() {
   const navigation = useNavigation<DashboardNavigationProp>();
+  const { user } = useAuthStore();
 
   // Data cho Progress Card
   const progressData = [
@@ -66,10 +69,10 @@ export default function DashboardScreen() {
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* Header Component */}
           <DashboardHeader
-            userName="Kiddo!"
-            avatarSource={require('../../../assets/images/default-avatar.jpg')}
-            streakCount={5}
-            coinCount={1250}
+            userName={user?.name || 'Học sinh'}
+            avatarSource={user?.avatar ? { uri: user.avatar } : require('../../../assets/images/default-avatar.jpg')}
+            streakCount={user?.streak || 0}
+            coinCount={user?.points || 0}
             notificationCount={getUnreadCount()}
             onNotificationPress={() => navigation.navigate('Notification')}
           />
