@@ -4,3 +4,4 @@ export * from './game';
 export * from './user';
 export * from './student';
 export * from './reward';
+export * from './quiz';

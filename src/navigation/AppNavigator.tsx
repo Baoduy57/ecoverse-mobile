@@ -9,7 +9,7 @@ import { QuizListScreen, QuizQuestionScreen, QuizResultScreen } from '../screens
 import { ScheduledExamScreen, ExamQuestionScreen, ExamResultScreen } from '../screens/exam';
 import { NotificationScreen } from '../screens/notification';
 import { DevApiTestScreen } from '../screens/dev';
-import { QuizAnswer, QuizAnswerDetail } from '../types/quiz';
+import { QuizAnswer, QuizAnswerDetail, StudentQuizSubmitResult } from '../types/quiz';
 import TabNavigator, { HomeTabParamList } from './TabNavigator';
 import { NavigatorScreenParams } from '@react-navigation/native';
 
@@ -23,15 +23,8 @@ export type AppStackParamList = {
   DragDropGamePlay: { levelId: number };
   GameResultDetail: { results: any[] };
   QuizList: undefined;
-  QuizQuestion: { quizId: string };
-  QuizResult: {
-    quizId: string;
-    totalQuestions: number;
-    correctAnswers: number;
-    wrongAnswers: number;
-    totalPoints: number;
-    answers: QuizAnswer[];
-  };
+  QuizQuestion: { templateId: string; title?: string };
+  QuizResult: { attempt: StudentQuizSubmitResult };
   QuizAnswerDetail: { answerDetails: QuizAnswerDetail[] };
   ScheduledExam: undefined;
   ExamQuestion: { examId: string };
