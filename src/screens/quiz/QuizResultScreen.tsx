@@ -1,60 +1,31 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
-import { colors, spacing, borderRadius } from '../../theme';
-import { MOCK_QUIZ_QUESTIONS } from '../../data/quizData';
-import type { AppStackParamList } from '../../navigation/AppNavigator';
+import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import ScreenBackground from '../../components/common/ScreenBackground';
+import { QuizPlacementsList } from '../../components/quiz';
+import type { AppStackParamList } from '../../navigation/AppNavigator';
+import { borderRadius, colors, spacing } from '../../theme';
 
-type QuizResultScreenRouteProp = RouteProp<AppStackParamList, 'QuizResult'>;
+type QuizResultRouteProp = RouteProp<AppStackParamList, 'QuizResult'>;
 
 export default function QuizResultScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const route = useRoute<QuizResultScreenRouteProp>();
-  const [showBreakdown, setShowBreakdown] = React.useState(false);
+  const route = useRoute<QuizResultRouteProp>();
+  const [showBreakdown, setShowBreakdown] = useState(false);
 
-  const {
-    quizId,
-    totalQuestions = 10,
-    correctAnswers = 0,
-    wrongAnswers = 0,
-    totalPoints = 0,
-    answers = [],
-  } = route.params || {};
+  const { attempt } = route.params;
 
-  const percentage = (correctAnswers / totalQuestions) * 100;
-  const stars = percentage >= 90 ? 3 : percentage >= 70 ? 2 : 1;
+  const accuracy = useMemo(() => {
+    if (attempt.total_questions <= 0) {
+      return 0;
+    }
+    return Math.round((attempt.correct_amount / attempt.total_questions) * 100);
+  }, [attempt.correct_amount, attempt.total_questions]);
 
-  const getGrade = () => {
-    if (percentage >= 90) return { label: 'Xuất sắc!', color: '#10B981' };
-    if (percentage >= 70) return { label: 'Khá tốt!', color: colors.primary };
-    if (percentage >= 50) return { label: 'Trung bình', color: '#F59E0B' };
-    return { label: 'Cần cố gắng thêm', color: '#EF4444' };
-  };
-
-  const grade = getGrade();
-
-  const answerDetails = answers.map((answer, index) => {
-    const question = MOCK_QUIZ_QUESTIONS.find(q => q.id === answer.questionId);
-    const selectedOption = question?.options.find(opt => opt.id === answer.selectedOptionId);
-    const correctOption = question?.options.find(opt => opt.id === question.correctOptionId);
-
-    return {
-      id: answer.questionId,
-      question: question?.question || `Câu ${index + 1}`,
-      userAnswer: selectedOption?.text || '',
-      correctAnswer: correctOption?.text || '',
-      isCorrect: answer.isCorrect,
-      explanation: question?.explanation,
-    };
-  });
-
-  const handleViewDetails = () => {
-    navigation.navigate('QuizAnswerDetail', { answerDetails });
-  };
+  const stars = accuracy >= 90 ? 3 : accuracy >= 70 ? 2 : 1;
 
   return (
     <View style={styles.container}>
@@ -64,100 +35,65 @@ export default function QuizResultScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Stars */}
-          <View style={styles.starsContainer}>
-            {[1, 2, 3].map(starIndex => (
+          <View style={styles.starsRow}>
+            {[1, 2, 3].map(index => (
               <MaterialCommunityIcons
-                key={`star-${starIndex}`}
+                key={`star-${index}`}
                 name="star"
-                size={starIndex === 2 ? 100 : 80}
-                color={starIndex <= stars ? colors.accent : '#E0E0E0'}
+                size={index === 2 ? 92 : 74}
+                color={index <= stars ? colors.accent : '#E2E8F0'}
               />
             ))}
           </View>
 
-          {/* Title */}
-          <Text style={[styles.gradeLabel, { color: grade.color }]}>{grade.label}</Text>
-          <Text style={styles.subTitle}>Bài quiz đã hoàn thành</Text>
+          <Text style={styles.title}>Đã hoàn thành bài kiểm tra</Text>
+          <Text style={styles.quizTitle}>{attempt.quiz_title}</Text>
 
-          {/* Points Card */}
-          <View style={styles.pointsCard}>
-            <Text style={styles.pointsLabel}>+{totalPoints} Điểm</Text>
-            <Text style={styles.pointsSubLabel}>{Math.round(percentage)}% chính xác</Text>
+          <View style={styles.scoreCard}>
+            <Text style={styles.scoreValue}>{attempt.score}%</Text>
+            <Text style={styles.scoreSubtitle}>
+              {attempt.correct_amount}/{attempt.total_questions} Câu đúng
+            </Text>
           </View>
 
-          {/* Stats */}
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{totalQuestions}</Text>
-              <Text style={styles.statLabel}>TỔNG SỐ</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{attempt.correct_amount}</Text>
+              <Text style={styles.statLabel}>Đúng</Text>
             </View>
-            <View style={[styles.statItem, styles.statItemSuccess]}>
-              <Text style={[styles.statValue, styles.statValueSuccess]}>{correctAnswers}</Text>
-              <Text style={styles.statLabel}>ĐÚNG</Text>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{attempt.wrong_amount}</Text>
+              <Text style={styles.statLabel}>Sai</Text>
             </View>
-            <View style={[styles.statItem, styles.statItemError]}>
-              <Text style={[styles.statValue, styles.statValueError]}>{wrongAnswers}</Text>
-              <Text style={styles.statLabel}>SAI</Text>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{attempt.duration}s</Text>
+              <Text style={styles.statLabel}>Thời gian</Text>
             </View>
           </View>
 
-          {/* Answer Breakdown */}
-          <View style={styles.breakdownContainer}>
-            <TouchableOpacity
-              style={styles.breakdownHeader}
-              onPress={() => setShowBreakdown(v => !v)}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons name="format-list-checks" size={20} color={colors.primary} />
-              <Text style={[styles.breakdownTitle, { flex: 1 }]}>Xem lại kết quả</Text>
-              <MaterialCommunityIcons
-                name={showBreakdown ? 'chevron-up' : 'chevron-down'}
-                size={22}
-                color={colors.text.secondary}
-              />
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.breakdownToggle}
+            onPress={() => setShowBreakdown(v => !v)}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="format-list-bulleted" size={20} color={colors.primary} />
+            <Text style={styles.breakdownToggleText}>Chi tiết đáp án</Text>
+            <MaterialCommunityIcons
+              name={showBreakdown ? 'chevron-up' : 'chevron-down'}
+              size={22}
+              color={colors.text.secondary}
+            />
+          </TouchableOpacity>
 
-            {showBreakdown &&
-              answerDetails.map((detail, index) => (
-                <View key={`${detail.id}-${index}`} style={styles.answerItem}>
-                  <View
-                    style={[
-                      styles.answerIcon,
-                      detail.isCorrect ? styles.answerIconCorrect : styles.answerIconError,
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name={detail.isCorrect ? 'check' : 'close'}
-                      size={20}
-                      color={colors.text.white}
-                    />
-                  </View>
-                  <View style={styles.answerContent}>
-                    <Text style={styles.answerQuestion} numberOfLines={1}>
-                      {detail.question}
-                    </Text>
-                    <Text style={styles.answerText} numberOfLines={1}>
-                      {detail.isCorrect ? 'Câu trả lời đúng' : detail.correctAnswer}
-                    </Text>
-                  </View>
-                  <MaterialCommunityIcons
-                    name={detail.isCorrect ? 'check-circle' : 'close-circle'}
-                    size={24}
-                    color={detail.isCorrect ? colors.status.success : colors.status.error}
-                  />
-                </View>
-              ))}
-          </View>
+          {showBreakdown ? <QuizPlacementsList placements={attempt.placements} /> : null}
 
-          {/* Action Buttons */}
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => navigation.navigate('QuizList')}
             activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name="refresh" size={24} color={colors.text.white} />
-            <Text style={styles.primaryButtonText}>Chơi lại</Text>
+            <MaterialCommunityIcons name="refresh" size={20} color={colors.text.white} />
+            <Text style={styles.primaryButtonText}>Làm bài kiểm tra khác</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -165,12 +101,11 @@ export default function QuizResultScreen() {
             onPress={() => navigation.navigate('Home' as never)}
             activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name="home" size={24} color={colors.text.primary} />
+            <MaterialCommunityIcons name="home" size={20} color={colors.text.primary} />
             <Text style={styles.secondaryButtonText}>Về trang chủ</Text>
           </TouchableOpacity>
 
-          {/* Bottom padding */}
-          <View style={{ height: 40 }} />
+          <View style={{ height: 28 }} />
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -178,128 +113,68 @@ export default function QuizResultScreen() {
 }
 
 const styles = StyleSheet.create({
-  answerContent: {
-    flex: 1,
-  },
-  answerIcon: {
+  breakdownToggle: {
     alignItems: 'center',
-    borderColor: 'transparent',
-    borderRadius: 20,
-    borderWidth: 2,
-    height: 40,
-    justifyContent: 'center',
-    width: 40,
-  },
-  answerIconCorrect: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#2E7D32',
-  },
-  answerIconError: {
-    backgroundColor: '#FF6B6B',
-    borderColor: '#D32F2F',
-  },
-  answerItem: {
-    alignItems: 'center',
-    borderBottomColor: '#F5F5F5',
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  answerQuestion: {
-    color: colors.text.primary,
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  answerText: {
-    color: colors.text.secondary,
-    fontSize: 12,
-  },
-  breakdownContainer: {
     backgroundColor: colors.surface,
-    borderColor: 'rgba(76, 175, 80, 0.1)',
-    borderRadius: 20,
-    borderWidth: 2,
-    elevation: 3,
-    marginBottom: spacing.lg,
-    padding: spacing.base,
-    shadowColor: '#4CAF50',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  breakdownHeader: {
-    alignItems: 'center',
-    borderBottomColor: '#E0E0E0',
-    borderBottomWidth: 2,
+    borderColor: '#E2E8F0',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.md,
-    paddingBottom: spacing.md,
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  breakdownTitle: {
+  breakdownToggleText: {
     color: colors.text.primary,
-    fontSize: 18,
-    fontWeight: '800',
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
   },
   container: {
     backgroundColor: colors.background,
     flex: 1,
   },
-  gradeLabel: {
-    fontSize: 32,
-    fontWeight: '900',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  pointsCard: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderColor: '#2E7D32',
-    borderRadius: 24,
-    borderWidth: 3,
-    elevation: 6,
-    marginBottom: spacing.lg,
-    paddingVertical: spacing.lg,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-  },
-  pointsLabel: {
-    color: colors.text.white,
-    fontSize: 32,
-    fontWeight: '900',
-  },
-  pointsSubLabel: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 4,
-  },
   primaryButton: {
     alignItems: 'center',
     backgroundColor: colors.primary,
-    borderRadius: 16,
-    elevation: 4,
+    borderRadius: borderRadius.lg,
     flexDirection: 'row',
     gap: spacing.sm,
     justifyContent: 'center',
-    marginBottom: spacing.md,
-    paddingVertical: 14,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    marginTop: spacing.lg,
+    paddingVertical: spacing.md,
   },
   primaryButtonText: {
     color: colors.text.white,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
+  },
+  quizTitle: {
+    color: colors.text.secondary,
+    fontSize: 14,
+    marginBottom: spacing.lg,
+    textAlign: 'center',
   },
   safeArea: {
     flex: 1,
+  },
+  scoreCard: {
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.xl,
+    marginBottom: spacing.lg,
+    paddingVertical: spacing.lg,
+  },
+  scoreSubtitle: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 13,
+  },
+  scoreValue: {
+    color: colors.text.white,
+    fontSize: 38,
+    fontWeight: '900',
   },
   scrollContent: {
     padding: spacing.base,
@@ -307,75 +182,55 @@ const styles = StyleSheet.create({
   secondaryButton: {
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderColor: '#E2E8F0',
-    borderRadius: 16,
-    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.sm,
     justifyContent: 'center',
-    paddingVertical: 14,
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
   },
   secondaryButtonText: {
     color: colors.text.primary,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
   },
-  starsContainer: {
+  starsRow: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: spacing.lg,
     marginTop: spacing.xl,
   },
-  statItem: {
+  statCard: {
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderColor: 'transparent',
-    borderRadius: 20,
-    borderWidth: 3,
-    elevation: 4,
+    borderColor: '#E2E8F0',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
     flex: 1,
-    paddingVertical: spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-  },
-  statItemError: {
-    backgroundColor: '#FFEBEE',
-    borderColor: '#FF6B6B',
-  },
-  statItemSuccess: {
-    backgroundColor: '#E8F5E9',
-    borderColor: '#4CAF50',
+    paddingVertical: spacing.md,
   },
   statLabel: {
     color: colors.text.secondary,
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontSize: 12,
+    fontWeight: '600',
   },
   statValue: {
     color: colors.text.primary,
-    fontSize: 32,
+    fontSize: 20,
     fontWeight: '900',
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
-  statValueError: {
-    color: '#D32F2F',
-  },
-  statValueSuccess: {
-    color: '#2E7D32',
-  },
-  statsContainer: {
+  statsRow: {
     flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.xl,
+    gap: spacing.sm,
   },
-  subTitle: {
-    color: colors.text.secondary,
-    fontSize: 14,
-    marginBottom: spacing.lg,
+  title: {
+    color: colors.text.primary,
+    fontSize: 28,
+    fontWeight: '900',
     textAlign: 'center',
   },
 });

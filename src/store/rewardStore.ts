@@ -1,33 +1,30 @@
 import { create } from 'zustand';
 import { IReward, IRedeemHistory } from '../types';
-import { rewardApi } from '../services/api';
+import { rewardApi, GetRewardsParams } from '../services/api';
+import { useAuthStore } from './authStore';
 
 interface RewardState {
   rewards: IReward[];
-  pendingRedemptions: IRedeemHistory[];
   redemptionHistory: IRedeemHistory[];
   isLoading: boolean;
   error: string | null;
 
   // Actions
-  fetchRewards: () => Promise<void>;
-  fetchPendingRedemptions: () => Promise<void>;
-  fetchRedemptionHistory: () => Promise<void>;
-  requestRedemption: (rewardId: string) => Promise<void>;
-  cancelRedemption: (redemptionId: string) => Promise<void>;
+  fetchRewards: (partnerId: string, params?: GetRewardsParams) => Promise<void>;
+  fetchRedemptionHistory: (userId: string) => Promise<void>;
+  requestRedemption: (studentId: string, rewardId: string) => Promise<void>;
 }
 
 export const useRewardStore = create<RewardState>((set, get) => ({
   rewards: [],
-  pendingRedemptions: [],
   redemptionHistory: [],
   isLoading: false,
   error: null,
 
-  fetchRewards: async () => {
+  fetchRewards: async (partnerId: string, params?: GetRewardsParams) => {
     try {
       set({ isLoading: true, error: null });
-      const rewards = await rewardApi.getRewards();
+      const rewards = await rewardApi.getRewards(partnerId, params);
       set({ rewards, isLoading: false });
     } catch (error: any) {
       set({
@@ -36,21 +33,11 @@ export const useRewardStore = create<RewardState>((set, get) => ({
       });
     }
   },
-
-  fetchPendingRedemptions: async () => {
-    try {
-      const pending = await rewardApi.getPendingRedemptions();
-      set({ pendingRedemptions: pending });
-    } catch (error: any) {
-      console.error('Fetch pending redemptions error:', error);
-    }
-  },
-
-  fetchRedemptionHistory: async () => {
+  fetchRedemptionHistory: async (userId: string) => {
     try {
       set({ isLoading: true });
-      const data = await rewardApi.getRedemptionHistory();
-      set({ redemptionHistory: data.items, isLoading: false });
+      const data = await rewardApi.getRedemptionHistory(userId);
+      set({ redemptionHistory: data, isLoading: false });
     } catch (error: any) {
       set({
         error: error.message || 'Không thể tải lịch sử đổi quà',
@@ -59,33 +46,30 @@ export const useRewardStore = create<RewardState>((set, get) => ({
     }
   },
 
-  requestRedemption: async (rewardId: string) => {
+  requestRedemption: async (studentId: string, rewardId: string) => {
     try {
       set({ isLoading: true, error: null });
-      const redemption = await rewardApi.requestRedemption(rewardId);
+      const redemption = await rewardApi.requestRedemption(studentId, rewardId);
 
       set(state => ({
-        pendingRedemptions: [redemption, ...state.pendingRedemptions],
         isLoading: false,
       }));
+
+      // Trừ điểm của user trên frontend tạm thời
+      const authStore = useAuthStore.getState();
+      if (authStore.user) {
+        useAuthStore.setState({
+          user: {
+            ...authStore.user,
+            points: Math.max(0, authStore.user.points - (redemption.pointsSpent || 0))
+          }
+        });
+      }
     } catch (error: any) {
       set({
         error: error.message || 'Không thể gửi yêu cầu đổi quà',
         isLoading: false,
       });
-      throw error;
-    }
-  },
-
-  cancelRedemption: async (redemptionId: string) => {
-    try {
-      await rewardApi.cancelRedemption(redemptionId);
-
-      set(state => ({
-        pendingRedemptions: state.pendingRedemptions.filter(r => r.id !== redemptionId),
-      }));
-    } catch (error: any) {
-      set({ error: error.message || 'Không thể hủy yêu cầu' });
       throw error;
     }
   },

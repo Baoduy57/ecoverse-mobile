@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { View, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../../theme';
@@ -15,6 +15,7 @@ interface RewardHistoryItemProps {
   redeemedAt: string;
   isFirst?: boolean;
   isLast?: boolean;
+  onPress?: () => void;
 }
 
 export default function RewardHistoryItem({
@@ -27,6 +28,7 @@ export default function RewardHistoryItem({
   redeemedAt,
   isFirst,
   isLast,
+  onPress,
 }: RewardHistoryItemProps) {
   const getStatusInfo = () => {
     switch (status) {
@@ -48,6 +50,7 @@ export default function RewardHistoryItem({
           bg: 'rgba(76, 175, 80, 0.12)',
         };
       case 'PARENT_REJECTED':
+      case 'PARTNER_REJECTED':
       case 'CANCELLED':
         return {
           text: 'Từ chối',
@@ -79,7 +82,11 @@ export default function RewardHistoryItem({
     <View style={[styles.wrapper, isFirst && styles.wrapperFirst, isLast && styles.wrapperLast]}>
       {/* Timeline line */}
       {!isLast && <View style={styles.timelineLine} />}
-      <View style={[styles.container, { borderLeftColor: statusInfo.color }]}>
+      <TouchableOpacity 
+        style={[styles.container, { borderLeftColor: statusInfo.color }]}
+        activeOpacity={onPress ? 0.7 : 1}
+        onPress={onPress}
+      >
         <View style={styles.imageContainer}>
           {image ? (
             <Image source={{ uri: image }} style={styles.image} />
@@ -116,7 +123,7 @@ export default function RewardHistoryItem({
             <Text style={styles.pointsUnit}>xu</Text>
           </View>
         )}
-      </View>
+      </TouchableOpacity>
     </View>
   );
 }

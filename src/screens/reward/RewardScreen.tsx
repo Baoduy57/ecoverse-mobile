@@ -9,7 +9,7 @@ import { colors, spacing, borderRadius } from '../../theme';
 import { RewardCard, ConfirmRedeemDialog, SuccessDialog } from '../../components/reward';
 import type { IReward } from '../../types';
 import { useRewardStore } from '../../store/rewardStore';
-import { MOCK_REWARDS } from '../../data';
+import { useAuthStore } from '../../store/authStore';
 
 export default function RewardScreen() {
   const navigation = useNavigation();
@@ -18,21 +18,19 @@ export default function RewardScreen() {
   const [selectedReward, setSelectedReward] = useState<IReward | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [userPoints] = useState(1250); // MOCK: should come from user profile
 
-  // Use mock data for testing - comment this out when API is ready
-  const displayRewards = MOCK_REWARDS;
-  // const displayRewards = rewards; // Uncomment this to use real API data
+  const { user } = useAuthStore();
+  const userPoints = user?.points || 0;
 
-  // Fetch data every time screen comes into focus
-  // Comment out when using mock data
-  /*
+  const displayRewards = rewards;
+
   useFocusEffect(
     useCallback(() => {
-      fetchRewards();
-    }, [fetchRewards])
+      if (user?.partnerId) {
+        fetchRewards(user.partnerId);
+      }
+    }, [fetchRewards, user?.partnerId])
   );
-  */
 
   const handleRedeemPress = (id: string) => {
     const reward = displayRewards.find(r => r.id === id);
@@ -43,10 +41,9 @@ export default function RewardScreen() {
   };
 
   const handleConfirmRedeem = async () => {
-    if (!selectedReward) return;
+    if (!selectedReward || !user?.id) return;
     try {
-      // In production, this would call API: await requestRedemption(selectedReward.id);
-      // This will create a pending redemption request for parent approval
+      await requestRedemption(user.id, selectedReward.id);
       setShowConfirmDialog(false);
       setShowSuccessDialog(true);
     } catch (error) {
@@ -106,7 +103,7 @@ export default function RewardScreen() {
         <View style={styles.sectionLabelRow}>
           <Text style={styles.sectionLabel}>Quà có thể đổi</Text>
           <Text style={styles.sectionCount}>
-            {displayRewards.filter(r => r.isAvailable && r.stock > 0).length} quà
+            {displayRewards.filter(r => r.available).length} quà
           </Text>
         </View>
 
@@ -121,14 +118,12 @@ export default function RewardScreen() {
                 <View style={styles.gridItem}>
                   <RewardCard
                     id={item.id}
-                    title={item.title}
-                    image={item.image}
-                    icon={item.icon}
-                    iconColor={item.iconColor}
-                    pointsCost={item.pointsCost}
+                    title={item.name}
+                    image={item.image_url}
+                    pointsCost={item.point_required}
                     userPoints={userPoints}
-                    stock={item.stock}
-                    isAvailable={item.isAvailable}
+                    stock={999}
+                    isAvailable={item.available}
                     onRedeem={handleRedeemPress}
                   />
                 </View>
@@ -146,11 +141,9 @@ export default function RewardScreen() {
       {selectedReward && (
         <ConfirmRedeemDialog
           visible={showConfirmDialog}
-          rewardTitle={selectedReward.title}
-          pointsCost={selectedReward.pointsCost}
-          image={selectedReward.image}
-          icon={selectedReward.icon}
-          iconColor={selectedReward.iconColor}
+          rewardTitle={selectedReward.name}
+          pointsCost={selectedReward.point_required}
+          image={selectedReward.image_url}
           onConfirm={handleConfirmRedeem}
           onCancel={handleCancelRedeem}
         />

@@ -14,8 +14,9 @@ export interface IUser {
   // Student specific info
   className?: string;
   schoolName?: string;
-  grade?: number;
+  grade?: string | number;
   parentEmail?: string;
+  partnerId?: string;
 }
 
 export interface IUserStats {

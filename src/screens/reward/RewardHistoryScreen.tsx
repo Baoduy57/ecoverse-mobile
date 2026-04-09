@@ -1,117 +1,36 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import ScreenBackground from '../../components/common/ScreenBackground';
 import { colors, spacing, borderRadius } from '../../theme';
-import { RewardHistoryItem } from '../../components/reward';
-import type { IRedeemHistory, IReward } from '../../types';
-
-// Mock data
-const MOCK_REWARDS: IReward[] = [
-  {
-    id: '1',
-    title: 'Vở viết EcoVerse',
-    description: 'Vở viết thân thiện môi trường',
-    image: '',
-    pointsCost: 500,
-    category: 'MERCHANDISE' as any,
-    stock: 10,
-    isAvailable: true,
-    icon: 'book-outline',
-    iconColor: '#FF9800',
-  },
-  {
-    id: '2',
-    title: 'Bộ bút chì màu',
-    description: 'Bút chì màu từ gỗ tái chế',
-    image: '',
-    pointsCost: 300,
-    category: 'MERCHANDISE' as any,
-    stock: 15,
-    isAvailable: true,
-    icon: 'palette',
-    iconColor: '#E91E63',
-  },
-  {
-    id: '5',
-    title: 'Hạt giống thần kỳ',
-    description: 'Hạt giống rau củ',
-    image: '',
-    pointsCost: 800,
-    category: 'MERCHANDISE' as any,
-    stock: 20,
-    isAvailable: true,
-    icon: 'seed',
-    iconColor: '#4CAF50',
-  },
-  {
-    id: '6',
-    title: 'Balo Eco Green',
-    description: 'Balo từ vải tái chế',
-    image: '',
-    pointsCost: 2500,
-    category: 'MERCHANDISE' as any,
-    stock: 3,
-    isAvailable: true,
-    icon: 'bag-personal',
-    iconColor: '#00BCD4',
-  },
-];
-
-const MOCK_HISTORY: IRedeemHistory[] = [
-  {
-    id: '1',
-    userId: 'user1',
-    rewardId: '1',
-    reward: MOCK_REWARDS[0],
-    pointsSpent: 500,
-    status: 'PENDING' as any,
-    redeemedAt: '04/03/2026',
-  },
-  {
-    id: '2',
-    userId: 'user1',
-    rewardId: '6',
-    reward: MOCK_REWARDS[3],
-    pointsSpent: 2500,
-    status: 'PARENT_APPROVED' as any,
-    redeemedAt: '02/03/2026',
-  },
-  {
-    id: '3',
-    userId: 'user1',
-    rewardId: '2',
-    reward: MOCK_REWARDS[1],
-    pointsSpent: 300,
-    status: 'PARENT_REJECTED' as any,
-    redeemedAt: '28/02/2026',
-  },
-  {
-    id: '4',
-    userId: 'user1',
-    rewardId: '5',
-    reward: MOCK_REWARDS[2],
-    pointsSpent: 800,
-    status: 'DELIVERED' as any,
-    redeemedAt: '25/02/2026',
-  },
-  {
-    id: '5',
-    userId: 'user1',
-    rewardId: '1',
-    reward: MOCK_REWARDS[0],
-    pointsSpent: 500,
-    status: 'USED' as any,
-    redeemedAt: '20/02/2026',
-  },
-] as IRedeemHistory[];
+import { RewardHistoryItem, ReasonDialog } from '../../components/reward';
+import { useAuthStore } from '../../store/authStore';
+import { useRewardStore } from '../../store/rewardStore';
+import type { IRedeemHistory } from '../../types';
 
 export default function RewardHistoryScreen() {
   const navigation = useNavigation();
-  const userPoints = 1250; // Mock - should get from store
+  const { user } = useAuthStore();
+  const { redemptionHistory, fetchRedemptionHistory, isLoading } = useRewardStore();
+
+  const userPoints = user?.points || 0;
+
+  const [selectedItem, setSelectedItem] = useState<IRedeemHistory | null>(null);
+
+  const handlePressItem = useCallback((item: IRedeemHistory) => {
+    setSelectedItem(item);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        fetchRedemptionHistory(user.id);
+      }
+    }, [fetchRedemptionHistory, user?.id])
+  );
 
   return (
     <View style={styles.container}>
@@ -145,23 +64,38 @@ export default function RewardHistoryScreen() {
         </View>
 
         {/* Content */}
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {MOCK_HISTORY.map((item, index) => (
-            <RewardHistoryItem
-              key={item.id}
-              title={item.reward.title}
-              image={item.reward.image}
-              icon={item.reward.icon}
-              iconColor={item.reward.iconColor}
-              pointsSpent={item.pointsSpent}
-              status={item.status}
-              redeemedAt={item.redeemedAt}
-              isFirst={index === 0}
-              isLast={index === MOCK_HISTORY.length - 1}
-            />
-          ))}
-        </ScrollView>
+        {isLoading ? (
+          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+        ) : (
+          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            {redemptionHistory.length === 0 ? (
+              <View style={{ alignItems: 'center', marginTop: 40 }}>
+                <Text style={{ color: colors.text.secondary }}>Bạn chưa đổi món quà nào.</Text>
+              </View>
+            ) : (
+              redemptionHistory.map((item, index) => (
+                <RewardHistoryItem
+                  key={item.id}
+                  title={item.reward.name}
+                  image={item.reward.image_url}
+                  pointsSpent={item.pointsSpent}
+                  status={item.status}
+                  redeemedAt={item.redeemedAt}
+                  isFirst={index === 0}
+                  isLast={index === redemptionHistory.length - 1}
+                  onPress={() => handlePressItem(item)}
+                />
+              ))
+            )}
+          </ScrollView>
+        )}
       </SafeAreaView>
+      
+      <ReasonDialog
+        visible={!!selectedItem}
+        historyItem={selectedItem}
+        onClose={() => setSelectedItem(null)}
+      />
     </View>
   );
 }
