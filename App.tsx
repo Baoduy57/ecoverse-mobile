@@ -5,14 +5,33 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthNavigator, AppNavigator } from './src/navigation';
 import { paperLightTheme } from './src/theme';
-import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { useFonts } from 'expo-font';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAudioBootstrap } from './src/hooks/useAudioBootstrap';
 import ApiIncidentOverlay from './src/components/common/ApiIncidentOverlay';
 
+import { useAuthStore } from './src/store/authStore';
+import { View, ActivityIndicator } from 'react-native';
+
 function AppContent() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loadUser } = useAuthStore();
+  const [isInitializing, setIsInitializing] = React.useState(true);
+
+  React.useEffect(() => {
+    const initAuth = async () => {
+      await loadUser();
+      setIsInitializing(false);
+    };
+    initAuth();
+  }, [loadUser]);
+
+  if (isInitializing) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
@@ -30,12 +49,10 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <PaperProvider theme={paperLightTheme}>
-            <AppContent />
-            <ApiIncidentOverlay />
-          </PaperProvider>
-        </AuthProvider>
+        <PaperProvider theme={paperLightTheme}>
+          <AppContent />
+          <ApiIncidentOverlay />
+        </PaperProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

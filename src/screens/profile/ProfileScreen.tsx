@@ -37,13 +37,13 @@ export default function ProfileScreen() {
 
   // Mock data - sẽ lấy từ store/API sau
   const stats = {
-    points: user?.points || 1250,
-    streak: user?.streak || 15,
-    rank: 8,
+    points: user?.points || 0,
+    streak: user?.streak || 0,
+    rank: 0,
   };
 
   const achievements = [
-    { icon: 'recycle', iconColor: '#FFB300', title: 'Siêu nhặn rác', isLocked: false },
+    { icon: 'recycle', iconColor: '#FFB300', title: 'Siêu nhặt rác', isLocked: false },
     { icon: 'shield-check', iconColor: '#2196F3', title: 'Hiệp sĩ xanh', isLocked: false },
     { icon: 'speedometer', iconColor: '#FF5722', title: 'Tốc độ', isLocked: true },
   ];
@@ -73,7 +73,11 @@ export default function ProfileScreen() {
             <View style={styles.avatarWrapper}>
               <View style={styles.avatarContainer}>
                 <Image
-                  source={require('../../../assets/images/default-avatar.jpg')}
+                  source={
+                    user?.avatar
+                      ? { uri: user.avatar }
+                      : require('../../../assets/images/default-avatar.jpg')
+                  }
                   style={styles.avatar}
                 />
               </View>
@@ -83,10 +87,10 @@ export default function ProfileScreen() {
             </View>
 
             <Text variant="headlineMedium" style={styles.name}>
-              {user?.name || 'Kiddo'}!
+              {user?.name || 'Học Sinh'}
             </Text>
             <Text variant="bodyMedium" style={styles.subtitle}>
-              Chiến binh xanh • {user?.grade ? `Lớp ${user.grade}` : 'Lớp 3'}
+              Chiến binh xanh • {user?.grade ? `Lớp ${user.grade}` : 'Đang cập nhật'}
             </Text>
 
             <Button

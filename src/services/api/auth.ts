@@ -2,15 +2,9 @@ import apiClient from './client';
 import { IAuthResponse, ILoginRequest, IRegisterRequest, IUser } from '../../types';
 
 export const authApi = {
-  // Đăng nhập
-  login: async (data: ILoginRequest): Promise<IAuthResponse> => {
-    const response = await apiClient.post<IAuthResponse>('/auth/login', data);
-    return response.data;
-  },
-
-  // Đăng ký
-  register: async (data: IRegisterRequest): Promise<IAuthResponse> => {
-    const response = await apiClient.post<IAuthResponse>('/auth/register', data);
+  // Đăng nhập học sinh
+  studentLogin: async (data: { student_code: string }): Promise<IAuthResponse> => {
+    const response = await apiClient.post<IAuthResponse>('/auth/student/login', data);
     return response.data;
   },
 
