@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { IUser, IAuthResponse } from '../types';
+import { IUser } from '../types';
 import { authApi } from '../services/api';
 import { storageService } from '../services/storage';
 
@@ -12,10 +12,40 @@ interface AuthState {
 
   // Actions
   studentLogin: (student_code: string) => Promise<void>;
+  refreshCurrentUser: (silent?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
   clearError: () => void;
 }
+
+const mapApiUserToStoreUser = (rawResponse: any, fallbackUser: IUser | null): IUser => {
+  const responseData = rawResponse?.data || rawResponse || {};
+  const apiUser = responseData.user_info || responseData.user || responseData || {};
+
+  const nowIso = new Date().toISOString();
+  const currentPoints = Number(apiUser.points ?? fallbackUser?.points ?? 0);
+
+  return {
+    id: String(apiUser.student_id || apiUser.id || fallbackUser?.id || ''),
+    email: String(apiUser.email || fallbackUser?.email || ''),
+    name: String(apiUser.full_name || apiUser.name || fallbackUser?.name || 'Hoc sinh'),
+    avatar: apiUser.avatar_url || apiUser.avatar || fallbackUser?.avatar,
+    level: Number(apiUser.level ?? fallbackUser?.level ?? 1),
+    points: currentPoints,
+    totalPoints: Number(
+      apiUser.total_points ?? apiUser.totalPoints ?? fallbackUser?.totalPoints ?? currentPoints
+    ),
+    streak: Number(apiUser.streak ?? fallbackUser?.streak ?? 0),
+    lives: Number(apiUser.lives ?? fallbackUser?.lives ?? 0),
+    createdAt: String(apiUser.created_at || apiUser.createdAt || fallbackUser?.createdAt || nowIso),
+    updatedAt: String(apiUser.updated_at || apiUser.updatedAt || fallbackUser?.updatedAt || nowIso),
+    className: apiUser.class_name || apiUser.className || fallbackUser?.className,
+    schoolName: apiUser.school_name || apiUser.schoolName || fallbackUser?.schoolName,
+    grade: apiUser.grade ?? fallbackUser?.grade,
+    parentEmail: apiUser.parent_email || apiUser.parentEmail || fallbackUser?.parentEmail,
+    partnerId: apiUser.partner_id || responseData.partner_id || fallbackUser?.partnerId,
+  };
+};
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -24,33 +54,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   error: null,
 
-
-
   studentLogin: async (student_code: string) => {
     try {
       set({ isLoading: true, error: null });
       const rawResponse: any = await authApi.studentLogin({ student_code });
-      
+
       // Khắc phục nhanh các dạng mapping trả về từ API backend
       const responseData = rawResponse.data || rawResponse;
       const extractedToken = responseData.access_token || responseData.token;
-      
-      // Map user_info sang chuẩn IUser của app
-      const apiUser = responseData.user_info || responseData.user || {};
-      const mappedUser = {
-        ...apiUser,
-        id: apiUser.student_id || apiUser.id,
-        name: apiUser.full_name || apiUser.name,
-        avatar: apiUser.avatar_url || apiUser.avatar,
-        points: apiUser.points || 0,
-        grade: apiUser.grade,
-        // Lưu lại token refresh nếu có
-        refreshToken: responseData.refresh_token,
-      };
+      const mappedUser = mapApiUserToStoreUser(rawResponse, null);
 
       if (!extractedToken) {
         console.error('API Response missing token:', rawResponse);
-        throw new Error('Đăng nhập thất bại: Máy chủ không trả về token hợp lệ. Xem log để biết chi tiết.');
+        throw new Error(
+          'Đăng nhập thất bại: Máy chủ không trả về token hợp lệ. Xem log để biết chi tiết.'
+        );
       }
 
       await storageService.saveToken(extractedToken);
@@ -62,6 +80,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
       });
+
+      // Đồng bộ lại user từ backend để cập nhật các field có thể thay đổi ngoài app.
+      await get().refreshCurrentUser(true);
     } catch (error: any) {
       set({
         error: error.message || 'Đăng nhập học sinh thất bại',
@@ -71,7 +92,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  refreshCurrentUser: async (silent: boolean = true) => {
+    if (!get().isAuthenticated) {
+      return;
+    }
 
+    try {
+      const currentUser = get().user;
+      const latestUser = await authApi.getCurrentUser();
+      const mappedUser = mapApiUserToStoreUser(latestUser, currentUser);
+
+      await storageService.saveUser(mappedUser);
+
+      set({
+        user: mappedUser,
+        error: null,
+      });
+    } catch (error: any) {
+      if (!silent) {
+        set({
+          error: error?.message || 'Khong the dong bo thong tin nguoi dung',
+        });
+      }
+    }
+  },
 
   logout: async () => {
     // Mock logout - chỉ clear local data
@@ -98,6 +142,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isAuthenticated: true,
           isLoading: false,
         });
+
+        // Không bắt user phải logout/login lại nếu dữ liệu trên DB đã đổi.
+        await get().refreshCurrentUser(true);
       } else {
         set({ isLoading: false });
       }
