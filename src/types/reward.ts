@@ -1,23 +1,12 @@
 // Reward Types
 export interface IReward {
   id: string;
-  title: string;
+  name: string;
   description: string;
-  image: string;
-  pointsCost: number;
-  category: RewardCategory;
-  stock: number;
-  isAvailable: boolean;
-  expiresAt?: string;
-  icon?: string; // Icon name for MaterialCommunityIcons
-  iconColor?: string; // Color for the icon
-}
-
-export enum RewardCategory {
-  VOUCHER = 'VOUCHER',
-  MERCHANDISE = 'MERCHANDISE',
-  DONATION = 'DONATION',
-  PREMIUM = 'PREMIUM',
+  point_required: number;
+  image_url: string;
+  partner_id: string;
+  available: boolean;
 }
 
 // Redeem History
@@ -31,6 +20,8 @@ export interface IRedeemHistory {
   code?: string;
   redeemedAt: string;
   usedAt?: string;
+  reason_parent?: string;
+  reason_partner?: string;
 }
 
 export enum RedeemStatus {
@@ -42,6 +33,7 @@ export enum RedeemStatus {
   EXPIRED = 'EXPIRED', // Hết hạn
   CANCELLED = 'CANCELLED', // Đã hủy
   PARENT_REJECTED = 'PARENT_REJECTED', // Phụ huynh từ chối
+  PARTNER_REJECTED = 'PARTNER_REJECTED', // Đối tác từ chối
 }
 
 // Badge/Achievement
