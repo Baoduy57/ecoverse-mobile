@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp, useIsFocused } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import ScreenBackground from '../../components/common/ScreenBackground';
 import { colors } from '../../theme';
@@ -10,8 +10,11 @@ import CurrentStageCard from '../../components/game/CurrentStageCard';
 import LearningPathNode from '../../components/game/LearningPathNode';
 import BackgroundDecorations from '../../components/game/BackgroundDecorations';
 import UnitSeparator from '../../components/game/UnitSeparator';
-import type { Level } from '../../types/game';
+import GameInfoDialog from '../../components/game/GameInfoDialog';
+import type { Level, IGameRound, IGameAttempt } from '../../types/game';
 import type { AppStackParamList } from '../../navigation/AppNavigator';
+import { useAuthStore } from '../../store/authStore';
+import { gameApi } from '../../services/api/game';
 import { StatusBar } from 'expo-status-bar';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -20,87 +23,30 @@ const START_OFFSET_Y = 50;
 const LESSONS_PER_UNIT = 7; // Number of lessons per unit
 const SEPARATOR_HEIGHT = 60; // Height of separator between units
 
-const LEARNING_PATH: Level[] = [
-  {
-    id: 1,
-    title: 'Cơ Bản',
-    icon: 'check-all',
-    status: 'completed',
-    bestScore: '100%',
-    description: 'Học cách phân loại rác đúng cách!',
-    playsCount: 12,
-    completionRate: 100,
-  },
-  {
-    id: 2,
-    title: 'Tái Chế',
-    icon: 'recycle',
-    status: 'completed',
-    bestScore: '95%',
-    description: 'Biến rác thành đồ hữu ích!',
-    playsCount: 8,
-    completionRate: 95,
-  },
-  {
-    id: 3,
-    title: 'Ủ Phân',
-    icon: 'sprout',
-    status: 'current',
-    isCurrent: true,
-    description: 'Cùng mình ủ rác hữu cơ nhé!',
-    playsCount: 3,
-    completionRate: 60,
-  },
-  {
-    id: 4,
-    title: 'Giảm Rác',
-    icon: 'minus-circle',
-    status: 'locked',
-    description: 'Giảm rác từng ngày!',
-  },
-  {
-    id: 5,
-    title: 'Tái Dùng',
-    icon: 'refresh',
-    status: 'locked',
-    description: 'Tái sử dụng đồ cũ thật sáng tạo!',
-  },
-  {
-    id: 6,
-    title: 'Mua Sắm',
-    icon: 'shopping',
-    status: 'locked',
-    description: 'Mua sắm thông minh, bảo vệ môi trường!',
-  },
-  {
-    id: 7,
-    title: 'Tiết Điện',
-    icon: 'lightning-bolt',
-    status: 'locked',
-    description: 'Tiết kiệm điện mỗi ngày!',
-  },
-  {
-    id: 8,
-    title: 'Nước Sạch',
-    icon: 'water',
-    status: 'locked',
-    description: 'Nước sạch quý giá lắm!',
-  },
-  {
-    id: 9,
-    title: 'Di Chuyển',
-    icon: 'bike',
-    status: 'locked',
-    description: 'Đi xe đạp vui khỏe!',
-  },
-  {
-    id: 10,
-    title: 'Chuyên Gia',
-    icon: 'trophy',
-    status: 'locked',
-    description: 'Trở thành chiến binh môi trường!',
-  },
-];
+const getRoundIcon = (round: IGameRound, index: number) => {
+  const title = round.title.toUpperCase();
+  if (title.includes('TÁI CHẾ')) return 'recycle';
+  if (title.includes('HỮU CƠ') || title.includes('Ủ')) return 'sprout';
+  if (title.includes('NHỰA')) return 'bottle-soda';
+  if (title.includes('GIẤY')) return 'file-document-outline';
+  if (title.includes('THỦY TINH')) return 'glass-fragile';
+  return index % 2 === 0 ? 'tree' : 'recycle';
+};
+
+const toSafeNumber = (value: unknown) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const isMeaningfulAttempt = (attempt: IGameAttempt) => {
+  if (attempt.completed) return true;
+
+  return (
+    toSafeNumber(attempt.points_earned) > 0 ||
+    toSafeNumber(attempt.correct_count) > 0 ||
+    toSafeNumber(attempt.duration) > 0
+  );
+};
 
 // Helper: Calculate node position with wavy pattern and unit offsets
 const getNodePosition = (index: number) => {
@@ -113,27 +59,153 @@ const getNodePosition = (index: number) => {
   return { x, y };
 };
 
+const applyCurrentStage = (levels: Level[], selectedId: string | number) => {
+  const selectedIdNormalized = String(selectedId);
+
+  return levels.map(level => {
+    const isCurrent = String(level.id) === selectedIdNormalized;
+    const status: Level['status'] = isCurrent ? 'current' : 'completed';
+
+    return {
+      ...level,
+      isCurrent,
+      status,
+    };
+  });
+};
+
 export default function GameScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const [selectedStage, setSelectedStage] = useState<Level>(
-    LEARNING_PATH.find(l => l.isCurrent) || LEARNING_PATH[0]
-  );
+  const isFocused = useIsFocused();
+  const { user, refreshCurrentUser } = useAuthStore();
+  const [learningPath, setLearningPath] = React.useState<Level[]>([]);
+  const [selectedStage, setSelectedStage] = useState<Level | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('Thong bao');
+  const [dialogMessage, setDialogMessage] = useState('');
 
-  // Calculate which unit is currently unlocked (contains current node)
-  const currentLevelIndex = LEARNING_PATH.findIndex(l => l.status === 'current');
-  const currentUnitIndex =
-    currentLevelIndex >= 0 ? Math.floor(currentLevelIndex / LESSONS_PER_UNIT) : 0;
+  const openDialog = (title: string, message: string) => {
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setDialogVisible(true);
+  };
+
+  React.useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
+    const fetchGameRounds = async () => {
+      try {
+        if (!user?.id) {
+          openDialog('Loi', 'Khong tim thay student_id, vui long dang nhap lai.');
+          return;
+        }
+
+        if (!user?.partnerId) {
+          openDialog('Loi', 'Khong tim thay partner_id, vui long dang nhap lai.');
+          return;
+        }
+
+        setIsLoading(true);
+        await refreshCurrentUser(true);
+
+        const rounds = await gameApi.getGameRounds(user.partnerId, 1, 10, null);
+
+        let studentAttempts: IGameAttempt[] = [];
+        try {
+          studentAttempts = await gameApi.getStudentAttempts(user.id, 1, 50, null);
+        } catch (attemptsError) {
+          console.warn(
+            'Không tải được lịch sử attempts, tiếp tục hiển thị danh sách rounds.',
+            attemptsError
+          );
+        }
+
+        const attemptsMap = new Map<string, IGameAttempt[]>();
+        studentAttempts.forEach(attempt => {
+          const current = attemptsMap.get(attempt.game_round_id) || [];
+          attemptsMap.set(attempt.game_round_id, [...current, attempt]);
+        });
+
+        const mappedRounds = rounds.filter(round => round.active !== false);
+
+        if (!mappedRounds.length) {
+          setLearningPath([]);
+          setSelectedStage(undefined);
+          return;
+        }
+
+        const firstUnplayedRoundIndex = mappedRounds.findIndex(round => {
+          const attempts = attemptsMap.get(round.id) || [];
+          const validAttempts = attempts.filter(isMeaningfulAttempt);
+          return validAttempts.length === 0;
+        });
+
+        const currentRoundIndex =
+          firstUnplayedRoundIndex === -1
+            ? Math.max(mappedRounds.length - 1, 0)
+            : firstUnplayedRoundIndex;
+
+        const levels: Level[] = mappedRounds.map((round, index) => {
+          const attempts = (attemptsMap.get(round.id) || []).filter(isMeaningfulAttempt);
+          const isCurrent = index === currentRoundIndex;
+          const status: Level['status'] = isCurrent ? 'current' : 'completed';
+
+          return {
+            id: round.id,
+            title: round.title,
+            icon: getRoundIcon(round, index),
+            status,
+            isCurrent,
+            description: round.description,
+            playsCount: attempts.length,
+            itemCount: toSafeNumber(round.item_count),
+          };
+        });
+
+        const defaultStage = levels.find(level => level.isCurrent) || levels[0];
+        const normalizedLevels = applyCurrentStage(levels, defaultStage.id);
+
+        setLearningPath(normalizedLevels);
+        setSelectedStage(normalizedLevels.find(level => level.isCurrent) || normalizedLevels[0]);
+      } catch (error: unknown) {
+        if (
+          typeof error === 'object' &&
+          error !== null &&
+          'isAxiosError' in error &&
+          (error as { isAxiosError?: boolean }).isAxiosError
+        ) {
+          const axiosError = error as {
+            config?: { baseURL?: string; url?: string };
+            response?: { status?: number };
+          };
+          if (axiosError.config) {
+            console.error(
+              `Lỗi request URL (${axiosError.response?.status || 'NO_STATUS'}): ${axiosError.config.baseURL || ''}${axiosError.config.url || ''}`
+            );
+          }
+        }
+        console.error('Lỗi khi tải màn chơi:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGameRounds();
+  }, [isFocused, refreshCurrentUser, user?.id, user?.partnerId]);
 
   // Generate SVG Path segments (one per unit, breaking at separators)
   const pathSegments = useMemo(() => {
     const segments: string[] = [];
-    const numberOfUnits = Math.ceil(LEARNING_PATH.length / LESSONS_PER_UNIT);
+    const numberOfUnits = Math.ceil(learningPath.length / LESSONS_PER_UNIT);
 
     for (let unitIndex = 0; unitIndex < numberOfUnits; unitIndex++) {
       const startIdx = unitIndex * LESSONS_PER_UNIT;
-      const endIdx = Math.min(startIdx + LESSONS_PER_UNIT, LEARNING_PATH.length);
+      const endIdx = Math.min(startIdx + LESSONS_PER_UNIT, learningPath.length);
 
-      if (startIdx >= LEARNING_PATH.length) break;
+      if (startIdx >= learningPath.length) break;
 
       let d = `M${getNodePosition(startIdx).x} ${getNodePosition(startIdx).y}`;
 
@@ -154,12 +226,12 @@ export default function GameScreen() {
     }
 
     return segments;
-  }, []);
+  }, [learningPath]);
 
   // Generate completed path segments (green solid line)
   const completedPathSegments = useMemo(() => {
     const segments: string[] = [];
-    const currentIndex = LEARNING_PATH.findIndex(l => l.status === 'current');
+    const currentIndex = learningPath.findIndex(l => l.status === 'current');
     if (currentIndex <= 0) return segments;
 
     const numberOfUnits = Math.ceil(currentIndex / LESSONS_PER_UNIT);
@@ -188,33 +260,48 @@ export default function GameScreen() {
     }
 
     return segments;
-  }, []);
+  }, [learningPath]);
 
   const handleLevelPress = (level: Level) => {
-    if (level.status === 'locked') {
-      Alert.alert('Khóa', 'Hoàn thành bài học trước để mở khóa!');
+    if ((level.itemCount ?? 0) <= 0) {
+      openDialog('Thông báo', 'Màn chơi này chưa có vật phẩm rác để chơi.');
       return;
     }
-    setSelectedStage(level);
-    // Navigate to game play screen
-    navigation.navigate('DragDropGamePlay', { levelId: level.id });
+
+    const updatedPath = applyCurrentStage(learningPath, level.id);
+    setLearningPath(updatedPath);
+    setSelectedStage(updatedPath.find(item => String(item.id) === String(level.id)) || level);
   };
 
   const handlePlayPress = () => {
-    Alert.alert('Start Game', `Starting ${selectedStage.title} level!`);
-    // TODO: Navigate to game/lesson screen
+    if (!selectedStage) return;
+
+    if ((selectedStage.itemCount ?? 0) <= 0) {
+      openDialog('Thông báo', 'Màn chơi này chưa có vật phẩm rác để chơi.');
+      return;
+    }
+
+    navigation.navigate('DragDropGamePlay', { levelId: selectedStage.id });
   };
 
   const handleBackPress = () => {
-    // TODO: Navigate back
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate('Home', { screen: 'Game' } as never);
   };
 
-  const numberOfSeparators = Math.floor(LEARNING_PATH.length / LESSONS_PER_UNIT);
+  const numberOfSeparators = Math.floor(learningPath.length / LESSONS_PER_UNIT);
   const contentHeight =
     START_OFFSET_Y +
-    LEARNING_PATH.length * LEVEL_HEIGHT +
+    learningPath.length * LEVEL_HEIGHT +
     numberOfSeparators * SEPARATOR_HEIGHT +
     100;
+
+  if (isLoading && learningPath.length === 0) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
@@ -227,16 +314,16 @@ export default function GameScreen() {
         <TopHeaderBar
           onBack={handleBackPress}
           stats={{
-            missions: 7,
-            streak: 124,
-            ecoPoints: 850,
+            missions: 0,
+            streak: Number(user?.streak ?? 0),
+            ecoPoints: Number(user?.points ?? 0),
           }}
         />
 
         {/* Game Content Container with Green Background */}
         <View style={styles.gameContent}>
           {/* Current Stage Card */}
-          <CurrentStageCard stage={selectedStage} onPlay={handlePlayPress} />
+          {selectedStage && <CurrentStageCard stage={selectedStage} onPlay={handlePlayPress} />}
 
           {/* Learning Path */}
           <ScrollView
@@ -248,10 +335,10 @@ export default function GameScreen() {
 
             {/* SVG Path Background */}
             <Svg style={StyleSheet.absoluteFill} height={contentHeight} width={SCREEN_WIDTH}>
-              {/* Locked path segments (gray dashed) */}
+              {/* Roadmap base path */}
               {pathSegments.map((pathData, index) => (
                 <Path
-                  key={`locked-${index}`}
+                  key={`base-${index}`}
                   d={pathData}
                   stroke={colors.text.disabled}
                   strokeWidth="6"
@@ -290,23 +377,26 @@ export default function GameScreen() {
             })}
 
             {/* Nodes */}
-            {LEARNING_PATH.map((level, index) => {
-              const nodeUnitIndex = Math.floor(index / LESSONS_PER_UNIT);
-              const isUnitUnlocked = nodeUnitIndex <= currentUnitIndex;
-
+            {learningPath.map((level, index) => {
               return (
                 <LearningPathNode
                   key={level.id}
                   level={level}
                   position={getNodePosition(index)}
                   onPress={handleLevelPress}
-                  isUnitUnlocked={isUnitUnlocked}
                 />
               );
             })}
           </ScrollView>
         </View>
       </SafeAreaView>
+
+      <GameInfoDialog
+        visible={dialogVisible}
+        title={dialogTitle}
+        message={dialogMessage}
+        onClose={() => setDialogVisible(false)}
+      />
     </View>
   );
 }
@@ -327,10 +417,5 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 50,
-  },
-  title: {
-    color: colors.text.primary,
-    fontWeight: 'bold',
-    marginBottom: 8,
   },
 });

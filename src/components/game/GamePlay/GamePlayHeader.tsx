@@ -24,7 +24,9 @@ interface GamePlayHeaderProps {
 }
 
 export default function GamePlayHeader({
+  gameModeLabel,
   timer,
+  timeLimit,
   combo,
   score,
   onPause,
@@ -32,7 +34,9 @@ export default function GamePlayHeader({
   currentQuestionIndex = 0,
   totalQuestions = 1,
 }: GamePlayHeaderProps) {
-  const progress = totalQuestions > 0 ? currentQuestionIndex / totalQuestions : 0;
+  const safeTimer = Math.max(0, Math.min(timer, timeLimit));
+  const progress = timeLimit > 0 ? safeTimer / timeLimit : 0;
+  const comboMultiplier = combo >= 3 ? 2 : 1;
 
   return (
     <View style={styles.headerWrapper}>
@@ -42,9 +46,18 @@ export default function GamePlayHeader({
           <MaterialCommunityIcons name="close" size={24} color={colors.text.primary} />
         </TouchableOpacity>
 
-        <Text style={styles.titleText}>PHÂN LOẠI RÁC</Text>
+        <View style={styles.titleWrap}>
+          <Text style={styles.titleText}>PHÂN LOẠI RÁC</Text>
+          <Text style={styles.subTitleText}>
+            {gameModeLabel} • {currentQuestionIndex}/{totalQuestions}
+          </Text>
+        </View>
 
-        <TouchableOpacity style={styles.iconButton} onPress={onSettings || onPause} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={onSettings || onPause}
+          activeOpacity={0.8}
+        >
           <MaterialCommunityIcons name="cog" size={24} color={colors.text.primary} />
         </TouchableOpacity>
       </View>
@@ -53,11 +66,7 @@ export default function GamePlayHeader({
       <View style={styles.statsRow}>
         {/* Timer */}
         <View style={styles.timerPill}>
-          <MaterialCommunityIcons
-            name="timer-outline"
-            size={20}
-            color={colors.primary}
-          />
+          <MaterialCommunityIcons name="timer-outline" size={20} color={colors.primary} />
           <Text style={styles.timerText}>{formatTime(timer)}</Text>
         </View>
 
@@ -69,7 +78,9 @@ export default function GamePlayHeader({
 
         {/* Combo */}
         <View style={[styles.comboPill, combo > 0 && styles.comboPillActive]}>
-          <Text style={[styles.comboText, combo > 0 && styles.comboTextActive]}>Combo x{combo}</Text>
+          <Text style={[styles.comboText, combo > 0 && styles.comboTextActive]}>
+            Combo x{combo} {comboMultiplier > 1 ? `(x${comboMultiplier} điểm)` : ''}
+          </Text>
         </View>
       </View>
 
@@ -80,7 +91,7 @@ export default function GamePlayHeader({
             colors={['#81C784', '#4CAF50']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={[styles.progressFill, { width: `${Math.max(5, progress * 100)}%` }]}
+            style={[styles.progressFill, { width: `${progress * 100}%` }]}
           />
         </View>
       </View>
@@ -170,11 +181,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  subTitleText: {
+    color: '#2E7D32',
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 2,
+    textAlign: 'center',
+  },
   titleText: {
     color: '#1B5E20',
     fontSize: 20,
     fontWeight: '900',
     letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  titleWrap: {
+    alignItems: 'center',
+    flex: 1,
   },
   topRow: {
     alignItems: 'center',

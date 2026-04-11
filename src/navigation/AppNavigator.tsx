@@ -20,8 +20,32 @@ export type AppStackParamList = {
   Settings: undefined;
   RewardHistory: undefined;
   Notification: undefined;
-  DragDropGamePlay: { levelId: number };
-  GameResultDetail: { results: any[] };
+  DragDropGamePlay: { levelId: string | number };
+  GameResultDetail: {
+    gameAttemptId?: string;
+    results: Array<{
+      id: string;
+      name: string;
+      icon: string;
+      description?: string;
+      correctType: string;
+      correctBinCode: 'PLASTIC' | 'PAPER' | 'ORGANIC' | 'OTHERS';
+      userAnswer: string;
+      code: 'PLASTIC' | 'PAPER' | 'ORGANIC' | 'OTHERS';
+      isCorrect: boolean;
+      orderIndex?: number;
+      color: string;
+      imageUrl?: string;
+    }>;
+    summary?: {
+      score: number;
+      correctAnswers: number;
+      totalQuestions: number;
+      duration: number;
+      maxCombo: number;
+      completed: boolean;
+    };
+  };
   QuizList: undefined;
   QuizQuestion: { templateId: string; title?: string };
   QuizResult: { attempt: StudentQuizSubmitResult };

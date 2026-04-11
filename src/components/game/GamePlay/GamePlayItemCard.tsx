@@ -3,14 +3,22 @@ import { View, StyleSheet, Animated, Dimensions, Image } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../../../theme';
-import type { WasteItem } from '../../../data/dragDropGameData';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = Math.min(SCREEN_WIDTH - spacing.xl * 2, 320); // slightly wider
 const ICON_AREA = 220;
 
+interface GamePlayItem {
+  name: string;
+  description?: string;
+  hint?: string;
+  image?: any;
+  image_url?: string;
+  icon?: string;
+}
+
 interface GamePlayItemCardProps {
-  item: WasteItem;
+  item: GamePlayItem;
   pan: Animated.ValueXY;
   scale: Animated.Value;
   opacity: Animated.Value;
@@ -26,10 +34,12 @@ export default function GamePlayItemCard({
   scale,
   opacity,
   panHandlers,
-  feedbackAnimation,
+
   isDragging,
   hintAnimation,
 }: GamePlayItemCardProps) {
+  const imageSource = item.image ?? (item.image_url ? { uri: item.image_url } : null);
+
   return (
     <View style={styles.itemContainer}>
       <Animated.View
@@ -50,11 +60,11 @@ export default function GamePlayItemCard({
 
           {/* Image/Icon Area */}
           <View style={styles.itemIconArea}>
-            {item.image ? (
-              <Image source={item.image} style={styles.imageContent} resizeMode="cover" />
+            {imageSource ? (
+              <Image source={imageSource} style={styles.imageContent} resizeMode="cover" />
             ) : (
               <MaterialCommunityIcons
-                name={item.icon as any}
+                name={(item.icon || 'recycle') as any}
                 size={120}
                 color={colors.text.primary}
               />
@@ -63,9 +73,7 @@ export default function GamePlayItemCard({
 
           {/* Texts */}
           <Text style={styles.itemName}>{item.name}</Text>
-          {item.hint ? (
-            <Text style={styles.itemHintText}>{item.hint}</Text>
-          ) : null}
+          {item.hint ? <Text style={styles.itemHintText}>{item.hint}</Text> : null}
         </View>
       </Animated.View>
 
@@ -75,10 +83,12 @@ export default function GamePlayItemCard({
           style={[
             styles.dragHint,
             {
-              opacity: isDragging ? 0 : hintAnimation.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.5, 1],
-              }),
+              opacity: isDragging
+                ? 0
+                : hintAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.5, 1],
+                  }),
               transform: [
                 {
                   translateY: hintAnimation.interpolate({

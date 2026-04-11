@@ -21,7 +21,7 @@ type NavigationProp = CompositeNavigationProp<
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
 
   const handleBack = () => {
     navigation.goBack();
@@ -41,6 +41,8 @@ export default function ProfileScreen() {
     streak: user?.streak || 0,
     rank: 0,
   };
+
+  const mappedParentName = user?.parentName?.trim() || 'Phu huynh';
 
   const achievements = [
     { icon: 'recycle', iconColor: '#FFB300', title: 'Siêu nhặt rác', isLocked: false },
@@ -158,7 +160,7 @@ export default function ProfileScreen() {
           <View style={styles.infoSection}>
             <MaterialCommunityIcons name="shield-check" size={24} color="#0284C7" />
             <Text variant="bodyMedium" style={styles.infoText}>
-              Đã liên kết với phụ huynh! <Text style={styles.infoBold}>Bố Nam</Text>
+              Da lien ket voi phu huynh! <Text style={styles.infoBold}>{mappedParentName}</Text>
             </Text>
           </View>
 
