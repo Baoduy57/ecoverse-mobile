@@ -28,62 +28,47 @@ export default function CurrentStageCard({ stage, onPlay }: CurrentStageCardProp
     return 'leaf';
   };
 
+  const hasHistory = (stage.playsCount ?? 0) > 0;
+  const stageBadge = hasHistory ? 'Đã hoàn thành' : 'Màn mới';
+
   return (
     <LinearGradient
-      colors={[colors.primary, colors.primaryDark]}
+      colors={['#43A047', '#2E7D32']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.container}
     >
+      <View style={styles.glowBubbleLarge} />
+      <View style={styles.glowBubbleSmall} />
       <View style={styles.content}>
-        {/* Left Section */}
         <View style={styles.leftSection}>
           <Text style={styles.label}>MÀN ĐÃ CHỌN</Text>
           <Text numberOfLines={2} style={styles.title}>
             {stage.title}
           </Text>
-          <Text numberOfLines={2} style={styles.descriptionText}>
+          <Text numberOfLines={1} style={styles.descriptionText}>
             {stage.description}
           </Text>
 
-          <TouchableOpacity style={styles.playButton} onPress={onPlay}>
-            <MaterialCommunityIcons name="play" size={24} color={colors.primary} />
-            <Text style={styles.playText}>CHƠI NGAY</Text>
-          </TouchableOpacity>
+          <View style={styles.stageBadge}>
+            <MaterialCommunityIcons
+              name={hasHistory ? 'check-circle-outline' : 'star-outline'}
+              size={13}
+              color={colors.text.white}
+            />
+            <Text style={styles.stageBadgeText}>{stageBadge}</Text>
+          </View>
         </View>
 
-        {/* Right Section */}
         <View style={styles.rightSection}>
-          <View style={styles.topicIconContainer}>
-            <MaterialCommunityIcons
-              name={getTopicIcon()}
-              size={48}
-              color={colors.text.white}
-              style={{ opacity: 0.3 }}
-            />
+          <View style={styles.iconBubble}>
+            <MaterialCommunityIcons name={getTopicIcon()} size={28} color={colors.text.white} />
           </View>
 
-          <View style={styles.statsColumn}>
-            <View style={styles.statCard}>
-              <View style={styles.statHeader}>
-                <MaterialCommunityIcons
-                  name="help-circle-outline"
-                  size={16}
-                  color={colors.text.white}
-                />
-                <Text style={styles.statLabel}>Số câu</Text>
-              </View>
-              <Text style={styles.statValue}>{stage.itemCount ?? 0}</Text>
-            </View>
-
-            <View style={styles.statCard}>
-              <View style={styles.statHeader}>
-                <MaterialCommunityIcons name="controller" size={16} color={colors.text.white} />
-                <Text style={styles.statLabel}>Lần chơi</Text>
-              </View>
-              <Text style={styles.statValue}>{stage.playsCount ?? 0}</Text>
-            </View>
-          </View>
+          <TouchableOpacity style={styles.playButton} onPress={onPlay}>
+            <MaterialCommunityIcons name="play" size={16} color={colors.primary} />
+            <Text style={styles.playText}>PLAY</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </LinearGradient>
@@ -92,98 +77,109 @@ export default function CurrentStageCard({ stage, onPlay }: CurrentStageCardProp
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 16,
+    borderRadius: 14,
     elevation: 4,
     marginHorizontal: 16,
-    marginVertical: 12,
+    marginVertical: 8,
+    overflow: 'hidden',
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
   },
   content: {
+    alignItems: 'center',
     flexDirection: 'row',
-    gap: 14,
-    minHeight: 210,
-    padding: 18,
+    gap: 12,
+    minHeight: 146,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   descriptionText: {
     color: colors.text.white,
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 8,
-    opacity: 0.92,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 4,
+    opacity: 0.9,
+  },
+  glowBubbleLarge: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 70,
+    height: 140,
+    position: 'absolute',
+    right: -30,
+    top: -28,
+    width: 140,
+  },
+  glowBubbleSmall: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 50,
+    bottom: -18,
+    height: 90,
+    position: 'absolute',
+    right: 48,
+    width: 90,
+  },
+  iconBubble: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 16,
+    height: 56,
+    justifyContent: 'center',
+    width: 56,
   },
   label: {
     color: colors.text.white,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
     opacity: 0.8,
   },
   leftSection: {
-    flex: 0.56,
+    flex: 1,
     justifyContent: 'space-between',
+    zIndex: 2,
   },
   playButton: {
     alignItems: 'center',
-    alignSelf: 'stretch',
     backgroundColor: colors.surface,
-    borderRadius: 24,
+    borderRadius: 22,
     elevation: 2,
     flexDirection: 'row',
-    gap: 10,
+    gap: 4,
     justifyContent: 'center',
-    marginTop: 14,
-    paddingHorizontal: 20,
-    paddingVertical: 13,
+    minWidth: 92,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   playText: {
     color: colors.primary,
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '900',
   },
   rightSection: {
-    flex: 0.44,
-    justifyContent: 'center',
-    paddingTop: 8,
-    position: 'relative',
-  },
-  statCard: {
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  statHeader: {
     alignItems: 'center',
+    gap: 10,
+    zIndex: 2,
+  },
+  stageBadge: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 999,
     flexDirection: 'row',
     gap: 6,
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
-  statLabel: {
+  stageBadgeText: {
     color: colors.text.white,
-    fontSize: 12,
-    fontWeight: '600',
-    opacity: 0.92,
-  },
-  statsColumn: {
-    gap: 8,
-  },
-  statValue: {
-    color: colors.text.white,
-    fontSize: 22,
-    fontWeight: '800',
-    marginTop: 4,
+    fontSize: 11,
+    fontWeight: '700',
   },
   title: {
     color: colors.text.white,
-    fontSize: 21,
+    fontSize: 20,
     fontWeight: '800',
-    marginTop: 4,
-  },
-  topicIconContainer: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
   },
 });

@@ -7,12 +7,13 @@ import {
   RouteProp,
   NavigationProp,
   useIsFocused,
+  StackActions,
 } from '@react-navigation/native';
 import { colors } from '../../theme';
 import type { AppStackParamList } from '../../navigation/AppNavigator';
 import { useAuthStore } from '../../store/authStore';
 import { gameApi } from '../../services/api/game';
-import type { IWasteBin, IWasteItemDetails, IGameAttempt, BinCode } from '../../types';
+import type { IWasteBin, IGameAttempt, IPlacementResponse, BinCode } from '../../types';
 import {
   GamePlayHeader,
   GamePlayInstruction,
@@ -24,6 +25,18 @@ import {
 import ScreenBackground from '../../components/common/ScreenBackground';
 import GameInfoDialog from '../../components/game/GameInfoDialog';
 import { useSettingsStore } from '../../store/settingsStore';
+import {
+  type AnswerSnapshotItem,
+  type AttemptSummaryPayload,
+  type GameQuestion,
+  type GameResultDetailItem,
+  buildFallbackResults,
+  buildGameQuestions,
+  buildPlacementRequests,
+  buildServerResults,
+  buildSummaryPayload,
+  computeTimeLimit,
+} from './dragDropGamePlay.helpers';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BASE_POINTS_PER_CORRECT = 10;
@@ -31,44 +44,6 @@ const COMBO_THRESHOLD = 3;
 const COMBO_MULTIPLIER = 2;
 
 export const WasteTypeObj = {}; // Retained for compatibility where needed by components, though most are decoupled.
-
-interface GameQuestion {
-  item: IWasteItemDetails;
-  options: string[]; // now an array of bin codes
-}
-
-interface GameResultDetailItem {
-  id: string;
-  name: string;
-  icon: string;
-  imageUrl?: string;
-  description?: string;
-  correctType: string;
-  correctBinCode: BinCode;
-  userAnswer: string;
-  code: BinCode;
-  isCorrect: boolean;
-  orderIndex?: number;
-  color: string;
-}
-
-interface AttemptSummaryPayload {
-  score: number;
-  correctAnswers: number;
-  totalQuestions: number;
-  duration: number;
-  maxCombo: number;
-  completed: boolean;
-}
-
-const HEX_COLOR_REGEX = /^#([0-9A-F]{3}|[0-9A-F]{6})$/i;
-
-const getBinColor = (bin?: IWasteBin) => {
-  if (!bin) return '#9E9E9E';
-  if (HEX_COLOR_REGEX.test(bin.color_hex || '')) return bin.color_hex;
-  if (HEX_COLOR_REGEX.test(bin.description || '')) return bin.description;
-  return '#9E9E9E';
-};
 
 type DragDropGamePlayScreenRouteProp = RouteProp<AppStackParamList, 'DragDropGamePlay'>;
 
@@ -78,6 +53,8 @@ export default function DragDropGamePlayScreen() {
   const isFocused = useIsFocused();
   const { user } = useAuthStore();
   const levelId = route.params?.levelId || '';
+  const replayAttemptId = route.params?.gameAttemptId;
+  const isReplayMode = Boolean(replayAttemptId);
 
   const [isLoading, setIsLoading] = useState(true);
   const [bins, setBins] = useState<IWasteBin[]>([]);
@@ -142,9 +119,7 @@ export default function DragDropGamePlayScreen() {
     new Animated.Value(1),
   ]).current;
 
-  const answeredQuestionsRef = useRef<
-    Array<{ item: IWasteItemDetails; userAnswerCode: BinCode; isCorrect: boolean }>
-  >([]);
+  const answeredQuestionsRef = useRef<AnswerSnapshotItem[]>([]);
   const isFinishingRef = useRef(false);
   const isAnimatingRef = useRef(false);
   const formattedResultsRef = useRef<GameResultDetailItem[]>([]);
@@ -191,25 +166,27 @@ export default function DragDropGamePlayScreen() {
           return;
         }
 
-        const attemptData = await gameApi.createAttempt(String(levelId), user.id, {
+        const initialAttemptPayload = {
           duration: 0,
           points_earned: 0,
           total_items: itemsData.length,
           correct_count: 0,
           completed: false,
-        });
+        };
+
+        const attemptData =
+          isReplayMode && replayAttemptId
+            ? await gameApi.replayGameRound(replayAttemptId, initialAttemptPayload)
+            : await gameApi.createAttempt(String(levelId), user.id, initialAttemptPayload);
 
         setBins(binsData);
         binsRef.current = binsData;
         setGameAttempt(attemptData);
 
-        const mappedQuestions = itemsData.map((item: IWasteItemDetails) => ({
-          item,
-          options: binsData.map((b: IWasteBin) => b.code),
-        }));
+        const mappedQuestions = buildGameQuestions(itemsData, binsData);
         setQuestions(mappedQuestions);
 
-        const computedTimeLimit = Math.max(60, Math.min(180, itemsData.length * 12));
+        const computedTimeLimit = computeTimeLimit(itemsData.length);
         setTimeLimit(computedTimeLimit);
         setTimer(computedTimeLimit);
         timeLimitRef.current = computedTimeLimit;
@@ -239,7 +216,7 @@ export default function DragDropGamePlayScreen() {
       }
     };
     initializeGame();
-  }, [user?.id, user?.partnerId, levelId, openDialog]);
+  }, [user?.id, user?.partnerId, levelId, openDialog, isReplayMode, replayAttemptId]);
 
   useEffect(() => {
     pan.setValue({ x: 0, y: 0 });
@@ -475,107 +452,80 @@ export default function DragDropGamePlayScreen() {
     const finalScore = scoreRef.current;
     const finalMaxCombo = maxComboRef.current;
 
-    let summaryPayload: AttemptSummaryPayload = {
-      score: finalScore,
-      correctAnswers: correctCount,
+    let summaryPayload: AttemptSummaryPayload = buildSummaryPayload(
+      finalScore,
+      correctCount,
       totalQuestions,
-      duration: playedSeconds,
-      maxCombo: finalMaxCombo,
-      completed: true,
-    };
+      playedSeconds,
+      finalMaxCombo
+    );
 
-    const fallbackResults: GameResultDetailItem[] = answerSnapshot
-      .map((answer, index) => {
-        const userBin = bins.find(bin => bin.code === answer.userAnswerCode);
-        const correctBin = bins.find(bin => bin.code === answer.item.correct_bin_code);
-
-        return {
-          id: answer.item.id,
-          name: answer.item.name,
-          icon: answer.item.image_url ? 'image' : 'recycle',
-          imageUrl: answer.item.image_url,
-          description: answer.item.description,
-          correctType: correctBin?.display_name || answer.item.correct_bin_code,
-          correctBinCode: answer.item.correct_bin_code,
-          userAnswer: userBin?.display_name || answer.userAnswerCode,
-          code: answer.userAnswerCode,
-          isCorrect: answer.isCorrect,
-          orderIndex: answer.item.order_index ?? index,
-          color: getBinColor(userBin),
-        };
-      })
-      .sort(
-        (a, b) =>
-          (a.orderIndex ?? Number.MAX_SAFE_INTEGER) - (b.orderIndex ?? Number.MAX_SAFE_INTEGER)
-      );
+    const fallbackResults: GameResultDetailItem[] = buildFallbackResults(answerSnapshot, bins);
 
     formattedResultsRef.current = fallbackResults;
 
     if (gameAttempt) {
-      let attemptIdForPlacement = gameAttempt.id;
+      const targetAttemptId = isReplayMode ? replayAttemptId || gameAttempt.id : gameAttempt.id;
 
-      try {
-        const updatedAttempt = await gameApi.updateAttempt(gameAttempt.id, {
-          duration: playedSeconds,
-          points_earned: finalScore,
-          total_items: totalQuestions,
-          correct_count: correctCount,
-          completed: true,
-        });
+      if (!targetAttemptId) {
+        console.error('Thiếu game attempt id khi chốt kết quả màn chơi.');
+        setFinalSummary(summaryPayload);
+        setShowResult(true);
+        isFinishingRef.current = false;
+        return;
+      }
 
+      const attemptPayload = {
+        duration: playedSeconds,
+        points_earned: finalScore,
+        total_items: totalQuestions,
+        correct_count: correctCount,
+        completed: true,
+      };
+
+      const placementRequests = buildPlacementRequests(answerSnapshot);
+
+      const savePlacementsPromise = placementRequests.length
+        ? isReplayMode
+          ? gameApi.updateAttemptPlacements(targetAttemptId, placementRequests)
+          : gameApi.createPlacements(String(levelId), targetAttemptId, placementRequests)
+        : Promise.resolve([] as IPlacementResponse[]);
+
+      const settleResults = await Promise.allSettled([
+        gameApi.updateAttempt(targetAttemptId, attemptPayload),
+        savePlacementsPromise,
+      ]);
+
+      const updateAttemptResult = settleResults[0];
+      const savePlacementsResult = settleResults[1];
+
+      if (updateAttemptResult.status === 'fulfilled') {
+        const updatedAttempt = updateAttemptResult.value;
         setGameAttempt(prev => ({
           ...(prev || updatedAttempt),
           ...updatedAttempt,
         }));
-
-        attemptIdForPlacement = updatedAttempt.id || gameAttempt.id;
-      } catch (updateError) {
-        console.error('Lỗi khi cập nhật attempt kết thúc màn:', updateError);
+      } else {
+        console.error(
+          `Lỗi khi chốt attempt ${isReplayMode ? 'replay' : 'lần đầu'}:`,
+          updateAttemptResult.reason
+        );
       }
 
-      const placementRequests = answerSnapshot.map(answer => ({
-        waste_item_id: answer.item.id,
-        code: answer.userAnswerCode,
-        is_correct: answer.isCorrect,
-      }));
-
-      try {
-        const placementsResponse = placementRequests.length
-          ? await gameApi.createPlacements(
-              String(levelId),
-              attemptIdForPlacement,
-              placementRequests
-            )
-          : [];
-
+      if (savePlacementsResult.status === 'fulfilled') {
+        const placementsResponse = savePlacementsResult.value;
         if (placementsResponse.length) {
-          const serverResults: GameResultDetailItem[] = placementsResponse.map(placement => {
-            const userBin = bins.find(bin => bin.code === placement.code);
-            const correctBin = bins.find(bin => bin.code === placement.waste_item.correct_bin_code);
-
-            return {
-              id: placement.waste_item.id,
-              name: placement.waste_item.name,
-              icon: placement.waste_item.image_url ? 'image' : 'recycle',
-              imageUrl: placement.waste_item.image_url,
-              description: placement.waste_item.description,
-              correctType: correctBin?.display_name || placement.waste_item.correct_bin_code,
-              correctBinCode: placement.waste_item.correct_bin_code,
-              userAnswer: userBin?.display_name || placement.code,
-              code: placement.code,
-              isCorrect: placement.is_correct,
-              orderIndex: placement.waste_item.order_index,
-              color: getBinColor(userBin),
-            };
-          });
-
-          formattedResultsRef.current = [...serverResults].sort(
-            (a, b) =>
-              (a.orderIndex ?? Number.MAX_SAFE_INTEGER) - (b.orderIndex ?? Number.MAX_SAFE_INTEGER)
+          const serverResults: GameResultDetailItem[] = buildServerResults(
+            placementsResponse,
+            bins
           );
+          formattedResultsRef.current = serverResults;
         }
-      } catch (placementError) {
-        console.error('Lỗi khi đẩy placement xuống BE:', placementError);
+      } else {
+        console.error(
+          `Lỗi khi lưu placements ${isReplayMode ? 'replay' : 'lần đầu'}:`,
+          savePlacementsResult.reason
+        );
       }
     }
 
@@ -588,44 +538,30 @@ export default function DragDropGamePlayScreen() {
   const handleViewDetails = () => {
     const summaryPayload =
       finalSummary ||
-      ({
-        score: scoreRef.current,
-        correctAnswers: correctAnswersRef.current,
-        totalQuestions: questions.length,
-        duration: Math.max(0, timeLimitRef.current - timerRef.current),
-        maxCombo: maxComboRef.current,
-        completed: true,
-      } as AttemptSummaryPayload);
+      buildSummaryPayload(
+        scoreRef.current,
+        correctAnswersRef.current,
+        questions.length,
+        Math.max(0, timeLimitRef.current - timerRef.current),
+        maxComboRef.current
+      );
 
     navigation.navigate('GameResultDetail', {
       gameAttemptId: gameAttempt?.id,
+      skipServerRefresh: isReplayMode,
       results: formattedResultsRef.current,
       summary: summaryPayload,
     });
   };
 
   const handlePlayAgain = () => {
-    setCurrentQuestionIndex(0);
-    setScore(0);
-    setCorrectAnswers(0);
-    setCombo(0);
-    setMaxCombo(0);
-    setFeedbackText('Chính xác! +10');
-    setTimer(timeLimit);
-    setIsGameOver(false);
-    setShowResult(false);
-    setFinalSummary(null);
-    answeredQuestionsRef.current = [];
-    formattedResultsRef.current = [];
-    scoreRef.current = 0;
-    correctAnswersRef.current = 0;
-    maxComboRef.current = 0;
-    timerRef.current = timeLimitRef.current;
-    isFinishingRef.current = false;
-
-    pan.setValue({ x: 0, y: 0 });
-    scale.setValue(1);
-    opacity.setValue(1);
+    const nextAttemptId = gameAttempt?.id || replayAttemptId;
+    navigation.dispatch(
+      StackActions.replace('DragDropGamePlay', {
+        levelId,
+        gameAttemptId: nextAttemptId,
+      })
+    );
   };
 
   const handleGoHome = () => {
@@ -635,14 +571,13 @@ export default function DragDropGamePlayScreen() {
   if (showResult) {
     const resultSummary =
       finalSummary ||
-      ({
-        score: scoreRef.current,
-        correctAnswers: correctAnswersRef.current,
-        totalQuestions: questions.length,
-        duration: Math.max(0, timeLimitRef.current - timerRef.current),
-        maxCombo: maxComboRef.current,
-        completed: true,
-      } as AttemptSummaryPayload);
+      buildSummaryPayload(
+        scoreRef.current,
+        correctAnswersRef.current,
+        questions.length,
+        Math.max(0, timeLimitRef.current - timerRef.current),
+        maxComboRef.current
+      );
 
     return (
       <>

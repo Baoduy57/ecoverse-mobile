@@ -102,6 +102,7 @@ export default function GameResultDetailScreen() {
   const routeResults = route.params?.results || [];
   const routeSummary = route.params?.summary;
   const gameAttemptId = route.params?.gameAttemptId;
+  const skipServerRefresh = route.params?.skipServerRefresh;
   const [results, setResults] = useState<AnswerDetail[]>(routeResults);
   const [binNameByCode, setBinNameByCode] = useState<Record<string, string>>({});
   const [selectedItem, setSelectedItem] = useState<AnswerDetail | null>(null);
@@ -136,7 +137,7 @@ export default function GameResultDetailScreen() {
         if (!isActive) return;
         setBinNameByCode(nextBinNameByCode);
 
-        if (!gameAttemptId) {
+        if (!gameAttemptId || skipServerRefresh) {
           return;
         }
 
@@ -178,7 +179,7 @@ export default function GameResultDetailScreen() {
     return () => {
       isActive = false;
     };
-  }, [gameAttemptId]);
+  }, [gameAttemptId, skipServerRefresh]);
 
   const fallbackSummary = useMemo<ResultSummary>(() => {
     const totalQuestions = results.length;

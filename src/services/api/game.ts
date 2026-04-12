@@ -5,6 +5,7 @@ import {
   IGameAttempt,
   IGameAttemptUpsertPayload,
   IPlacementRequest,
+  IPlacementUpdateQuery,
   IPlacementResponse,
   IWasteItemDetails,
 } from '../../types';
@@ -116,6 +117,19 @@ export const gameApi = {
     return unwrapData<IGameAttempt>(response as { data?: unknown });
   },
 
+  // 3.2. Replay lại game round qua game attempt
+  replayGameRound: async (
+    gameAttemptId: string,
+    payload: IGameAttemptUpsertPayload
+  ): Promise<IGameAttempt> => {
+    const response = await apiClient.put<unknown>(
+      `/games/attempts/${gameAttemptId}/replay-game-round`,
+      payload,
+      { baseURL: getGameBaseUrl() }
+    );
+    return unwrapData<IGameAttempt>(response as { data?: unknown });
+  },
+
   // 4. Nhặt & Thả Rác (Create Placements)
   createPlacements: async (
     gameRoundId: string,
@@ -128,6 +142,38 @@ export const gameApi = {
       { baseURL: getGameBaseUrl() }
     );
     return unwrapArray<IPlacementResponse>(response as { data?: unknown });
+  },
+
+  // 4.1. Cập nhật danh sách placements theo game attempt (Replay)
+  updateAttemptPlacements: async (
+    gameAttemptId: string,
+    placements: IPlacementRequest[]
+  ): Promise<IPlacementResponse[]> => {
+    const response = await apiClient.put<unknown>(
+      `/games/attempts/${gameAttemptId}/placements`,
+      placements,
+      { baseURL: getGameBaseUrl() }
+    );
+    return unwrapArray<IPlacementResponse>(response as { data?: unknown });
+  },
+
+  // 4.2. Cập nhật 1 placement qua query params
+  updatePlacement: async (
+    gamePlacementId: string,
+    query: IPlacementUpdateQuery
+  ): Promise<IPlacementResponse> => {
+    const response = await apiClient.put<unknown>(
+      `/games/placements/${gamePlacementId}`,
+      undefined,
+      {
+        baseURL: getGameBaseUrl(),
+        params: {
+          correct: query.correct,
+          code: query.code,
+        },
+      }
+    );
+    return unwrapData<IPlacementResponse>(response as { data?: unknown });
   },
 
   // 5. Xem chi tiết thao tác thả rác trong 1 Lần chơi

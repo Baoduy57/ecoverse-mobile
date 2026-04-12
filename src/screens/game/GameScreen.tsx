@@ -48,6 +48,32 @@ const isMeaningfulAttempt = (attempt: IGameAttempt) => {
   );
 };
 
+const getAttemptTimestamp = (attempt: IGameAttempt) => {
+  const timeValue =
+    attempt.updated_at || attempt.completed_at || attempt.created_at || attempt.started_at;
+
+  if (!timeValue) {
+    return 0;
+  }
+
+  const parsed = new Date(timeValue).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getLatestAttempt = (attempts: IGameAttempt[]) => {
+  if (!attempts.length) {
+    return undefined;
+  }
+
+  return [...attempts].sort((a, b) => {
+    if (b.attempt_number !== a.attempt_number) {
+      return b.attempt_number - a.attempt_number;
+    }
+
+    return getAttemptTimestamp(b) - getAttemptTimestamp(a);
+  })[0];
+};
+
 // Helper: Calculate node position with wavy pattern and unit offsets
 const getNodePosition = (index: number) => {
   const unitIndex = Math.floor(index / LESSONS_PER_UNIT);
@@ -137,19 +163,12 @@ export default function GameScreen() {
           return;
         }
 
-        const firstUnplayedRoundIndex = mappedRounds.findIndex(round => {
-          const attempts = attemptsMap.get(round.id) || [];
-          const validAttempts = attempts.filter(isMeaningfulAttempt);
-          return validAttempts.length === 0;
-        });
-
-        const currentRoundIndex =
-          firstUnplayedRoundIndex === -1
-            ? Math.max(mappedRounds.length - 1, 0)
-            : firstUnplayedRoundIndex;
+        const currentRoundIndex = Math.max(mappedRounds.length - 1, 0);
 
         const levels: Level[] = mappedRounds.map((round, index) => {
-          const attempts = (attemptsMap.get(round.id) || []).filter(isMeaningfulAttempt);
+          const roundAttempts = attemptsMap.get(round.id) || [];
+          const attempts = roundAttempts.filter(isMeaningfulAttempt);
+          const latestAttempt = getLatestAttempt(roundAttempts);
           const isCurrent = index === currentRoundIndex;
           const status: Level['status'] = isCurrent ? 'current' : 'completed';
 
@@ -162,6 +181,8 @@ export default function GameScreen() {
             description: round.description,
             playsCount: attempts.length,
             itemCount: toSafeNumber(round.item_count),
+            lastAttemptId: latestAttempt?.id,
+            lastAttemptNumber: latestAttempt?.attempt_number,
           };
         });
 
@@ -281,7 +302,13 @@ export default function GameScreen() {
       return;
     }
 
-    navigation.navigate('DragDropGamePlay', { levelId: selectedStage.id });
+    navigation.navigate('DragDropGamePlay', {
+      levelId: selectedStage.id,
+    });
+  };
+
+  const handleHistoryPress = () => {
+    navigation.navigate('GameHistory');
   };
 
   const handleBackPress = () => {
@@ -313,6 +340,7 @@ export default function GameScreen() {
         {/* Top Header */}
         <TopHeaderBar
           onBack={handleBackPress}
+          onHistoryPress={handleHistoryPress}
           stats={{
             missions: 0,
             streak: Number(user?.streak ?? 0),

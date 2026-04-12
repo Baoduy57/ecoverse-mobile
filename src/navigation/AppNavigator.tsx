@@ -4,7 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { AIScannerScreen } from '../screens/ai';
 import { EditAvatarScreen, SettingsScreen } from '../screens/profile';
 import { RewardHistoryScreen } from '../screens/reward';
-import { DragDropGamePlayScreen, GameResultDetailScreen } from '../screens/game';
+import { DragDropGamePlayScreen, GameHistoryScreen, GameResultDetailScreen } from '../screens/game';
 import { QuizListScreen, QuizQuestionScreen, QuizResultScreen } from '../screens/quiz';
 import { ScheduledExamScreen, ExamQuestionScreen, ExamResultScreen } from '../screens/exam';
 import { NotificationScreen } from '../screens/notification';
@@ -20,9 +20,11 @@ export type AppStackParamList = {
   Settings: undefined;
   RewardHistory: undefined;
   Notification: undefined;
-  DragDropGamePlay: { levelId: string | number };
+  GameHistory: undefined;
+  DragDropGamePlay: { levelId: string | number; gameAttemptId?: string };
   GameResultDetail: {
     gameAttemptId?: string;
+    skipServerRefresh?: boolean;
     results: Array<{
       id: string;
       name: string;
@@ -104,6 +106,13 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Notification"
         component={NotificationScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="GameHistory"
+        component={GameHistoryScreen}
         options={{
           presentation: 'card',
         }}

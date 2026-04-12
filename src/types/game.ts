@@ -93,6 +93,7 @@ export interface Level {
   lastPoints?: number;
   lastDuration?: number;
   lastAttemptNumber?: number;
+  lastAttemptId?: string;
 }
 
 // -----------------------------------------
@@ -157,6 +158,11 @@ export interface IPlacementRequest {
   waste_item_id: string;
   code: BinCode;
   is_correct: boolean;
+}
+
+export interface IPlacementUpdateQuery {
+  correct: boolean;
+  code: BinCode;
 }
 
 export interface IWasteItemDetails {
