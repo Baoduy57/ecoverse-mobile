@@ -1,16 +1,19 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Animated, PanResponder, Dimensions, Vibration } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  NavigationProp,
+  useIsFocused,
+  StackActions,
+} from '@react-navigation/native';
 import { colors } from '../../theme';
 import type { AppStackParamList } from '../../navigation/AppNavigator';
-import {
-  WasteType,
-  BINS,
-  getWasteItemsForLevel,
-  getLevelConfig,
-  type WasteItem,
-} from '../../data/dragDropGameData';
+import { useAuthStore } from '../../store/authStore';
+import { gameApi } from '../../services/api/game';
+import type { IWasteBin, IGameAttempt, IPlacementResponse, BinCode } from '../../types';
 import {
   GamePlayHeader,
   GamePlayInstruction,
@@ -20,76 +23,200 @@ import {
   GamePlayPauseModal,
 } from '../../components/game/GamePlay';
 import ScreenBackground from '../../components/common/ScreenBackground';
+import GameInfoDialog from '../../components/game/GameInfoDialog';
 import { useSettingsStore } from '../../store/settingsStore';
+import {
+  type AnswerSnapshotItem,
+  type AttemptSummaryPayload,
+  type GameQuestion,
+  type GameResultDetailItem,
+  buildFallbackResults,
+  buildGameQuestions,
+  buildPlacementRequests,
+  buildServerResults,
+  buildSummaryPayload,
+  computeTimeLimit,
+} from './dragDropGamePlay.helpers';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const BASE_POINTS_PER_CORRECT = 10;
+const COMBO_THRESHOLD = 3;
+const COMBO_MULTIPLIER = 2;
 
-export { WasteType };
-
-interface GameQuestion {
-  item: WasteItem;
-  options: WasteType[];
-}
+export const WasteTypeObj = {}; // Retained for compatibility where needed by components, though most are decoupled.
 
 type DragDropGamePlayScreenRouteProp = RouteProp<AppStackParamList, 'DragDropGamePlay'>;
 
 export default function DragDropGamePlayScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const route = useRoute<DragDropGamePlayScreenRouteProp>();
-  const levelId = route.params?.levelId || 1;
-  const levelConfig = getLevelConfig(levelId);
+  const isFocused = useIsFocused();
+  const { user } = useAuthStore();
+  const levelId = route.params?.levelId || '';
+  const replayAttemptId = route.params?.gameAttemptId;
+  const isReplayMode = Boolean(replayAttemptId);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [bins, setBins] = useState<IWasteBin[]>([]);
+  const binsRef = useRef<IWasteBin[]>([]);
+  const [questions, setQuestions] = useState<GameQuestion[]>([]);
+  const [gameAttempt, setGameAttempt] = useState<IGameAttempt | null>(null);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [combo, setCombo] = useState(0);
-  const [timer, setTimer] = useState(levelConfig.timeLimit);
+  const [maxCombo, setMaxCombo] = useState(0);
+  const [timeLimit, setTimeLimit] = useState(60);
+  const [timer, setTimer] = useState(60);
   const [isGameOver, setIsGameOver] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [answeredQuestions, setAnsweredQuestions] = useState<
-    Array<{ item: WasteItem; userAnswer: WasteType; isCorrect: boolean }>
-  >([]);
+  const [feedbackText, setFeedbackText] = useState('Chính xác! +10');
+  const [finalSummary, setFinalSummary] = useState<AttemptSummaryPayload | null>(null);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('Thong bao');
+  const [dialogMessage, setDialogMessage] = useState('');
+  const [shouldGoBackAfterDialog, setShouldGoBackAfterDialog] = useState(false);
 
-  const [questions] = useState<GameQuestion[]>(() => {
-    const items = getWasteItemsForLevel(levelId, levelConfig.itemCount);
-    return items.map(item => ({
-      item,
-      options: [WasteType.ORGANIC, WasteType.RECYCLABLE, WasteType.HAZARDOUS, WasteType.OTHER],
-    }));
-  });
+  const scoreRef = useRef(0);
+  const correctAnswersRef = useRef(0);
+  const maxComboRef = useRef(0);
+  const timerRef = useRef(60);
+  const timeLimitRef = useRef(60);
 
   const currentQuestion = questions[currentQuestionIndex];
+
+  const openDialog = useCallback((title: string, message: string, goBackAfterClose = false) => {
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setShouldGoBackAfterDialog(goBackAfterClose);
+    setDialogVisible(true);
+  }, []);
+
+  const closeDialog = useCallback(() => {
+    const shouldGoBack = shouldGoBackAfterDialog;
+    setDialogVisible(false);
+    setShouldGoBackAfterDialog(false);
+    if (shouldGoBack && navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  }, [navigation, shouldGoBackAfterDialog]);
 
   const pan = useRef(new Animated.ValueXY()).current;
   const scale = useRef(new Animated.Value(1)).current;
   const opacity = useRef(new Animated.Value(1)).current;
   const [isDragging, setIsDragging] = useState(false);
-  const [highlightedBin, setHighlightedBin] = useState<WasteType | null>(null);
+  const [highlightedBin, setHighlightedBin] = useState<string | null>(null);
   const [feedbackAnimation] = useState(new Animated.Value(0));
   const [hintAnimation] = useState(new Animated.Value(0));
   const [isAnimating, setIsAnimating] = useState(false);
-  const binScaleAnims = useRef(BINS.map(() => new Animated.Value(1))).current;
+  // We dynamic-allocate animated values for bins during load if needed, but 4 is normal
+  const binScaleAnims = useRef([
+    new Animated.Value(1),
+    new Animated.Value(1),
+    new Animated.Value(1),
+    new Animated.Value(1),
+  ]).current;
 
-  const BINS_BOTTOM_THRESHOLD = SCREEN_HEIGHT - 220;
+  const answeredQuestionsRef = useRef<AnswerSnapshotItem[]>([]);
+  const isFinishingRef = useRef(false);
   const isAnimatingRef = useRef(false);
-  const handleAnswerRef = useRef<(type: WasteType, binIndex: number, releaseY: number) => void>(
-    () => { }
+  const formattedResultsRef = useRef<GameResultDetailItem[]>([]);
+  const handleAnswerRef = useRef<(typeCode: BinCode, binIndex: number, releaseY: number) => void>(
+    () => {}
   );
 
   useEffect(() => {
-    if (isGameOver || showResult || isPaused) return;
+    if (isGameOver || showResult || isPaused || !isFocused) return;
     const interval = setInterval(() => {
       setTimer(prev => {
+        const next = prev <= 1 ? 0 : prev - 1;
+        timerRef.current = next;
         if (prev <= 1) {
           handleGameOver();
           return 0;
         }
-        return prev - 1;
+        return next;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isGameOver, showResult, isPaused, currentQuestionIndex]);
+  }, [isGameOver, showResult, isPaused, currentQuestionIndex, isFocused]);
+
+  useEffect(() => {
+    const initializeGame = async () => {
+      try {
+        if (!user?.id || !user?.partnerId) {
+          openDialog(
+            'Loi',
+            'Khong tim thay partner_id hoac student_id, vui long dang nhap lai.',
+            true
+          );
+          return;
+        }
+        setIsLoading(true);
+
+        const [binsData, itemsData] = await Promise.all([
+          gameApi.getWasteBins(),
+          gameApi.getGameRoundItems(user.partnerId, String(levelId)),
+        ]);
+
+        if (!itemsData?.length) {
+          openDialog('Thông báo', 'Màn chơi này chưa có vật phẩm rác để chơi.', true);
+          return;
+        }
+
+        const initialAttemptPayload = {
+          duration: 0,
+          points_earned: 0,
+          total_items: itemsData.length,
+          correct_count: 0,
+          completed: false,
+        };
+
+        const attemptData =
+          isReplayMode && replayAttemptId
+            ? await gameApi.replayGameRound(replayAttemptId, initialAttemptPayload)
+            : await gameApi.createAttempt(String(levelId), user.id, initialAttemptPayload);
+
+        setBins(binsData);
+        binsRef.current = binsData;
+        setGameAttempt(attemptData);
+
+        const mappedQuestions = buildGameQuestions(itemsData, binsData);
+        setQuestions(mappedQuestions);
+
+        const computedTimeLimit = computeTimeLimit(itemsData.length);
+        setTimeLimit(computedTimeLimit);
+        setTimer(computedTimeLimit);
+        timeLimitRef.current = computedTimeLimit;
+        timerRef.current = computedTimeLimit;
+      } catch (err: unknown) {
+        const requestError = err as {
+          config?: { baseURL?: string; url?: string };
+          response?: { status?: number; data?: { message?: string } };
+        };
+
+        if (requestError?.config) {
+          console.error(
+            `Lỗi khi tải dữ liệu game Drag Drop (${requestError.response?.status || 'NO_STATUS'}): ${requestError.config.baseURL || ''}${requestError.config.url || ''}`
+          );
+        }
+        if (
+          requestError?.response?.status === 404 &&
+          requestError?.response?.data?.message === 'Waste items not found'
+        ) {
+          openDialog('Thông báo', 'Không tìm thấy vật phẩm rác cho màn chơi này.', true);
+          return;
+        }
+        console.error('Chi tiết lỗi Drag Drop:', requestError?.response?.data || err);
+        openDialog('Lỗi', 'Không thể tải dữ liệu màn chơi. Vui lòng thử lại.', true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initializeGame();
+  }, [user?.id, user?.partnerId, levelId, openDialog, isReplayMode, replayAttemptId]);
 
   useEffect(() => {
     pan.setValue({ x: 0, y: 0 });
@@ -98,37 +225,38 @@ export default function DragDropGamePlayScreen() {
   }, [currentQuestionIndex, pan, scale, opacity]);
 
   useEffect(() => {
-    BINS.forEach((bin, i) => {
-      Animated.timing(binScaleAnims[i], {
-        toValue: highlightedBin === bin.type ? 1.08 : 1,
-        duration: 120,
-        useNativeDriver: true,
-      }).start();
+    bins.forEach((bin, i) => {
+      if (binScaleAnims[i]) {
+        Animated.timing(binScaleAnims[i], {
+          toValue: highlightedBin === bin.code ? 1.08 : 1,
+          duration: 120,
+          useNativeDriver: true,
+        }).start();
+      }
     });
-  }, [highlightedBin]);
+  }, [highlightedBin, bins]);
 
   useEffect(() => {
     if (!isDragging) {
-      Animated.loop(
+      const pulseLoop = Animated.loop(
         Animated.sequence([
           Animated.timing(hintAnimation, { toValue: 1, duration: 1000, useNativeDriver: true }),
           Animated.timing(hintAnimation, { toValue: 0, duration: 1000, useNativeDriver: true }),
         ])
-      ).start();
+      );
+      pulseLoop.start();
+      return () => pulseLoop.stop();
     }
-  }, [isDragging]);
+  }, [isDragging, hintAnimation]);
+
+  const BINS_BOTTOM_THRESHOLD = SCREEN_HEIGHT - 220;
 
   const getBinIndexFromPosition = useCallback((moveX: number, moveY: number) => {
+    const currentBins = binsRef.current;
     const itemY = SCREEN_HEIGHT / 2 + moveY;
     if (itemY <= BINS_BOTTOM_THRESHOLD) return -1;
-    const binIndex = Math.floor((moveX / SCREEN_WIDTH) * 4);
-    return binIndex >= 0 && binIndex < 4 ? binIndex : -1;
-  }, []);
-
-  const getSnapTarget = useCallback((binIndex: number) => {
-    const binCenterX = (2 * binIndex + 1) * (SCREEN_WIDTH / 8) - SCREEN_WIDTH / 2;
-    const targetY = SCREEN_HEIGHT * 0.35;
-    return { x: binCenterX, y: targetY };
+    const binIndex = Math.floor((moveX / SCREEN_WIDTH) * currentBins.length);
+    return binIndex >= 0 && binIndex < currentBins.length ? binIndex : -1;
   }, []);
 
   const panResponder = useRef(
@@ -142,15 +270,17 @@ export default function DragDropGamePlayScreen() {
       onPanResponderMove: (_, gesture) => {
         pan.setValue({ x: gesture.dx, y: gesture.dy });
         const binIndex = getBinIndexFromPosition(gesture.moveX, gesture.dy);
-        setHighlightedBin(binIndex >= 0 ? BINS[binIndex].type : null);
+        const currentBins = binsRef.current;
+        setHighlightedBin(binIndex >= 0 ? currentBins[binIndex].code : null);
       },
       onPanResponderRelease: (_, gesture) => {
         setIsDragging(false);
         setHighlightedBin(null);
         const binIndex = getBinIndexFromPosition(gesture.moveX, gesture.dy);
         const droppedInBin = binIndex >= 0;
+        const currentBins = binsRef.current;
         if (droppedInBin) {
-          handleAnswerRef.current(BINS[binIndex].type, binIndex, gesture.dy);
+          handleAnswerRef.current(currentBins[binIndex].code as BinCode, binIndex, gesture.dy);
         } else {
           Animated.parallel([
             Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: true }),
@@ -165,32 +295,53 @@ export default function DragDropGamePlayScreen() {
     pan.setValue({ x: 0, y: 0 });
     opacity.setValue(1);
     scale.setValue(1);
-
   }, [pan, scale, opacity]);
 
   const handleAnswer = useCallback(
-    (selectedType: WasteType, binIndex: number, releaseY: number) => {
+    (selectedTypeCode: BinCode, _binIndex: number, releaseY: number) => {
       if (!currentQuestion) return;
-      const isCorrect = selectedType === currentQuestion.item.type;
+      const isCorrect = selectedTypeCode === currentQuestion.item.correct_bin_code;
       isAnimatingRef.current = true;
       setIsAnimating(true);
 
-      setAnsweredQuestions(prev => [
-        ...prev,
-        { item: currentQuestion.item, userAnswer: selectedType, isCorrect },
-      ]);
+      answeredQuestionsRef.current = [
+        ...answeredQuestionsRef.current,
+        { item: currentQuestion.item, userAnswerCode: selectedTypeCode, isCorrect },
+      ];
 
       if (!isCorrect) setCombo(0);
 
       if (isCorrect) {
-        const target = getSnapTarget(binIndex);
+        const newCombo = combo + 1;
+        const multiplier = newCombo >= COMBO_THRESHOLD ? COMBO_MULTIPLIER : 1;
+        const scoreToAdd = BASE_POINTS_PER_CORRECT * multiplier;
+
+        setFeedbackText(
+          multiplier > 1
+            ? `Chính xác! +${scoreToAdd} (x${multiplier})`
+            : `Chính xác! +${scoreToAdd}`
+        );
+
         Animated.parallel([
-          Animated.timing(pan, { toValue: target, duration: 280, useNativeDriver: true }),
-          Animated.timing(scale, { toValue: 0.4, duration: 280, useNativeDriver: true }),
-          Animated.timing(opacity, { toValue: 0, duration: 180, useNativeDriver: true }),
+          Animated.timing(scale, { toValue: 0.12, duration: 250, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true, delay: 50 }),
         ]).start(() => {
-          setScore(prev => prev + 300);
-          setCorrectAnswers(prev => prev + 1);
+          setScore(prev => {
+            const next = prev + scoreToAdd;
+            scoreRef.current = next;
+            return next;
+          });
+          setCombo(newCombo);
+          setMaxCombo(prev => {
+            const next = Math.max(prev, newCombo);
+            maxComboRef.current = next;
+            return next;
+          });
+          setCorrectAnswers(prev => {
+            const next = prev + 1;
+            correctAnswersRef.current = next;
+            return next;
+          });
           feedbackAnimation.setValue(0);
           Animated.timing(feedbackAnimation, {
             toValue: 1,
@@ -214,7 +365,12 @@ export default function DragDropGamePlayScreen() {
             setTimeout(() => {
               Animated.parallel([
                 Animated.timing(opacity, { toValue: 1, duration: 250, useNativeDriver: true }),
-                Animated.spring(scale, { toValue: 1, friction: 8, tension: 50, useNativeDriver: true })
+                Animated.spring(scale, {
+                  toValue: 1,
+                  friction: 8,
+                  tension: 50,
+                  useNativeDriver: true,
+                }),
               ]).start(() => {
                 isAnimatingRef.current = false;
                 setIsAnimating(false);
@@ -232,6 +388,9 @@ export default function DragDropGamePlayScreen() {
         if (useSettingsStore.getState().vibrationEnabled) {
           Vibration.vibrate(400);
         }
+        correctAnswersRef.current = answeredQuestionsRef.current.filter(
+          answer => answer.isCorrect
+        ).length;
         const shakeSteps = [-12, 12, -10, 10, -6, 6, 0];
         const anims = shakeSteps.map(xVal =>
           Animated.timing(pan, {
@@ -271,51 +430,138 @@ export default function DragDropGamePlayScreen() {
       questions.length,
       pan,
       scale,
-      getSnapTarget,
       feedbackAnimation,
       resetPanAndScale,
+      combo,
+      opacity,
     ]
   );
   handleAnswerRef.current = handleAnswer;
 
-  const handleGameOver = () => {
+  const handleGameOver = async () => {
+    if (isFinishingRef.current) {
+      return;
+    }
+    isFinishingRef.current = true;
     setIsGameOver(true);
+
+    const playedSeconds = Math.max(0, timeLimitRef.current - timerRef.current);
+    const answerSnapshot = answeredQuestionsRef.current;
+    const correctCount = answerSnapshot.filter(answer => answer.isCorrect).length;
+    const totalQuestions = questions.length;
+    const finalScore = scoreRef.current;
+    const finalMaxCombo = maxComboRef.current;
+
+    let summaryPayload: AttemptSummaryPayload = buildSummaryPayload(
+      finalScore,
+      correctCount,
+      totalQuestions,
+      playedSeconds,
+      finalMaxCombo
+    );
+
+    const fallbackResults: GameResultDetailItem[] = buildFallbackResults(answerSnapshot, bins);
+
+    formattedResultsRef.current = fallbackResults;
+
+    if (gameAttempt) {
+      const targetAttemptId = isReplayMode ? replayAttemptId || gameAttempt.id : gameAttempt.id;
+
+      if (!targetAttemptId) {
+        console.error('Thiếu game attempt id khi chốt kết quả màn chơi.');
+        setFinalSummary(summaryPayload);
+        setShowResult(true);
+        isFinishingRef.current = false;
+        return;
+      }
+
+      const attemptPayload = {
+        duration: playedSeconds,
+        points_earned: finalScore,
+        total_items: totalQuestions,
+        correct_count: correctCount,
+        completed: true,
+      };
+
+      const placementRequests = buildPlacementRequests(answerSnapshot);
+
+      const savePlacementsPromise = placementRequests.length
+        ? isReplayMode
+          ? gameApi.updateAttemptPlacements(targetAttemptId, placementRequests)
+          : gameApi.createPlacements(String(levelId), targetAttemptId, placementRequests)
+        : Promise.resolve([] as IPlacementResponse[]);
+
+      const settleResults = await Promise.allSettled([
+        gameApi.updateAttempt(targetAttemptId, attemptPayload),
+        savePlacementsPromise,
+      ]);
+
+      const updateAttemptResult = settleResults[0];
+      const savePlacementsResult = settleResults[1];
+
+      if (updateAttemptResult.status === 'fulfilled') {
+        const updatedAttempt = updateAttemptResult.value;
+        setGameAttempt(prev => ({
+          ...(prev || updatedAttempt),
+          ...updatedAttempt,
+        }));
+      } else {
+        console.error(
+          `Lỗi khi chốt attempt ${isReplayMode ? 'replay' : 'lần đầu'}:`,
+          updateAttemptResult.reason
+        );
+      }
+
+      if (savePlacementsResult.status === 'fulfilled') {
+        const placementsResponse = savePlacementsResult.value;
+        if (placementsResponse.length) {
+          const serverResults: GameResultDetailItem[] = buildServerResults(
+            placementsResponse,
+            bins
+          );
+          formattedResultsRef.current = serverResults;
+        }
+      } else {
+        console.error(
+          `Lỗi khi lưu placements ${isReplayMode ? 'replay' : 'lần đầu'}:`,
+          savePlacementsResult.reason
+        );
+      }
+    }
+
+    setFinalSummary(summaryPayload);
     setShowResult(true);
+
+    isFinishingRef.current = false;
   };
 
-  const getBinConfig = (type: WasteType) => BINS.find(bin => bin.type === type);
-
   const handleViewDetails = () => {
-    const formattedResults = answeredQuestions.map(answer => {
-      const binConfig = getBinConfig(answer.item.type);
-      return {
-        id: answer.item.id,
-        name: answer.item.name,
-        icon: answer.item.icon,
-        description: answer.item.description,
-        correctType: binConfig?.name || '',
-        correctTypeIcon: binConfig?.icon || 'delete',
-        userAnswer: getBinConfig(answer.userAnswer)?.name || '',
-        isCorrect: answer.isCorrect,
-        color: binConfig?.color || colors.primary,
-      };
+    const summaryPayload =
+      finalSummary ||
+      buildSummaryPayload(
+        scoreRef.current,
+        correctAnswersRef.current,
+        questions.length,
+        Math.max(0, timeLimitRef.current - timerRef.current),
+        maxComboRef.current
+      );
+
+    navigation.navigate('GameResultDetail', {
+      gameAttemptId: gameAttempt?.id,
+      skipServerRefresh: isReplayMode,
+      results: formattedResultsRef.current,
+      summary: summaryPayload,
     });
-    navigation.navigate('GameResultDetail', { results: formattedResults });
   };
 
   const handlePlayAgain = () => {
-    setCurrentQuestionIndex(0);
-    setScore(0);
-    setCorrectAnswers(0);
-    setCombo(0);
-    setTimer(levelConfig.timeLimit);
-    setIsGameOver(false);
-    setShowResult(false);
-    setAnsweredQuestions([]);
-
-    pan.setValue({ x: 0, y: 0 });
-    scale.setValue(1);
-    opacity.setValue(1);
+    const nextAttemptId = gameAttempt?.id || replayAttemptId;
+    navigation.dispatch(
+      StackActions.replace('DragDropGamePlay', {
+        levelId,
+        gameAttemptId: nextAttemptId,
+      })
+    );
   };
 
   const handleGoHome = () => {
@@ -323,19 +569,53 @@ export default function DragDropGamePlayScreen() {
   };
 
   if (showResult) {
+    const resultSummary =
+      finalSummary ||
+      buildSummaryPayload(
+        scoreRef.current,
+        correctAnswersRef.current,
+        questions.length,
+        Math.max(0, timeLimitRef.current - timerRef.current),
+        maxComboRef.current
+      );
+
     return (
-      <GamePlayResult
-        score={score}
-        correctAnswers={correctAnswers}
-        totalQuestions={questions.length}
-        onViewDetails={handleViewDetails}
-        onPlayAgain={handlePlayAgain}
-        onGoHome={handleGoHome}
-      />
+      <>
+        <GamePlayResult
+          score={resultSummary.score}
+          correctAnswers={resultSummary.correctAnswers}
+          totalQuestions={resultSummary.totalQuestions}
+          duration={resultSummary.duration}
+          maxCombo={resultSummary.maxCombo}
+          completed={resultSummary.completed}
+          onViewDetails={handleViewDetails}
+          onPlayAgain={handlePlayAgain}
+          onGoHome={handleGoHome}
+        />
+        <GameInfoDialog
+          visible={dialogVisible}
+          title={dialogTitle}
+          message={dialogMessage}
+          onClose={closeDialog}
+        />
+      </>
     );
   }
 
-  if (!currentQuestion) return null;
+  // Keep dialog visible even when game data is missing.
+  if (isLoading || !currentQuestion || bins.length === 0) {
+    return (
+      <View style={styles.container}>
+        <ScreenBackground />
+        <GameInfoDialog
+          visible={dialogVisible}
+          title={dialogTitle}
+          message={dialogMessage}
+          onClose={closeDialog}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -343,9 +623,9 @@ export default function DragDropGamePlayScreen() {
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <GamePlayHeader
-          gameModeLabel={levelConfig.gameModeLabel}
+          gameModeLabel={'Bài tập vòng ' + gameAttempt?.attempt_number}
           timer={timer}
-          timeLimit={levelConfig.timeLimit}
+          timeLimit={timeLimit}
           combo={combo}
           score={score}
           onPause={() => setIsPaused(true)}
@@ -354,7 +634,7 @@ export default function DragDropGamePlayScreen() {
           totalQuestions={questions.length}
         />
 
-        <GamePlayInstruction feedbackAnimation={feedbackAnimation} />
+        <GamePlayInstruction feedbackAnimation={feedbackAnimation} feedbackText={feedbackText} />
 
         <GamePlayItemCard
           item={currentQuestion.item}
@@ -367,7 +647,7 @@ export default function DragDropGamePlayScreen() {
           hintAnimation={hintAnimation}
         />
 
-        <GamePlayBins highlightedBin={highlightedBin} binScaleAnims={binScaleAnims} />
+        <GamePlayBins bins={bins} highlightedBin={highlightedBin} binScaleAnims={binScaleAnims} />
 
         <GamePlayPauseModal
           visible={isPaused}
@@ -382,6 +662,13 @@ export default function DragDropGamePlayScreen() {
           }}
         />
       </SafeAreaView>
+
+      <GameInfoDialog
+        visible={dialogVisible}
+        title={dialogTitle}
+        message={dialogMessage}
+        onClose={closeDialog}
+      />
     </View>
   );
 }

@@ -6,9 +6,13 @@ import { colors, spacing } from '../../../theme';
 
 interface GamePlayInstructionProps {
   feedbackAnimation: Animated.Value;
+  feedbackText?: string;
 }
 
-export default function GamePlayInstruction({ feedbackAnimation }: GamePlayInstructionProps) {
+export default function GamePlayInstruction({
+  feedbackAnimation,
+  feedbackText = 'Chính xác! +10',
+}: GamePlayInstructionProps) {
   return (
     <View style={styles.instructionContainer}>
       <Animated.View
@@ -29,7 +33,7 @@ export default function GamePlayInstruction({ feedbackAnimation }: GamePlayInstr
         pointerEvents="none"
       >
         <MaterialCommunityIcons name="check-circle" size={80} color={colors.status.success} />
-        <Text style={styles.feedbackText}>Chính xác! +300</Text>
+        <Text style={styles.feedbackText}>{feedbackText}</Text>
       </Animated.View>
     </View>
   );
@@ -55,11 +59,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     position: 'relative',
-  },
-  instructionText: {
-    color: colors.primary,
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
   },
 });

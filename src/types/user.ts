@@ -15,6 +15,7 @@ export interface IUser {
   className?: string;
   schoolName?: string;
   grade?: string | number;
+  parentName?: string;
   parentEmail?: string;
   partnerId?: string;
 }

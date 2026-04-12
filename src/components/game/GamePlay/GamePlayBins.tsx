@@ -1,56 +1,125 @@
-import React from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import React, { useRef } from 'react';
+import { View, StyleSheet, Animated, Image } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { spacing } from '../../../theme';
-import { BINS } from '../../../data/dragDropGameData';
-import type { WasteType } from '../../../data/dragDropGameData';
+import type { IWasteBin } from '../../../types';
 
 interface GamePlayBinsProps {
-  highlightedBin: WasteType | null;
+  bins: IWasteBin[];
+  highlightedBin: string | null;
   binScaleAnims: Animated.Value[];
+  onBinLayout?: (
+    binCode: string,
+    layout: { x: number; y: number; width: number; height: number }
+  ) => void;
 }
 
-export default function GamePlayBins({ highlightedBin, binScaleAnims }: GamePlayBinsProps) {
+const BIN_ICON_BY_CODE: Record<string, string> = {
+  PLASTIC: 'bottle-soda-outline',
+  PAPER: 'file-document-outline',
+  ORGANIC: 'leaf',
+  OTHERS: 'delete',
+};
+
+const HEX_COLOR_REGEX = /^#([0-9A-F]{3}|[0-9A-F]{6})$/i;
+
+const getBinColor = (bin: IWasteBin) => {
+  if (HEX_COLOR_REGEX.test(bin.color_hex || '')) {
+    return bin.color_hex;
+  }
+
+  if (HEX_COLOR_REGEX.test(bin.description || '')) {
+    return bin.description;
+  }
+
+  return '#9E9E9E';
+};
+
+export default function GamePlayBins({
+  bins,
+  highlightedBin,
+  binScaleAnims,
+  onBinLayout,
+}: GamePlayBinsProps) {
+  const binRefs = useRef<Record<string, any>>({});
+
   return (
     <View style={styles.binsContainer}>
-      {BINS.map((bin, index) => (
-        <Animated.View
-          key={bin.type}
-          style={[
-            styles.binWrapper,
-            highlightedBin === bin.type && styles.binHighlighted,
-            { transform: [{ scale: binScaleAnims[index] }] },
-          ]}
-        >
-          <View style={styles.trashCanShape}>
-            {/* Lid */}
-            <View style={[styles.lid, { backgroundColor: bin.color }]} />
+      {bins.map((bin, index) => {
+        const isHighlighted = highlightedBin === bin.code;
+        const hasIconUrl = /^https?:\/\//i.test(bin.icon_url || '');
+        const binColor = getBinColor(bin);
 
-            {/* Body */}
-            <View style={[styles.body, { backgroundColor: bin.color }]}>
-              {/* Two-tone top overlay to make top half lighter */}
-              <View style={styles.twoToneOverlay} />
+        return (
+          <Animated.View
+            key={bin.code}
+            ref={ref => {
+              binRefs.current[bin.code] = ref;
+            }}
+            onLayout={event => {
+              if (!onBinLayout || !binRefs.current[bin.code]) {
+                return;
+              }
 
-              <View style={styles.iconContainer}>
-                <MaterialCommunityIcons name={bin.icon as any} size={32} color="#FFFFFF" />
+              binRefs.current[bin.code]?.measureInWindow(
+                (x: number, y: number, width: number, height: number) => {
+                  onBinLayout(bin.code, { x, y, width, height });
+                }
+              );
+            }}
+            style={[
+              styles.binWrapper,
+              isHighlighted && styles.binHighlighted,
+              {
+                transform: [
+                  { translateY: isHighlighted ? -8 : 0 },
+                  { scale: binScaleAnims[index] },
+                ],
+              },
+            ]}
+          >
+            <View style={styles.trashCanShape}>
+              {/* Lid */}
+              <View style={[styles.lid, { backgroundColor: binColor }]} />
+
+              {/* Body */}
+              <View style={[styles.body, { backgroundColor: binColor }]}>
+                {/* Two-tone top overlay to make top half lighter */}
+                <View style={styles.twoToneOverlay} />
+
+                <View style={styles.iconContainer}>
+                  {hasIconUrl ? (
+                    <Image
+                      source={{ uri: bin.icon_url }}
+                      style={styles.iconImage}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <MaterialCommunityIcons
+                      name={(BIN_ICON_BY_CODE[bin.code] || 'delete') as any}
+                      size={32}
+                      color="#FFFFFF"
+                    />
+                  )}
+                </View>
               </View>
             </View>
-          </View>
 
-          {/* Label outside, below the shape */}
-          <Text style={[styles.binLabel, { color: bin.color }]}>
-            {bin.name.toUpperCase()}
-          </Text>
-        </Animated.View>
-      ))}
+            {/* Label outside, below the shape */}
+            <Text style={[styles.binLabel, { color: binColor }]}>
+              {bin.display_name.toUpperCase()}
+            </Text>
+          </Animated.View>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   binHighlighted: {
-    transform: [{ translateY: -8 }], // slight pop up when active, scale is handled by anim
+    opacity: 1,
   },
   binLabel: {
     fontSize: 12,
@@ -85,6 +154,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
+  },
+  iconImage: {
+    height: 32,
+    width: 32,
   },
   lid: {
     borderRadius: 8,

@@ -18,9 +18,47 @@ interface AuthState {
   clearError: () => void;
 }
 
+const extractEnvelopeData = (rawResponse: any) => {
+  const root = rawResponse?.data ?? rawResponse ?? {};
+
+  if (root && typeof root === 'object' && 'data' in root) {
+    const nestedData = (root as { data?: unknown }).data;
+    if (nestedData !== undefined && nestedData !== null) {
+      return nestedData;
+    }
+  }
+
+  return root;
+};
+
+const toIsoDateString = (rawDate: unknown, fallbackIso: string) => {
+  if (typeof rawDate === 'string' && rawDate.trim().length > 0) {
+    return rawDate;
+  }
+
+  if (Array.isArray(rawDate) && rawDate.length >= 6) {
+    const [year, month, day, hour, minute, second, nano = 0] = rawDate.map(value => Number(value));
+
+    if (
+      [year, month, day, hour, minute, second].every(value => Number.isFinite(value)) &&
+      month >= 1
+    ) {
+      const millisecond = Number.isFinite(nano) ? Math.floor(nano / 1_000_000) : 0;
+      const parsed = new Date(
+        Date.UTC(year, month - 1, day, hour, minute, second, Math.max(0, millisecond))
+      );
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString();
+      }
+    }
+  }
+
+  return fallbackIso;
+};
+
 const mapApiUserToStoreUser = (rawResponse: any, fallbackUser: IUser | null): IUser => {
-  const responseData = rawResponse?.data || rawResponse || {};
-  const apiUser = responseData.user_info || responseData.user || responseData || {};
+  const responseData = extractEnvelopeData(rawResponse);
+  const apiUser = responseData?.user_info || responseData?.user || responseData || {};
 
   const nowIso = new Date().toISOString();
   const currentPoints = Number(apiUser.points ?? fallbackUser?.points ?? 0);
@@ -37,11 +75,23 @@ const mapApiUserToStoreUser = (rawResponse: any, fallbackUser: IUser | null): IU
     ),
     streak: Number(apiUser.streak ?? fallbackUser?.streak ?? 0),
     lives: Number(apiUser.lives ?? fallbackUser?.lives ?? 0),
-    createdAt: String(apiUser.created_at || apiUser.createdAt || fallbackUser?.createdAt || nowIso),
-    updatedAt: String(apiUser.updated_at || apiUser.updatedAt || fallbackUser?.updatedAt || nowIso),
+    createdAt: toIsoDateString(
+      apiUser.created_at || apiUser.createdAt || apiUser.created_date || apiUser.createdDate,
+      fallbackUser?.createdAt || nowIso
+    ),
+    updatedAt: toIsoDateString(
+      apiUser.updated_at || apiUser.updatedAt || apiUser.updated_date || apiUser.updatedDate,
+      fallbackUser?.updatedAt || nowIso
+    ),
     className: apiUser.class_name || apiUser.className || fallbackUser?.className,
     schoolName: apiUser.school_name || apiUser.schoolName || fallbackUser?.schoolName,
     grade: apiUser.grade ?? fallbackUser?.grade,
+    parentName:
+      apiUser.parent_name ||
+      apiUser.parentName ||
+      apiUser.parent_full_name ||
+      responseData.parent_name ||
+      fallbackUser?.parentName,
     parentEmail: apiUser.parent_email || apiUser.parentEmail || fallbackUser?.parentEmail,
     partnerId: apiUser.partner_id || responseData.partner_id || fallbackUser?.partnerId,
   };
@@ -60,8 +110,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const rawResponse: any = await authApi.studentLogin({ student_code });
 
       // Khắc phục nhanh các dạng mapping trả về từ API backend
-      const responseData = rawResponse.data || rawResponse;
-      const extractedToken = responseData.access_token || responseData.token;
+      const responseData = extractEnvelopeData(rawResponse);
+      const extractedToken = responseData?.access_token || responseData?.token;
       const mappedUser = mapApiUserToStoreUser(rawResponse, null);
 
       if (!extractedToken) {

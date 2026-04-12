@@ -2,6 +2,7 @@
   "expo": {
     "name": "Ecoverse",
     "slug": "eco-mobile",
+    "owner": "thauduy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo_eco.png",
@@ -69,7 +70,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "a2a40c25-4272-4807-b2e5-2922c2a27e73"
+        "projectId": "cafe7809-c26a-4543-8a53-714304e954cd"
       }
     }
   }

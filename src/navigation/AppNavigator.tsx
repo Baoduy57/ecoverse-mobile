@@ -4,7 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { AIScannerScreen } from '../screens/ai';
 import { EditAvatarScreen, SettingsScreen } from '../screens/profile';
 import { RewardHistoryScreen } from '../screens/reward';
-import { DragDropGamePlayScreen, GameResultDetailScreen } from '../screens/game';
+import { DragDropGamePlayScreen, GameHistoryScreen, GameResultDetailScreen } from '../screens/game';
 import { QuizListScreen, QuizQuestionScreen, QuizResultScreen } from '../screens/quiz';
 import { ScheduledExamScreen, ExamQuestionScreen, ExamResultScreen } from '../screens/exam';
 import { NotificationScreen } from '../screens/notification';
@@ -20,8 +20,34 @@ export type AppStackParamList = {
   Settings: undefined;
   RewardHistory: undefined;
   Notification: undefined;
-  DragDropGamePlay: { levelId: number };
-  GameResultDetail: { results: any[] };
+  GameHistory: undefined;
+  DragDropGamePlay: { levelId: string | number; gameAttemptId?: string };
+  GameResultDetail: {
+    gameAttemptId?: string;
+    skipServerRefresh?: boolean;
+    results: Array<{
+      id: string;
+      name: string;
+      icon: string;
+      description?: string;
+      correctType: string;
+      correctBinCode: 'PLASTIC' | 'PAPER' | 'ORGANIC' | 'OTHERS';
+      userAnswer: string;
+      code: 'PLASTIC' | 'PAPER' | 'ORGANIC' | 'OTHERS';
+      isCorrect: boolean;
+      orderIndex?: number;
+      color: string;
+      imageUrl?: string;
+    }>;
+    summary?: {
+      score: number;
+      correctAnswers: number;
+      totalQuestions: number;
+      duration: number;
+      maxCombo: number;
+      completed: boolean;
+    };
+  };
   QuizList: undefined;
   QuizQuestion: { templateId: string; title?: string };
   QuizResult: { attempt: StudentQuizSubmitResult };
@@ -80,6 +106,13 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Notification"
         component={NotificationScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="GameHistory"
+        component={GameHistoryScreen}
         options={{
           presentation: 'card',
         }}
