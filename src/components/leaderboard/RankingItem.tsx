@@ -3,7 +3,7 @@ import { View, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../../theme';
-import type { ILeaderboardEntry } from '../../types/game';
+import type { ILeaderboardEntry } from '../../types/leaderboard';
 
 const RANK_STYLE: Record<number, { bg: string; color: string }> = {
   4: { bg: 'rgba(33, 150, 243, 0.12)', color: colors.accentBlue },
@@ -21,6 +21,19 @@ interface RankingItemProps {
 
 export default function RankingItem({ entry, isCurrentUser }: RankingItemProps) {
   const rankStyle = getRankStyle(entry.rank);
+  const subtitleParts: string[] = [];
+
+  if (entry.grade) {
+    subtitleParts.push('Lop ' + entry.grade);
+  }
+
+  if (typeof entry.minDuration === 'number' && entry.minDuration > 0) {
+    subtitleParts.push('Nhanh nhat ' + entry.minDuration + 's');
+  }
+
+  if (!subtitleParts.length && typeof entry.level === 'number' && entry.level > 0) {
+    subtitleParts.push('Level ' + entry.level);
+  }
 
   return (
     <TouchableOpacity
@@ -50,7 +63,9 @@ export default function RankingItem({ entry, isCurrentUser }: RankingItemProps) 
             </View>
           )}
         </View>
-        {entry.level != null && <Text style={styles.subtitle}>Level {entry.level}</Text>}
+        {subtitleParts.length > 0 && (
+          <Text style={styles.subtitle}>{subtitleParts.join(' • ')}</Text>
+        )}
       </View>
       <View style={styles.pointsChip}>
         <MaterialCommunityIcons name="star-four-points" size={16} color={colors.accent} />

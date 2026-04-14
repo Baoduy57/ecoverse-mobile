@@ -33,30 +33,6 @@ export enum NotificationType {
   SYSTEM = 'SYSTEM', // Thông báo hệ thống
 }
 
-// Leaderboard Types
-export interface ILeaderboard {
-  id: string;
-  type: LeaderboardType;
-  scope: LeaderboardScope;
-  scopeId?: string; // ID của lớp hoặc trường
-  entries: import('./game').ILeaderboardEntry[];
-  updatedAt: string;
-}
-
-export enum LeaderboardType {
-  DAILY = 'DAILY',
-  WEEKLY = 'WEEKLY',
-  MONTHLY = 'MONTHLY',
-  ALL_TIME = 'ALL_TIME',
-}
-
-export enum LeaderboardScope {
-  GLOBAL = 'GLOBAL', // Toàn quốc
-  SCHOOL = 'SCHOOL', // Theo trường
-  CLASS = 'CLASS', // Theo lớp
-  FRIENDS = 'FRIENDS', // Bạn bè
-}
-
 // Student Profile Info
 export interface IStudentInfo {
   className?: string;
