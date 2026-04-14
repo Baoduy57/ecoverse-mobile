@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -21,7 +21,15 @@ type NavigationProp = CompositeNavigationProp<
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const { user } = useAuthStore();
+  const { user, refreshCurrentUser } = useAuthStore();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        refreshCurrentUser(true);
+      }
+    }, [refreshCurrentUser, user?.id])
+  );
 
   const handleBack = () => {
     navigation.goBack();
@@ -78,7 +86,7 @@ export default function ProfileScreen() {
                   source={
                     user?.avatar
                       ? { uri: user.avatar }
-                      : require('../../../assets/images/default-avatar.jpg')
+                      : require('../../../assets/images/avatar.jpg')
                   }
                   style={styles.avatar}
                 />

@@ -1,7 +1,20 @@
 import apiClient from './client';
 import { INotification, ILeaderboard, LeaderboardType, LeaderboardScope } from '../../types';
 
+const getStudentBaseUrl = () => {
+  const currentBase = apiClient.defaults.baseURL || 'https://ecoverse.com.name.vn/api';
+  return currentBase.replace(/\/api\/?$/, '');
+};
+
 export const studentApi = {
+  // Student details
+  getStudentById: async (studentId: string) => {
+    const response = await apiClient.get(`/students/${studentId}`, {
+      baseURL: getStudentBaseUrl(),
+    });
+    return response.data;
+  },
+
   // Notifications
   getNotifications: async (page: number = 1, limit: number = 20) => {
     const response = await apiClient.get('/student/notifications', {

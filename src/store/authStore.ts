@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { IUser } from '../types';
-import { authApi } from '../services/api';
+import { authApi, studentApi } from '../services/api';
 import { storageService } from '../services/storage';
 
 interface AuthState {
@@ -58,10 +58,19 @@ const toIsoDateString = (rawDate: unknown, fallbackIso: string) => {
 
 const mapApiUserToStoreUser = (rawResponse: any, fallbackUser: IUser | null): IUser => {
   const responseData = extractEnvelopeData(rawResponse);
-  const apiUser = responseData?.user_info || responseData?.user || responseData || {};
+  const apiUser = responseData?.user_info || responseData?.user || responseData?.student || responseData || {};
 
   const nowIso = new Date().toISOString();
-  const currentPoints = Number(apiUser.points ?? fallbackUser?.points ?? 0);
+  const currentPoints = Number(
+    apiUser.points ??
+      apiUser.point ??
+      apiUser.current_points ??
+      apiUser.currentPoint ??
+      apiUser.eco_points ??
+      apiUser.ecoPoints ??
+      fallbackUser?.points ??
+      0
+  );
 
   return {
     id: String(apiUser.student_id || apiUser.id || fallbackUser?.id || ''),
@@ -71,7 +80,12 @@ const mapApiUserToStoreUser = (rawResponse: any, fallbackUser: IUser | null): IU
     level: Number(apiUser.level ?? fallbackUser?.level ?? 1),
     points: currentPoints,
     totalPoints: Number(
-      apiUser.total_points ?? apiUser.totalPoints ?? fallbackUser?.totalPoints ?? currentPoints
+      apiUser.total_points ??
+        apiUser.totalPoints ??
+        apiUser.total_point ??
+        apiUser.totalPoint ??
+        fallbackUser?.totalPoints ??
+        currentPoints
     ),
     streak: Number(apiUser.streak ?? fallbackUser?.streak ?? 0),
     lives: Number(apiUser.lives ?? fallbackUser?.lives ?? 0),
@@ -149,7 +163,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     try {
       const currentUser = get().user;
-      const latestUser = await authApi.getCurrentUser();
+      const latestUser = currentUser?.id
+        ? await studentApi.getStudentById(currentUser.id).catch(() => authApi.getCurrentUser())
+        : await authApi.getCurrentUser();
       const mappedUser = mapApiUserToStoreUser(latestUser, currentUser);
 
       await storageService.saveUser(mappedUser);
