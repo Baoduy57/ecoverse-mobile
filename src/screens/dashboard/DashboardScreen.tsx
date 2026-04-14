@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, ProgressBar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AppStackParamList } from '../../navigation/AppNavigator';
 import {
@@ -25,7 +25,15 @@ type DashboardNavigationProp = StackNavigationProp<AppStackParamList>;
 
 export default function DashboardScreen() {
   const navigation = useNavigation<DashboardNavigationProp>();
-  const { user } = useAuthStore();
+  const { user, refreshCurrentUser } = useAuthStore();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        refreshCurrentUser(true);
+      }
+    }, [refreshCurrentUser, user?.id])
+  );
 
   // Data cho Progress Card
   const progressData = [
@@ -70,7 +78,9 @@ export default function DashboardScreen() {
           {/* Header Component */}
           <DashboardHeader
             userName={user?.name || 'Học sinh'}
-            avatarSource={user?.avatar ? { uri: user.avatar } : require('../../../assets/images/default-avatar.jpg')}
+            avatarSource={
+              user?.avatar ? { uri: user.avatar } : require('../../../assets/images/avatar.jpg')
+            }
             streakCount={user?.streak || 0}
             coinCount={user?.points || 0}
             notificationCount={getUnreadCount()}

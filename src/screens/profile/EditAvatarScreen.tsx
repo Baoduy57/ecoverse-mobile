@@ -22,42 +22,42 @@ interface AvatarOption {
 const avatarOptions: AvatarOption[] = [
   {
     id: '1',
-    source: require('../../../assets/images/default-avatar.jpg'),
+    source: require('../../../assets/images/avatar.jpg'),
     bgColor: '#FFE0B2',
   },
   {
     id: '2',
-    source: require('../../../assets/images/default-avatar.jpg'),
+    source: require('../../../assets/images/avatar.jpg'),
     bgColor: '#C8E6C9',
   },
   {
     id: '3',
-    source: require('../../../assets/images/default-avatar.jpg'),
+    source: require('../../../assets/images/avatar.jpg'),
     bgColor: '#BBDEFB',
   },
   {
     id: '4',
-    source: require('../../../assets/images/default-avatar.jpg'),
+    source: require('../../../assets/images/avatar.jpg'),
     bgColor: '#B0BEC5',
   },
   {
     id: '5',
-    source: require('../../../assets/images/default-avatar.jpg'),
+    source: require('../../../assets/images/avatar.jpg'),
     bgColor: '#E1BEE7',
   },
   {
     id: '6',
-    source: require('../../../assets/images/default-avatar.jpg'),
+    source: require('../../../assets/images/avatar.jpg'),
     bgColor: '#F0F4C3',
   },
   {
     id: '7',
-    source: require('../../../assets/images/default-avatar.jpg'),
+    source: require('../../../assets/images/avatar.jpg'),
     bgColor: '#CFD8DC',
   },
   {
     id: '8',
-    source: require('../../../assets/images/default-avatar.jpg'),
+    source: require('../../../assets/images/avatar.jpg'),
     bgColor: '#FFCCBC',
   },
   {

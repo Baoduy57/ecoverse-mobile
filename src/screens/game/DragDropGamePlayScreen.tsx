@@ -51,7 +51,7 @@ export default function DragDropGamePlayScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const route = useRoute<DragDropGamePlayScreenRouteProp>();
   const isFocused = useIsFocused();
-  const { user } = useAuthStore();
+  const { user, refreshCurrentUser } = useAuthStore();
   const levelId = route.params?.levelId || '';
   const replayAttemptId = route.params?.gameAttemptId;
   const isReplayMode = Boolean(replayAttemptId);
@@ -505,6 +505,12 @@ export default function DragDropGamePlayScreen() {
           ...(prev || updatedAttempt),
           ...updatedAttempt,
         }));
+
+        // Sync latest points from backend right after attempt finalization.
+        refreshCurrentUser(true);
+        setTimeout(() => {
+          refreshCurrentUser(true);
+        }, 1200);
       } else {
         console.error(
           `Lỗi khi chốt attempt ${isReplayMode ? 'replay' : 'lần đầu'}:`,

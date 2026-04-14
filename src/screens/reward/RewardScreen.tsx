@@ -19,17 +19,21 @@ export default function RewardScreen() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
-  const { user } = useAuthStore();
+  const { user, refreshCurrentUser } = useAuthStore();
   const userPoints = user?.points || 0;
 
   const displayRewards = rewards;
 
   useFocusEffect(
     useCallback(() => {
+      if (user?.id) {
+        refreshCurrentUser(true);
+      }
+
       if (user?.partnerId) {
         fetchRewards(user.partnerId);
       }
-    }, [fetchRewards, user?.partnerId])
+    }, [fetchRewards, refreshCurrentUser, user?.id, user?.partnerId])
   );
 
   const handleRedeemPress = (id: string) => {
@@ -44,6 +48,7 @@ export default function RewardScreen() {
     if (!selectedReward || !user?.id) return;
     try {
       await requestRedemption(user.id, selectedReward.id);
+      await refreshCurrentUser(true);
       setShowConfirmDialog(false);
       setShowSuccessDialog(true);
     } catch (error) {

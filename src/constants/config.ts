@@ -19,7 +19,7 @@ export const APP_CONFIG = {
   LEADERBOARD_LIMIT: 50,
 
   // Assets
-  DEFAULT_AVATAR: require('../../assets/images/default-avatar.jpg'),
+  DEFAULT_AVATAR: require('../../assets/images/avatar.jpg'),
 
   // Analytics
   ANALYTICS_ENABLED: true,
