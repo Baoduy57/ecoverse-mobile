@@ -50,17 +50,6 @@ export interface IGameResult {
   rank?: number;
 }
 
-// Leaderboard Entry
-export interface ILeaderboardEntry {
-  rank: number;
-  userId: string;
-  userName: string;
-  avatar?: string;
-  points: number;
-  level: number;
-  isCurrentUser?: boolean;
-}
-
 // Daily Challenge
 export interface IDailyChallenge {
   id: string;

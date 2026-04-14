@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { INotification, ILeaderboard, LeaderboardType, LeaderboardScope } from '../../types';
+import { INotification } from '../../types';
 
 const getStudentBaseUrl = () => {
   const currentBase = apiClient.defaults.baseURL || 'https://ecoverse.com.name.vn/api';
@@ -29,18 +29,6 @@ export const studentApi = {
 
   markAllNotificationsAsRead: async (): Promise<void> => {
     await apiClient.put('/student/notifications/read-all');
-  },
-
-  // Leaderboard
-  getLeaderboard: async (
-    type: LeaderboardType,
-    scope: LeaderboardScope,
-    scopeId?: string
-  ): Promise<ILeaderboard> => {
-    const response = await apiClient.get('/student/leaderboard', {
-      params: { type, scope, scopeId },
-    });
-    return response.data;
   },
 
   // Class Info

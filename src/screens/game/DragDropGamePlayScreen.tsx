@@ -485,11 +485,36 @@ export default function DragDropGamePlayScreen() {
 
       const placementRequests = buildPlacementRequests(answerSnapshot);
 
-      const savePlacementsPromise = placementRequests.length
-        ? isReplayMode
-          ? gameApi.updateAttemptPlacements(targetAttemptId, placementRequests)
-          : gameApi.createPlacements(String(levelId), targetAttemptId, placementRequests)
-        : Promise.resolve([] as IPlacementResponse[]);
+      const savePlacements = async (): Promise<IPlacementResponse[]> => {
+        if (!placementRequests.length) {
+          return [];
+        }
+
+        const gameRoundId = String(levelId || gameAttempt.game_round_id || '');
+
+        if (!isReplayMode) {
+          if (!gameRoundId) {
+            console.error('Thiếu game_round_id khi lưu placements lần đầu.');
+            return [];
+          }
+          return gameApi.createPlacements(gameRoundId, targetAttemptId, placementRequests);
+        }
+
+        try {
+          return await gameApi.updateAttemptPlacements(targetAttemptId, placementRequests);
+        } catch (error: unknown) {
+          const status = (error as { response?: { status?: number } })?.response?.status;
+          if (status === 404 && gameRoundId) {
+            console.warn(
+              'Endpoint update placements cho replay không tồn tại (404), fallback sang create placements.'
+            );
+            return gameApi.createPlacements(gameRoundId, targetAttemptId, placementRequests);
+          }
+          throw error;
+        }
+      };
+
+      const savePlacementsPromise = savePlacements();
 
       const settleResults = await Promise.allSettled([
         gameApi.updateAttempt(targetAttemptId, attemptPayload),

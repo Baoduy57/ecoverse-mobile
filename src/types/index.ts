@@ -33,6 +33,7 @@ export interface IApiError {
 // Types index - Export all types
 export * from './user';
 export * from './game';
+export * from './leaderboard';
 export * from './reward';
 export * from './student';
 

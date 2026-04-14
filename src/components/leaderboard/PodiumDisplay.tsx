@@ -3,7 +3,7 @@ import { View, StyleSheet, Image } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../../theme';
-import type { ILeaderboardEntry } from '../../types/game';
+import type { ILeaderboardEntry } from '../../types/leaderboard';
 
 const RANK_CONFIG = {
   1: {
