@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, Dimensions, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp, useIsFocused } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
@@ -16,12 +16,13 @@ import type { AppStackParamList } from '../../navigation/AppNavigator';
 import { useAuthStore } from '../../store/authStore';
 import { gameApi } from '../../services/api/game';
 import { StatusBar } from 'expo-status-bar';
+import { ROADMAP_CONSTANTS } from '../../constants/roadmap';
+import { getNodePosition } from '../../utils/roadmapUtils';
+import { EcoPreloader, useLevelLoading } from '../../features/PreloadingSystem';
+import AnimatedNode from '../../components/game/AnimatedNode';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const LEVEL_HEIGHT = 120; // Vertical spacing between nodes
-const START_OFFSET_Y = 50;
-const LESSONS_PER_UNIT = 7; // Number of lessons per unit
-const SEPARATOR_HEIGHT = 60; // Height of separator between units
+const { SCREEN_WIDTH, LEVEL_HEIGHT, START_OFFSET_Y, LESSONS_PER_UNIT, SEPARATOR_HEIGHT } = ROADMAP_CONSTANTS;
+
 
 const getRoundIcon = (round: IGameRound, index: number) => {
   const title = round.title.toUpperCase();
@@ -74,17 +75,6 @@ const getLatestAttempt = (attempts: IGameAttempt[]) => {
   })[0];
 };
 
-// Helper: Calculate node position with wavy pattern and unit offsets
-const getNodePosition = (index: number) => {
-  const unitIndex = Math.floor(index / LESSONS_PER_UNIT);
-  const unitOffset = unitIndex * SEPARATOR_HEIGHT;
-
-  const y = START_OFFSET_Y + index * LEVEL_HEIGHT + unitOffset;
-  // Sine wave with smooth frequency for natural roadmap feel
-  const x = SCREEN_WIDTH / 2 + SCREEN_WIDTH * 0.3 * Math.sin(index * 0.8);
-  return { x, y };
-};
-
 const applyCurrentStage = (levels: Level[], selectedId: string | number) => {
   const selectedIdNormalized = String(selectedId);
 
@@ -104,7 +94,20 @@ export default function GameScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const isFocused = useIsFocused();
   const { user, refreshCurrentUser } = useAuthStore();
-  const [learningPath, setLearningPath] = React.useState<Level[]>([]);
+  const [apiLevels, setApiLevels] = useState<Level[]>([]);
+  const {
+    levels: learningPath,
+    setLevels: setLearningPath,
+    isLoadingMore,
+    handleScroll,
+    handlePreloaderCycleEnd,
+    isPreloaderCompleting,
+    preloaderOpacity,
+  } = useLevelLoading({
+    allAvailableLevels: apiLevels,
+    initialCount: 10,
+    batchSize: 10,
+  });
   const [selectedStage, setSelectedStage] = useState<Level | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -137,11 +140,11 @@ export default function GameScreen() {
         setIsLoading(true);
         await refreshCurrentUser(true);
 
-        const rounds = await gameApi.getGameRounds(user.partnerId, 1, 10, null);
+        const rounds = await gameApi.getGameRounds(user.partnerId, 1, 100, null);
         const mappedRounds = rounds.filter(round => round.active !== false);
 
         if (!mappedRounds.length) {
-          setLearningPath([]);
+          setApiLevels([]);
           setSelectedStage(undefined);
           return;
         }
@@ -201,7 +204,7 @@ export default function GameScreen() {
         const defaultStage = levels.find(level => level.isCurrent) || levels[0];
         const normalizedLevels = applyCurrentStage(levels, defaultStage.id);
 
-        setLearningPath(normalizedLevels);
+        setApiLevels(normalizedLevels);
         setSelectedStage(normalizedLevels.find(level => level.isCurrent) || normalizedLevels[0]);
       } catch (error: unknown) {
         if (
@@ -369,6 +372,8 @@ export default function GameScreen() {
           <ScrollView
             contentContainerStyle={[styles.scrollContent, { height: contentHeight }]}
             showsVerticalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
           >
             {/* Background Decorations */}
             <BackgroundDecorations width={SCREEN_WIDTH} height={contentHeight} />
@@ -418,15 +423,35 @@ export default function GameScreen() {
 
             {/* Nodes */}
             {learningPath.map((level, index) => {
+              const isNew = index >= (learningPath.length - 10); // Simple logic for animation
               return (
-                <LearningPathNode
-                  key={level.id}
-                  level={level}
-                  position={getNodePosition(index)}
-                  onPress={handleLevelPress}
-                />
+                <AnimatedNode key={String(level.id)} index={index} isNew={isNew}>
+                  <LearningPathNode
+                    level={level}
+                    position={getNodePosition(index)}
+                    onPress={handleLevelPress}
+                  />
+                </AnimatedNode>
               );
             })}
+
+            {/* Bottom Preloader */}
+            {isLoadingMore && (
+              <Animated.View
+                style={[
+                  styles.loaderFooter,
+                  {
+                    top: contentHeight - 120,
+                    opacity: preloaderOpacity,
+                  },
+                ]}
+              >
+                <EcoPreloader
+                  isCompleting={isPreloaderCompleting}
+                  onCycleEnd={handlePreloaderCycleEnd}
+                />
+              </Animated.View>
+            )}
           </ScrollView>
         </View>
       </SafeAreaView>
@@ -456,6 +481,14 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   scrollContent: {
-    paddingBottom: 50,
+    paddingBottom: 150,
+  },
+  loaderFooter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
