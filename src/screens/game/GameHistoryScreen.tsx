@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, View, InteractionManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -175,7 +175,10 @@ export default function GameHistoryScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchHistory(true);
+      const task = InteractionManager.runAfterInteractions(() => {
+        fetchHistory(true);
+      });
+      return () => task.cancel();
     }, [fetchHistory])
   );
 

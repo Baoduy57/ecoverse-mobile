@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions, Animated } from 'react-native';
+import { View, StyleSheet, ScrollView, Dimensions, Animated, InteractionManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp, useIsFocused } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
@@ -229,7 +229,11 @@ export default function GameScreen() {
       }
     };
 
-    fetchGameRounds();
+    const task = InteractionManager.runAfterInteractions(() => {
+      fetchGameRounds();
+    });
+
+    return () => task.cancel();
   }, [isFocused, refreshCurrentUser, user?.id, user?.partnerId]);
 
   // Generate SVG Path segments (one per unit, breaking at separators)
