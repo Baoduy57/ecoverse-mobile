@@ -69,8 +69,8 @@ export default function LeaderboardScreen() {
         setErrorText(null);
 
         const scope = tab === 'class' ? 'CLASS' : 'SCHOOL';
-        const shouldSendGrade = tab === 'class' && typeof currentUser.className === 'string';
-        const grade = shouldSendGrade ? currentUser.className?.trim() : undefined;
+        const shouldSendGrade = tab === 'class' && currentUser.grade;
+        const grade = shouldSendGrade ? String(currentUser.grade).trim() : undefined;
 
         const apiRows = await leaderboardApi.getStudentLeaderboard(currentUser.partnerId, {
           scope,
