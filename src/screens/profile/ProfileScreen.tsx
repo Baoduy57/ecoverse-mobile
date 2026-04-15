@@ -55,9 +55,7 @@ export default function ProfileScreen() {
             return;
           }
 
-          const normalizedClassName =
-            typeof latestUser.className === 'string' ? latestUser.className.trim() : '';
-          const classGrade = normalizedClassName.length > 0 ? normalizedClassName : undefined;
+          const classGrade = latestUser.grade ? String(latestUser.grade).trim() : undefined;
 
           const [classRankResult, schoolRankResult] = await Promise.allSettled([
             leaderboardApi.getStudentRank(latestUser.partnerId, latestUser.id, {
@@ -97,7 +95,7 @@ export default function ProfileScreen() {
       return () => {
         isActive = false;
       };
-    }, [refreshCurrentUser, user?.id, user?.partnerId, user?.className])
+    }, [refreshCurrentUser, user?.id, user?.partnerId, user?.grade])
   );
 
   const handleBack = () => {
