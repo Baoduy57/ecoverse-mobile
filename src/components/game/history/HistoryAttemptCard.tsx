@@ -15,6 +15,7 @@ interface HistoryAttemptCardProps {
   attempt: IGameAttempt;
   stats?: PlacementStats;
   onReplay: (attempt: IGameAttempt) => void;
+  onViewDetails: (attempt: IGameAttempt) => void;
 }
 
 const formatDuration = (seconds: number) => {
@@ -24,7 +25,12 @@ const formatDuration = (seconds: number) => {
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 };
 
-export default function HistoryAttemptCard({ attempt, stats, onReplay }: HistoryAttemptCardProps) {
+export default function HistoryAttemptCard({
+  attempt,
+  stats,
+  onReplay,
+  onViewDetails,
+}: HistoryAttemptCardProps) {
   const progressRatio = useMemo(() => {
     if (!stats || stats.total <= 0) return 0;
     return Math.min(1, Math.max(0, stats.correct / stats.total));
@@ -79,23 +85,43 @@ export default function HistoryAttemptCard({ attempt, stats, onReplay }: History
           <View style={[styles.progressFill, { width: `${progressRatio * 100}%` }]} />
         </View>
 
-        <TouchableOpacity style={styles.replayButton} onPress={() => onReplay(attempt)}>
-          <LinearGradient
-            colors={['#4CAF50', '#3E9F45']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.replayButtonInner}
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={styles.detailButton}
+            onPress={() => onViewDetails(attempt)}
+            activeOpacity={0.85}
           >
-            <MaterialCommunityIcons name="refresh" size={18} color={colors.text.white} />
-            <Text style={styles.replayButtonText}>Chơi lại màn này</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+            <MaterialCommunityIcons name="file-document-outline" size={18} color={colors.primary} />
+            <Text style={styles.detailButtonText}>Xem chi tiết</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.replayButton}
+            onPress={() => onReplay(attempt)}
+            activeOpacity={0.85}
+          >
+            <LinearGradient
+              colors={['#4CAF50', '#3E9F45']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.replayButtonInner}
+            >
+              <MaterialCommunityIcons name="refresh" size={18} color={colors.text.white} />
+              <Text style={styles.replayButtonText}>Chơi lại</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
   card: {
     borderColor: '#E5EFE4',
     borderRadius: borderRadius.xl,
@@ -105,6 +131,24 @@ const styles = StyleSheet.create({
   },
   cardWrap: {
     marginBottom: spacing.base,
+  },
+  detailButton: {
+    alignItems: 'center',
+    backgroundColor: '#EEF7F0',
+    borderColor: '#CFE7D2',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingHorizontal: spacing.base,
+  },
+  detailButtonText: {
+    color: colors.primaryDark,
+    fontSize: 15,
+    fontWeight: '800',
   },
   headerRow: {
     alignItems: 'flex-start',
@@ -141,7 +185,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   replayButton: {
-    marginTop: spacing.xs,
+    flex: 1.25,
   },
   replayButtonInner: {
     alignItems: 'center',
@@ -149,6 +193,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'center',
+    minHeight: 44,
     paddingVertical: spacing.sm,
   },
   replayButtonText: {

@@ -184,8 +184,9 @@ export const gameApi = {
     return unwrapArray<IPlacementResponse>(response as { data?: unknown });
   },
 
-  // 7. Lấy lịch sử attempts theo chính student_id (API mới 10.3)
+  // 7. Lấy lịch sử attempts theo game_round_id + student_id (API mới 10.3)
   getStudentAttempts: async (
+    gameRoundId: string,
     studentId: string,
     pageNo = 1,
     pageSize = 10,
@@ -197,7 +198,7 @@ export const gameApi = {
       searching,
     };
     const response = await apiClient.post<unknown>(
-      `/games/students/${studentId}/attempts/get-list`,
+      `/games/rounds/${gameRoundId}/students/${studentId}/attempts/get-list`,
       payloadReq,
       { baseURL: getGameBaseUrl() }
     );
