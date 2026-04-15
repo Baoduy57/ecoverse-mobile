@@ -13,6 +13,41 @@ const getLeaderboardBaseUrl = () => {
 };
 
 export const leaderboardApi = {
+  getStudentRank: async (
+    partnerId: string,
+    studentId: string,
+    params: {
+      scope: StudentLeaderboardScope;
+      grade?: string;
+    }
+  ): Promise<number | null> => {
+    const response = await apiClient.get(
+      `/leaderboards/partners/${partnerId}/students/${studentId}`,
+      {
+        baseURL: getLeaderboardBaseUrl(),
+        params: {
+          scope: params.scope,
+          ...(params.grade ? { grade: params.grade } : {}),
+        },
+      }
+    );
+
+    const payload = response.data;
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      Number.isFinite(Number((payload as { data?: unknown }).data))
+    ) {
+      return Number((payload as { data?: unknown }).data);
+    }
+
+    if (Number.isFinite(Number(payload))) {
+      return Number(payload);
+    }
+
+    return null;
+  },
+
   getStudentLeaderboard: async (
     partnerId: string,
     params: {

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import type { HomeTabParamList } from '../../navigation/TabNavigator';
 import { useAuthStore } from '@store/authStore';
 import { StatsCard, AchievementBadge } from '@/components/profile';
 import ScreenBackground from '../../components/common/ScreenBackground';
+import { leaderboardApi } from '../../services/api';
 import { colors, spacing } from '@theme';
 
 type NavigationProp = CompositeNavigationProp<
@@ -22,13 +23,81 @@ type NavigationProp = CompositeNavigationProp<
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { user, refreshCurrentUser } = useAuthStore();
+  const [classRank, setClassRank] = useState<number | null>(null);
+  const [schoolRank, setSchoolRank] = useState<number | null>(null);
+  const [isRankLoading, setIsRankLoading] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      if (user?.id) {
-        refreshCurrentUser(true);
-      }
-    }, [refreshCurrentUser, user?.id])
+      let isActive = true;
+
+      const syncProfileAndRank = async () => {
+        if (!user?.id || !user?.partnerId) {
+          if (isActive) {
+            setClassRank(null);
+            setSchoolRank(null);
+            setIsRankLoading(false);
+          }
+          return;
+        }
+
+        setIsRankLoading(true);
+
+        try {
+          await refreshCurrentUser(true);
+
+          const latestUser = useAuthStore.getState().user ?? user;
+          if (!latestUser?.id || !latestUser?.partnerId) {
+            if (isActive) {
+              setClassRank(null);
+              setSchoolRank(null);
+            }
+            return;
+          }
+
+          const normalizedClassName =
+            typeof latestUser.className === 'string' ? latestUser.className.trim() : '';
+          const classGrade = normalizedClassName.length > 0 ? normalizedClassName : undefined;
+
+          const [classRankResult, schoolRankResult] = await Promise.allSettled([
+            leaderboardApi.getStudentRank(latestUser.partnerId, latestUser.id, {
+              scope: 'CLASS',
+              ...(classGrade ? { grade: classGrade } : {}),
+            }),
+            leaderboardApi.getStudentRank(latestUser.partnerId, latestUser.id, {
+              scope: 'SCHOOL',
+            }),
+          ]);
+
+          if (!isActive) {
+            return;
+          }
+
+          setClassRank(classRankResult.status === 'fulfilled' ? classRankResult.value : null);
+          setSchoolRank(schoolRankResult.status === 'fulfilled' ? schoolRankResult.value : null);
+
+          if (classRankResult.status === 'rejected' || schoolRankResult.status === 'rejected') {
+            console.warn('Khong the tai day du xep hang tren Profile.');
+          }
+        } catch (error) {
+          if (isActive) {
+            setClassRank(null);
+            setSchoolRank(null);
+          }
+          console.error('Khong the dong bo thong tin rank tren Profile:', error);
+        } finally {
+          if (isActive) {
+            setIsRankLoading(false);
+          }
+        }
+      };
+
+      syncProfileAndRank();
+
+      return () => {
+        isActive = false;
+      };
+    }, [refreshCurrentUser, user?.id, user?.partnerId, user?.className])
   );
 
   const handleBack = () => {
@@ -43,11 +112,22 @@ export default function ProfileScreen() {
     navigation.navigate('EditAvatar');
   };
 
-  // Mock data - sẽ lấy từ store/API sau
+  const formatRank = (rank: number | null) => {
+    if (isRankLoading) {
+      return '...';
+    }
+
+    if (!Number.isFinite(Number(rank)) || Number(rank) <= 0) {
+      return '--';
+    }
+
+    return `#${String(rank).padStart(2, '0')}`;
+  };
+
   const stats = {
     points: user?.points || 0,
-    streak: user?.streak || 0,
-    rank: 0,
+    classRank: formatRank(classRank),
+    schoolRank: formatRank(schoolRank),
   };
 
   const mappedParentName = user?.parentName?.trim() || 'Phu huynh';
@@ -123,16 +203,16 @@ export default function ProfileScreen() {
               value={stats.points.toLocaleString()}
             />
             <StatsCard
-              icon="fire"
+              icon="account-group"
               iconColor={colors.secondary}
-              label="CHUỖI NGÀY"
-              value={stats.streak}
+              label="HẠNG LỚP"
+              value={stats.classRank}
             />
             <StatsCard
-              icon="trophy"
+              icon="school"
               iconColor={colors.accentBlue}
-              label="THỨ HẠNG"
-              value={`#${stats.rank.toString().padStart(2, '0')}`}
+              label="HẠNG TRƯỜNG"
+              value={stats.schoolRank}
             />
           </View>
 

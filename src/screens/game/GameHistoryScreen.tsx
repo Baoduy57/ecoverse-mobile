@@ -35,6 +35,33 @@ export default function GameHistoryScreen() {
   const { user } = useAuthStore();
   const loadMoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const buildSummaryPayloadFromAttempt = useCallback(
+    (attempt: IGameAttempt, stats?: PlacementStats) => {
+      const correctAnswers = Math.max(
+        0,
+        Number.isFinite(Number(stats?.correct))
+          ? Number(stats?.correct)
+          : Number(attempt.correct_count || 0)
+      );
+      const totalQuestions = Math.max(
+        correctAnswers,
+        Number.isFinite(Number(stats?.total))
+          ? Number(stats?.total)
+          : Number(attempt.total_items || 0)
+      );
+
+      return {
+        score: Number(attempt.points_earned || 0),
+        correctAnswers,
+        totalQuestions,
+        duration: Math.max(0, Number(attempt.duration || 0)),
+        maxCombo: 0,
+        completed: Boolean(attempt.completed),
+      };
+    },
+    []
+  );
+
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -55,14 +82,48 @@ export default function GameHistoryScreen() {
         return;
       }
 
+      if (!user?.partnerId) {
+        setErrorText('Khong tim thay partner_id. Vui long dang nhap lai.');
+        setAttempts([]);
+        setPlacementStats({});
+        setIsLoading(false);
+        setIsRefreshing(false);
+        return;
+      }
+
       if (showLoader) {
         setIsLoading(true);
       }
       setErrorText(null);
 
       try {
-        const attemptList = await gameApi.getStudentAttempts(user.id, 1, 100, null);
-        const sortedAttempts = [...attemptList].sort((a, b) => {
+        const rounds = await gameApi.getGameRounds(user.partnerId, 1, 100, null);
+        const mappedRounds = rounds.filter(round => round.active !== false);
+
+        const attemptResults = await Promise.allSettled(
+          mappedRounds.map(round => gameApi.getStudentAttempts(round.id, user.id, 1, 100, null))
+        );
+
+        const attemptList = attemptResults.flatMap(result =>
+          result.status === 'fulfilled' ? result.value : []
+        );
+        const failedRoundCount = attemptResults.filter(result => result.status === 'rejected').length;
+
+        if (failedRoundCount > 0) {
+          console.warn(
+            `Không tải được attempts của ${failedRoundCount}/${mappedRounds.length} màn ở lịch sử game.`
+          );
+        }
+
+        if (mappedRounds.length > 0 && failedRoundCount === mappedRounds.length) {
+          throw new Error('Khong the tai lich su attempts cho tat ca round.');
+        }
+
+        const dedupedAttempts = Array.from(
+          new Map(attemptList.map(attempt => [attempt.id, attempt])).values()
+        );
+
+        const sortedAttempts = [...dedupedAttempts].sort((a, b) => {
           const timeDiff = toTimestamp(b) - toTimestamp(a);
           if (timeDiff !== 0) {
             return timeDiff;
@@ -109,7 +170,7 @@ export default function GameHistoryScreen() {
         setIsRefreshing(false);
       }
     },
-    [user?.id]
+    [user?.id, user?.partnerId]
   );
 
   useFocusEffect(
@@ -166,6 +227,17 @@ export default function GameHistoryScreen() {
     [navigation]
   );
 
+  const handleViewDetails = useCallback(
+    (attempt: IGameAttempt) => {
+      navigation.navigate('GameResultDetail', {
+        gameAttemptId: attempt.id,
+        results: [],
+        summary: buildSummaryPayloadFromAttempt(attempt, placementStats[attempt.id]),
+      });
+    },
+    [navigation, placementStats, buildSummaryPayloadFromAttempt]
+  );
+
   return (
     <View style={styles.container}>
       <ScreenBackground />
@@ -185,6 +257,7 @@ export default function GameHistoryScreen() {
                 attempt={item}
                 stats={placementStats[item.id]}
                 onReplay={handleReplay}
+                onViewDetails={handleViewDetails}
               />
             )}
             contentContainerStyle={styles.listContent}

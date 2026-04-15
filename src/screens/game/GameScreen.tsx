@@ -138,10 +138,30 @@ export default function GameScreen() {
         await refreshCurrentUser(true);
 
         const rounds = await gameApi.getGameRounds(user.partnerId, 1, 10, null);
+        const mappedRounds = rounds.filter(round => round.active !== false);
+
+        if (!mappedRounds.length) {
+          setLearningPath([]);
+          setSelectedStage(undefined);
+          return;
+        }
 
         let studentAttempts: IGameAttempt[] = [];
         try {
-          studentAttempts = await gameApi.getStudentAttempts(user.id, 1, 50, null);
+          const attemptResults = await Promise.allSettled(
+            mappedRounds.map(round => gameApi.getStudentAttempts(round.id, user.id, 1, 50, null))
+          );
+
+          studentAttempts = attemptResults.flatMap(result =>
+            result.status === 'fulfilled' ? result.value : []
+          );
+
+          const failedCount = attemptResults.filter(result => result.status === 'rejected').length;
+          if (failedCount > 0) {
+            console.warn(
+              `Không tải được lịch sử attempts của ${failedCount}/${mappedRounds.length} màn, vẫn tiếp tục hiển thị.`
+            );
+          }
         } catch (attemptsError) {
           console.warn(
             'Không tải được lịch sử attempts, tiếp tục hiển thị danh sách rounds.',
@@ -154,14 +174,6 @@ export default function GameScreen() {
           const current = attemptsMap.get(attempt.game_round_id) || [];
           attemptsMap.set(attempt.game_round_id, [...current, attempt]);
         });
-
-        const mappedRounds = rounds.filter(round => round.active !== false);
-
-        if (!mappedRounds.length) {
-          setLearningPath([]);
-          setSelectedStage(undefined);
-          return;
-        }
 
         const currentRoundIndex = Math.max(mappedRounds.length - 1, 0);
 
