@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, InteractionManager } from 'react-native';
 import { Text, ProgressBar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -29,9 +29,12 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (user?.id) {
-        refreshCurrentUser(true);
-      }
+      const task = InteractionManager.runAfterInteractions(() => {
+        if (user?.id) {
+          refreshCurrentUser(true);
+        }
+      });
+      return () => task.cancel();
     }, [refreshCurrentUser, user?.id])
   );
 
