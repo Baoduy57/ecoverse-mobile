@@ -7,7 +7,6 @@ import Tooltip from '../common/Tooltip';
 
 interface TopHeaderBarProps {
   onBack?: () => void;
-  onHistoryPress?: () => void;
   stats: {
     missions: number;
     streak: number;
@@ -15,7 +14,7 @@ interface TopHeaderBarProps {
   };
 }
 
-export default function TopHeaderBar({ onBack, onHistoryPress, stats }: TopHeaderBarProps) {
+export default function TopHeaderBar({ onBack, stats }: TopHeaderBarProps) {
   return (
     <View style={styles.container}>
       {/* Back Button */}
@@ -29,16 +28,6 @@ export default function TopHeaderBar({ onBack, onHistoryPress, stats }: TopHeade
           <StatItem icon="star" value={`${stats.ecoPoints} điểm`} color={colors.accent} />
         </Tooltip>
       </View>
-
-      <Tooltip content="Lịch sử đã chơi">
-        <TouchableOpacity
-          onPress={onHistoryPress}
-          style={styles.historyButton}
-          disabled={!onHistoryPress}
-        >
-          <MaterialCommunityIcons name="history" size={22} color={colors.text.secondary} />
-        </TouchableOpacity>
-      </Tooltip>
     </View>
   );
 }
@@ -79,16 +68,6 @@ const styles = StyleSheet.create({
     elevation: 0,
     shadowOpacity: 0,
     borderBottomWidth: 0,
-  },
-  historyButton: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: '#E6ECE7',
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    height: 42,
-    justifyContent: 'center',
-    width: 42,
   },
   statItem: {
     flexDirection: 'row',

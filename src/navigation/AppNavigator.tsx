@@ -20,7 +20,7 @@ export type AppStackParamList = {
   Settings: undefined;
   RewardHistory: undefined;
   Notification: undefined;
-  GameHistory: undefined;
+  GameHistory: { gameRoundId: string; gameRoundTitle: string };
   DragDropGamePlay: { levelId: string | number; gameAttemptId?: string };
   GameResultDetail: {
     gameAttemptId?: string;

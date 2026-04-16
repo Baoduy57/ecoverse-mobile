@@ -6,9 +6,10 @@ import { borderRadius, colors, spacing } from '../../../theme';
 
 interface HistoryHeaderProps {
   onBack: () => void;
+  title?: string;
 }
 
-export default function HistoryHeader({ onBack }: HistoryHeaderProps) {
+export default function HistoryHeader({ onBack, title }: HistoryHeaderProps) {
   return (
     <View style={styles.headerWrap}>
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
@@ -16,8 +17,8 @@ export default function HistoryHeader({ onBack }: HistoryHeaderProps) {
       </TouchableOpacity>
 
       <View style={styles.headerTextWrap}>
-        <Text style={styles.title}>Lịch sử đã chơi</Text>
-        <Text style={styles.subtitle}>Chỉ hiển thị 5 màn mới nhất, kéo xuống để tải thêm</Text>
+        <Text style={styles.title}>{title ?? 'Lịch sử đã chơi'}</Text>
+        <Text style={styles.subtitle}>Kéo xuống để tải thêm, nhấn "Chơi lại" để replay</Text>
       </View>
     </View>
   );
