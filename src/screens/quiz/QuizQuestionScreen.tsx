@@ -114,18 +114,9 @@ export default function QuizQuestionScreen() {
     }));
   };
 
-  const handleSkipQuestion = () => {
-    if (!currentQuestion) {
-      return;
-    }
-
-    setAnswersByQuestionId(prev => ({
-      ...prev,
-      [currentQuestion.id]: null,
-    }));
-
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+  const handlePreviousQuestion = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(prev => prev - 1);
     }
   };
 
@@ -244,9 +235,12 @@ export default function QuizQuestionScreen() {
           />
 
           <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.skipButton} onPress={handleSkipQuestion}>
-              <Text style={styles.skipButtonText}>Bỏ qua</Text>
-            </TouchableOpacity>
+            {currentIndex > 0 ? (
+              <TouchableOpacity style={styles.previousButton} onPress={handlePreviousQuestion}>
+                <MaterialCommunityIcons name="arrow-left" size={18} color={colors.text.secondary} />
+                <Text style={styles.previousButtonText}>Quay lại</Text>
+              </TouchableOpacity>
+            ) : null}
 
             <TouchableOpacity
               style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
@@ -317,8 +311,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: colors.text.primary,
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '900',
   },
   loaderScreen: {
     backgroundColor: colors.background,
@@ -331,25 +325,31 @@ const styles = StyleSheet.create({
   nextButton: {
     alignItems: 'center',
     backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     flex: 1,
     flexDirection: 'row',
-    gap: spacing.xs,
+    gap: spacing.sm,
     justifyContent: 'center',
-    paddingVertical: spacing.md,
+    paddingVertical: 14,
+    elevation: 3,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
   nextButtonDisabled: {
-    opacity: 0.7,
+    opacity: 0.6,
+    elevation: 0,
   },
   nextButtonText: {
     color: colors.text.white,
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '900',
   },
   progressBar: {
     backgroundColor: '#E2E8F0',
     borderRadius: borderRadius.full,
-    height: 8,
+    height: 12,
     marginHorizontal: spacing.base,
     overflow: 'hidden',
   },
@@ -365,30 +365,40 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   progressText: {
-    color: colors.text.secondary,
-    fontSize: 12,
-    fontWeight: '700',
+    color: colors.text.primary,
+    fontSize: 14,
+    fontWeight: '800',
   },
   questionCard: {
-    backgroundColor: colors.surface,
-    borderColor: 'rgba(76, 175, 80, 0.15)',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
     borderRadius: borderRadius.xl,
     borderWidth: 2,
-    marginBottom: spacing.md,
-    padding: spacing.base,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   questionText: {
     color: colors.text.primary,
-    fontSize: 18,
-    fontWeight: '700',
-    lineHeight: 26,
+    fontSize: 19,
+    fontWeight: '800',
+    lineHeight: 28,
   },
   questionTitle: {
-    color: colors.primary,
+    alignSelf: 'flex-start',
+    backgroundColor: '#FEF08A',
+    borderRadius: borderRadius.md,
+    color: '#CA8A04',
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '900',
     letterSpacing: 0.5,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     textTransform: 'uppercase',
   },
   retryButton: {
@@ -411,19 +421,21 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  skipButton: {
+  previousButton: {
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderColor: '#CBD5E1',
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
+    borderRadius: borderRadius.xl,
+    borderWidth: 2,
     justifyContent: 'center',
-    minWidth: 110,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    minWidth: 120,
     paddingHorizontal: spacing.md,
   },
-  skipButtonText: {
+  previousButtonText: {
     color: colors.text.secondary,
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
   },
 });

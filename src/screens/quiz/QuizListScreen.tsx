@@ -181,16 +181,19 @@ export default function QuizListScreen() {
             <Text style={styles.sectionTitle}>Danh sách bài kiểm tra</Text>
             {quizzes.length === 0 ? (
               <View style={styles.emptyCard}>
-                <MaterialCommunityIcons
-                  name="notebook-outline"
-                  size={24}
-                  color={colors.text.secondary}
-                />
-                <Text style={styles.emptyText}>Không có bài kiểm tra nào</Text>
+                <View style={styles.emptyIconWrap}>
+                  <MaterialCommunityIcons
+                    name="notebook-outline"
+                    size={32}
+                    color={colors.primary}
+                  />
+                </View>
+                <Text style={styles.emptyTitle}>Chưa có bài kiểm tra</Text>
+                <Text style={styles.emptyText}>Các bài kiểm tra sẽ sớm được cập nhật!</Text>
               </View>
             ) : (
-              quizzes.map(item => (
-                <QuizListItemCard key={item.id} item={item} onPress={handleOpenQuiz} />
+              quizzes.map((item, index) => (
+                <QuizListItemCard key={item.id} item={item} index={index} onPress={handleOpenQuiz} />
               ))
             )}
 
@@ -222,11 +225,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+    borderStyle: 'dashed',
+  },
+  emptyIconWrap: {
+    backgroundColor: '#DCFCE7',
+    padding: 16,
+    borderRadius: 50,
+    marginBottom: spacing.md,
+  },
+  emptyTitle: {
+    color: colors.text.primary,
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: spacing.xs,
   },
   emptyText: {
     color: colors.text.secondary,
-    marginTop: spacing.xs,
+    fontSize: 14,
+    textAlign: 'center',
   },
   errorCard: {
     backgroundColor: '#FEE2E2',

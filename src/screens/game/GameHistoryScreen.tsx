@@ -3,7 +3,13 @@ import { ActivityIndicator, FlatList, StyleSheet, View, InteractionManager } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { NavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
+import {
+  NavigationProp,
+  RouteProp,
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
 import ScreenBackground from '../../components/common/ScreenBackground';
 import { borderRadius, colors, spacing } from '../../theme';
 import type { AppStackParamList } from '../../navigation/AppNavigator';
@@ -21,17 +27,20 @@ const INITIAL_VISIBLE_COUNT = 5;
 const LOAD_MORE_STEP = 5;
 const LOAD_MORE_DELAY_MS = 450;
 
+type GameHistoryRouteProp = RouteProp<AppStackParamList, 'GameHistory'>;
+
 const toTimestamp = (attempt: IGameAttempt) => {
   const value =
     attempt.updated_at || attempt.completed_at || attempt.created_at || attempt.started_at;
   if (!value) return 0;
-
   const parsed = new Date(value).getTime();
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
 export default function GameHistoryScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
+  const route = useRoute<GameHistoryRouteProp>();
+  const { gameRoundId, gameRoundTitle } = route.params;
   const { user } = useAuthStore();
   const loadMoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -49,7 +58,6 @@ export default function GameHistoryScreen() {
           ? Number(stats?.total)
           : Number(attempt.total_items || 0)
       );
-
       return {
         score: Number(attempt.points_earned || 0),
         correctAnswers,
@@ -74,77 +82,40 @@ export default function GameHistoryScreen() {
   const fetchHistory = useCallback(
     async (showLoader: boolean) => {
       if (!user?.id) {
-        setErrorText('Khong tim thay student_id. Vui long dang nhap lai.');
-        setAttempts([]);
-        setPlacementStats({});
+        setErrorText('Không tìm thấy student_id. Vui lòng đăng nhập lại.');
         setIsLoading(false);
         setIsRefreshing(false);
         return;
       }
 
-      if (!user?.partnerId) {
-        setErrorText('Khong tim thay partner_id. Vui long dang nhap lai.');
-        setAttempts([]);
-        setPlacementStats({});
-        setIsLoading(false);
-        setIsRefreshing(false);
-        return;
-      }
-
-      if (showLoader) {
-        setIsLoading(true);
-      }
+      if (showLoader) setIsLoading(true);
       setErrorText(null);
 
       try {
-        const rounds = await gameApi.getGameRounds(user.partnerId, 1, 100, null);
-        const mappedRounds = rounds.filter(round => round.active !== false);
+        // Chỉ lấy lịch sử của game round này
+        const attemptList = await gameApi.getStudentAttempts(gameRoundId, user.id, 1, 100, null);
 
-        const attemptResults = await Promise.allSettled(
-          mappedRounds.map(round => gameApi.getStudentAttempts(round.id, user.id, 1, 100, null))
+        const deduped = Array.from(
+          new Map(attemptList.map(a => [a.id, a])).values()
         );
 
-        const attemptList = attemptResults.flatMap(result =>
-          result.status === 'fulfilled' ? result.value : []
-        );
-        const failedRoundCount = attemptResults.filter(result => result.status === 'rejected').length;
-
-        if (failedRoundCount > 0) {
-          console.warn(
-            `Không tải được attempts của ${failedRoundCount}/${mappedRounds.length} màn ở lịch sử game.`
-          );
-        }
-
-        if (mappedRounds.length > 0 && failedRoundCount === mappedRounds.length) {
-          throw new Error('Khong the tai lich su attempts cho tat ca round.');
-        }
-
-        const dedupedAttempts = Array.from(
-          new Map(attemptList.map(attempt => [attempt.id, attempt])).values()
-        );
-
-        const sortedAttempts = [...dedupedAttempts].sort((a, b) => {
+        const sorted = [...deduped].sort((a, b) => {
           const timeDiff = toTimestamp(b) - toTimestamp(a);
-          if (timeDiff !== 0) {
-            return timeDiff;
-          }
-
-          return b.attempt_number - a.attempt_number;
+          return timeDiff !== 0 ? timeDiff : b.attempt_number - a.attempt_number;
         });
 
-        setAttempts(sortedAttempts);
+        setAttempts(sorted);
         setVisibleCount(INITIAL_VISIBLE_COUNT);
         setHasUserScrolled(false);
 
+        // Tải placement stats để hiển thị độ chính xác
         const statsResult = await Promise.allSettled(
-          sortedAttempts.map(async attempt => {
+          sorted.map(async attempt => {
             const placements = await gameApi.getPlacementDetails(attempt.id);
-            const correctCount = placements.filter(placement => placement.is_correct).length;
-
             return {
               attemptId: attempt.id,
               total: placements.length,
-              correct: correctCount,
+              correct: placements.filter(p => p.is_correct).length,
             };
           })
         );
@@ -158,7 +129,6 @@ export default function GameHistoryScreen() {
             };
           }
         });
-
         setPlacementStats(nextStats);
       } catch (error) {
         console.error('Không thể tải lịch sử chơi game:', error);
@@ -170,7 +140,7 @@ export default function GameHistoryScreen() {
         setIsRefreshing(false);
       }
     },
-    [user?.id, user?.partnerId]
+    [user?.id, gameRoundId]
   );
 
   useFocusEffect(
@@ -184,9 +154,7 @@ export default function GameHistoryScreen() {
 
   useEffect(() => {
     return () => {
-      if (loadMoreTimerRef.current) {
-        clearTimeout(loadMoreTimerRef.current);
-      }
+      if (loadMoreTimerRef.current) clearTimeout(loadMoreTimerRef.current);
     };
   }, []);
 
@@ -196,7 +164,7 @@ export default function GameHistoryScreen() {
   };
 
   const playedAttempts = useMemo(
-    () => attempts.filter(attempt => attempt.completed || Number(attempt.total_items) > 0),
+    () => attempts.filter(a => a.completed || Number(a.total_items) > 0),
     [attempts]
   );
 
@@ -208,9 +176,7 @@ export default function GameHistoryScreen() {
   const hasMore = visibleCount < playedAttempts.length;
 
   const loadMoreHistory = useCallback(() => {
-    if (!hasUserScrolled || !hasMore || isLoadingMore || isLoading || isRefreshing) {
-      return;
-    }
+    if (!hasUserScrolled || !hasMore || isLoadingMore || isLoading || isRefreshing) return;
 
     setIsLoadingMore(true);
     loadMoreTimerRef.current = setTimeout(() => {
@@ -245,7 +211,10 @@ export default function GameHistoryScreen() {
     <View style={styles.container}>
       <ScreenBackground />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <HistoryHeader onBack={() => navigation.goBack()} />
+        <HistoryHeader
+          onBack={() => navigation.goBack()}
+          title={gameRoundTitle}
+        />
 
         {isLoading ? (
           <View style={styles.loaderWrap}>
@@ -280,9 +249,11 @@ export default function GameHistoryScreen() {
             ListEmptyComponent={
               !errorText ? (
                 <View style={styles.emptyCard}>
-                  <MaterialCommunityIcons name="history" size={34} color={colors.text.secondary} />
-                  <Text style={styles.emptyTitle}>Chưa có lịch sử chơi</Text>
-                  <Text style={styles.emptySubtitle}>Hay chơi ít nhất 1 màn để có thể replay.</Text>
+                  <MaterialCommunityIcons name="history" size={40} color={colors.text.disabled} />
+                  <Text style={styles.emptyTitle}>Chưa có lịch sử</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Bạn chưa chơi màn này lần nào. Nhấn Play để bắt đầu!
+                  </Text>
                 </View>
               ) : null
             }
@@ -311,17 +282,17 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     marginTop: spacing.base,
     padding: spacing.xl,
+    gap: spacing.xs,
   },
   emptySubtitle: {
     color: colors.text.secondary,
-    marginTop: spacing.xs,
     textAlign: 'center',
+    fontSize: 13,
   },
   emptyTitle: {
     color: colors.text.primary,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
-    marginTop: spacing.sm,
   },
   errorCard: {
     backgroundColor: '#FEE2E2',
@@ -345,6 +316,7 @@ const styles = StyleSheet.create({
   loaderWrap: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   safeArea: {
     flex: 1,

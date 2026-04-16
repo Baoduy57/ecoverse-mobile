@@ -68,6 +68,18 @@ export const colors = {
     card: ['#FFFFFF', '#F8FDF8'] as const,
     scanGlow: ['#4CAF50', 'transparent'] as const,
   },
+
+  // Game level card gradients — import from here, not hardcoded in components
+  gameCardGradients: [
+    ['#FF9800', '#F57C00'] as [string, string], // Orange
+    ['#4CAF50', '#2E7D32'] as [string, string], // Green
+    ['#29B6F6', '#0288D1'] as [string, string], // Sky Blue
+    ['#AB47BC', '#7B1FA2'] as [string, string], // Purple
+    ['#EF5350', '#C62828'] as [string, string], // Red
+    ['#26C6DA', '#00838F'] as [string, string], // Teal
+    ['#FFCA28', '#F57F17'] as [string, string], // Amber
+    ['#66BB6A', '#2E7D32'] as [string, string], // Light Green
+  ] as const,
 };
 
 // Độ mờ cho overlay và disabled states

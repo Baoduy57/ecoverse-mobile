@@ -1,47 +1,44 @@
-import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions, Animated, InteractionManager } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  ListRenderItem,
+  InteractionManager,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp, useIsFocused } from '@react-navigation/native';
-import Svg, { Path } from 'react-native-svg';
 import ScreenBackground from '../../components/common/ScreenBackground';
 import { colors } from '../../theme';
 import TopHeaderBar from '../../components/game/TopHeaderBar';
-import CurrentStageCard from '../../components/game/CurrentStageCard';
-import LearningPathNode from '../../components/game/LearningPathNode';
-import BackgroundDecorations from '../../components/game/BackgroundDecorations';
-import UnitSeparator from '../../components/game/UnitSeparator';
 import GameInfoDialog from '../../components/game/GameInfoDialog';
-import type { Level, IGameRound, IGameAttempt } from '../../types/game';
+import GameLevelListItem from '../../components/game/GameLevelListItem';
+import type { Level, IGameAttempt, IGameRound } from '../../types/game';
 import type { AppStackParamList } from '../../navigation/AppNavigator';
 import { useAuthStore } from '../../store/authStore';
 import { gameApi } from '../../services/api/game';
 import { StatusBar } from 'expo-status-bar';
-import { ROADMAP_CONSTANTS } from '../../constants/roadmap';
-import { getNodePosition } from '../../utils/roadmapUtils';
-import { EcoPreloader, useLevelLoading } from '../../features/PreloadingSystem';
-import AnimatedNode from '../../components/game/AnimatedNode';
 
-const { SCREEN_WIDTH, LEVEL_HEIGHT, START_OFFSET_Y, LESSONS_PER_UNIT, SEPARATOR_HEIGHT } = ROADMAP_CONSTANTS;
+// ─── helpers ────────────────────────────────────────────────────────────────
 
-
-const getRoundIcon = (round: IGameRound, index: number) => {
+const getRoundIcon = (round: IGameRound, index: number): string => {
   const title = round.title.toUpperCase();
   if (title.includes('TÁI CHẾ')) return 'recycle';
   if (title.includes('HỮU CƠ') || title.includes('Ủ')) return 'sprout';
   if (title.includes('NHỰA')) return 'bottle-soda';
   if (title.includes('GIẤY')) return 'file-document-outline';
   if (title.includes('THỦY TINH')) return 'glass-fragile';
-  return index % 2 === 0 ? 'tree' : 'recycle';
+  return index % 2 === 0 ? 'tree' : 'leaf';
 };
 
-const toSafeNumber = (value: unknown) => {
+const toSafeNumber = (value: unknown): number => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const isMeaningfulAttempt = (attempt: IGameAttempt) => {
+const isMeaningfulAttempt = (attempt: IGameAttempt): boolean => {
   if (attempt.completed) return true;
-
   return (
     toSafeNumber(attempt.points_earned) > 0 ||
     toSafeNumber(attempt.correct_count) > 0 ||
@@ -49,91 +46,51 @@ const isMeaningfulAttempt = (attempt: IGameAttempt) => {
   );
 };
 
-const getAttemptTimestamp = (attempt: IGameAttempt) => {
-  const timeValue =
-    attempt.updated_at || attempt.completed_at || attempt.created_at || attempt.started_at;
-
-  if (!timeValue) {
-    return 0;
-  }
-
-  const parsed = new Date(timeValue).getTime();
-  return Number.isFinite(parsed) ? parsed : 0;
-};
-
-const getLatestAttempt = (attempts: IGameAttempt[]) => {
-  if (!attempts.length) {
-    return undefined;
-  }
-
+const getLatestAttempt = (attempts: IGameAttempt[]): IGameAttempt | undefined => {
+  if (!attempts.length) return undefined;
   return [...attempts].sort((a, b) => {
-    if (b.attempt_number !== a.attempt_number) {
-      return b.attempt_number - a.attempt_number;
-    }
-
-    return getAttemptTimestamp(b) - getAttemptTimestamp(a);
+    if (b.attempt_number !== a.attempt_number) return b.attempt_number - a.attempt_number;
+    const tA = new Date(
+      a.updated_at || a.completed_at || a.created_at || a.started_at || 0
+    ).getTime();
+    const tB = new Date(
+      b.updated_at || b.completed_at || b.created_at || b.started_at || 0
+    ).getTime();
+    return tB - tA;
   })[0];
 };
 
-const applyCurrentStage = (levels: Level[], selectedId: string | number) => {
-  const selectedIdNormalized = String(selectedId);
-
-  return levels.map(level => {
-    const isCurrent = String(level.id) === selectedIdNormalized;
-    const status: Level['status'] = isCurrent ? 'current' : 'completed';
-
-    return {
-      ...level,
-      isCurrent,
-      status,
-    };
-  });
-};
+// ─── screen ─────────────────────────────────────────────────────────────────
 
 export default function GameScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const isFocused = useIsFocused();
   const { user, refreshCurrentUser } = useAuthStore();
-  const [apiLevels, setApiLevels] = useState<Level[]>([]);
-  const {
-    levels: learningPath,
-    setLevels: setLearningPath,
-    isLoadingMore,
-    handleScroll,
-    handlePreloaderCycleEnd,
-    isPreloaderCompleting,
-    preloaderOpacity,
-  } = useLevelLoading({
-    allAvailableLevels: apiLevels,
-    initialCount: 10,
-    batchSize: 10,
-  });
-  const [selectedStage, setSelectedStage] = useState<Level | undefined>(undefined);
+
+  const [levels, setLevels] = useState<Level[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialogVisible, setDialogVisible] = useState(false);
-  const [dialogTitle, setDialogTitle] = useState('Thong bao');
+  const [dialogTitle, setDialogTitle] = useState('Thông báo');
   const [dialogMessage, setDialogMessage] = useState('');
 
-  const openDialog = (title: string, message: string) => {
+  const openDialog = useCallback((title: string, message: string) => {
     setDialogTitle(title);
     setDialogMessage(message);
     setDialogVisible(true);
-  };
+  }, []);
 
+  // ── fetch ──────────────────────────────────────────────────────────────────
   React.useEffect(() => {
-    if (!isFocused) {
-      return;
-    }
+    if (!isFocused) return;
 
     const fetchGameRounds = async () => {
       try {
         if (!user?.id) {
-          openDialog('Loi', 'Khong tim thay student_id, vui long dang nhap lai.');
+          openDialog('Lỗi', 'Không tìm thấy student_id, vui lòng đăng nhập lại.');
           return;
         }
-
         if (!user?.partnerId) {
-          openDialog('Loi', 'Khong tim thay partner_id, vui long dang nhap lai.');
+          openDialog('Lỗi', 'Không tìm thấy partner_id, vui lòng đăng nhập lại.');
           return;
         }
 
@@ -141,225 +98,115 @@ export default function GameScreen() {
         await refreshCurrentUser(true);
 
         const rounds = await gameApi.getGameRounds(user.partnerId, 1, 100, null);
-        const mappedRounds = rounds.filter(round => round.active !== false);
+        const active = rounds.filter(r => r.active !== false);
 
-        if (!mappedRounds.length) {
-          setApiLevels([]);
-          setSelectedStage(undefined);
+        if (!active.length) {
+          setLevels([]);
           return;
         }
 
+        // Fetch attempts for all rounds in parallel
         let studentAttempts: IGameAttempt[] = [];
-        try {
-          const attemptResults = await Promise.allSettled(
-            mappedRounds.map(round => gameApi.getStudentAttempts(round.id, user.id, 1, 50, null))
-          );
-
-          studentAttempts = attemptResults.flatMap(result =>
-            result.status === 'fulfilled' ? result.value : []
-          );
-
-          const failedCount = attemptResults.filter(result => result.status === 'rejected').length;
-          if (failedCount > 0) {
-            console.warn(
-              `Không tải được lịch sử attempts của ${failedCount}/${mappedRounds.length} màn, vẫn tiếp tục hiển thị.`
-            );
-          }
-        } catch (attemptsError) {
-          console.warn(
-            'Không tải được lịch sử attempts, tiếp tục hiển thị danh sách rounds.',
-            attemptsError
-          );
-        }
+        const results = await Promise.allSettled(
+          active.map(r => gameApi.getStudentAttempts(r.id, user.id, 1, 50, null))
+        );
+        studentAttempts = results.flatMap(r => (r.status === 'fulfilled' ? r.value : []));
 
         const attemptsMap = new Map<string, IGameAttempt[]>();
-        studentAttempts.forEach(attempt => {
-          const current = attemptsMap.get(attempt.game_round_id) || [];
-          attemptsMap.set(attempt.game_round_id, [...current, attempt]);
+        studentAttempts.forEach(a => {
+          attemptsMap.set(a.game_round_id, [...(attemptsMap.get(a.game_round_id) ?? []), a]);
         });
 
-        const currentRoundIndex = Math.max(mappedRounds.length - 1, 0);
-
-        const levels: Level[] = mappedRounds.map((round, index) => {
-          const roundAttempts = attemptsMap.get(round.id) || [];
-          const attempts = roundAttempts.filter(isMeaningfulAttempt);
-          const latestAttempt = getLatestAttempt(roundAttempts);
-          const isCurrent = index === currentRoundIndex;
-          const status: Level['status'] = isCurrent ? 'current' : 'completed';
-
+        const mapped: Level[] = active.map((round, index) => {
+          const ra = attemptsMap.get(round.id) ?? [];
+          const latest = getLatestAttempt(ra);
           return {
             id: round.id,
             title: round.title,
             icon: getRoundIcon(round, index),
-            status,
-            isCurrent,
+            status: 'completed' as const,
+            isCurrent: false,
             description: round.description,
-            playsCount: attempts.length,
+            playsCount: ra.filter(isMeaningfulAttempt).length,
             itemCount: toSafeNumber(round.item_count),
-            lastAttemptId: latestAttempt?.id,
-            lastAttemptNumber: latestAttempt?.attempt_number,
+            lastAttemptId: latest?.id,
+            lastAttemptNumber: latest?.attempt_number,
           };
         });
 
-        const defaultStage = levels.find(level => level.isCurrent) || levels[0];
-        const normalizedLevels = applyCurrentStage(levels, defaultStage.id);
-
-        setApiLevels(normalizedLevels);
-        setSelectedStage(normalizedLevels.find(level => level.isCurrent) || normalizedLevels[0]);
-      } catch (error: unknown) {
-        if (
-          typeof error === 'object' &&
-          error !== null &&
-          'isAxiosError' in error &&
-          (error as { isAxiosError?: boolean }).isAxiosError
-        ) {
-          const axiosError = error as {
-            config?: { baseURL?: string; url?: string };
-            response?: { status?: number };
-          };
-          if (axiosError.config) {
-            console.error(
-              `Lỗi request URL (${axiosError.response?.status || 'NO_STATUS'}): ${axiosError.config.baseURL || ''}${axiosError.config.url || ''}`
-            );
-          }
-        }
-        console.error('Lỗi khi tải màn chơi:', error);
+        setLevels(mapped);
+      } catch (err) {
+        console.error('Lỗi khi tải màn chơi:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    const task = InteractionManager.runAfterInteractions(() => {
-      fetchGameRounds();
-    });
-
+    const task = InteractionManager.runAfterInteractions(fetchGameRounds);
     return () => task.cancel();
   }, [isFocused, refreshCurrentUser, user?.id, user?.partnerId]);
 
-  // Generate SVG Path segments (one per unit, breaking at separators)
-  const pathSegments = useMemo(() => {
-    const segments: string[] = [];
-    const numberOfUnits = Math.ceil(learningPath.length / LESSONS_PER_UNIT);
-
-    for (let unitIndex = 0; unitIndex < numberOfUnits; unitIndex++) {
-      const startIdx = unitIndex * LESSONS_PER_UNIT;
-      const endIdx = Math.min(startIdx + LESSONS_PER_UNIT, learningPath.length);
-
-      if (startIdx >= learningPath.length) break;
-
-      let d = `M${getNodePosition(startIdx).x} ${getNodePosition(startIdx).y}`;
-
-      for (let i = startIdx; i < endIdx - 1; i++) {
-        const p1 = getNodePosition(i);
-        const p2 = getNodePosition(i + 1);
-
-        // Bezier control points for smooth curves
-        const cp1x = p1.x;
-        const cp1y = p1.y + LEVEL_HEIGHT / 2;
-        const cp2x = p2.x;
-        const cp2y = p2.y - LEVEL_HEIGHT / 2;
-
-        d += ` C${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
+  // ── handlers ───────────────────────────────────────────────────────────────
+  const handlePlayLevel = useCallback(
+    (level: Level) => {
+      if ((level.itemCount ?? 0) <= 0) {
+        openDialog('Thông báo', 'Màn chơi này chưa có vật phẩm rác để chơi.');
+        return;
       }
+      navigation.navigate('DragDropGamePlay', { levelId: level.id });
+    },
+    [navigation, openDialog]
+  );
 
-      segments.push(d);
-    }
+  const handleViewHistory = useCallback(
+    (level: Level) => {
+      navigation.navigate('GameHistory', {
+        gameRoundId: String(level.id),
+        gameRoundTitle: level.title,
+      });
+    },
+    [navigation]
+  );
 
-    return segments;
-  }, [learningPath]);
-
-  // Generate completed path segments (green solid line)
-  const completedPathSegments = useMemo(() => {
-    const segments: string[] = [];
-    const currentIndex = learningPath.findIndex(l => l.status === 'current');
-    if (currentIndex <= 0) return segments;
-
-    const numberOfUnits = Math.ceil(currentIndex / LESSONS_PER_UNIT);
-
-    for (let unitIndex = 0; unitIndex < numberOfUnits; unitIndex++) {
-      const startIdx = unitIndex * LESSONS_PER_UNIT;
-      const endIdx = Math.min(startIdx + LESSONS_PER_UNIT, currentIndex + 1);
-
-      if (startIdx >= currentIndex) break;
-
-      let d = `M${getNodePosition(startIdx).x} ${getNodePosition(startIdx).y}`;
-
-      for (let i = startIdx; i < endIdx - 1; i++) {
-        const p1 = getNodePosition(i);
-        const p2 = getNodePosition(i + 1);
-
-        const cp1x = p1.x;
-        const cp1y = p1.y + LEVEL_HEIGHT / 2;
-        const cp2x = p2.x;
-        const cp2y = p2.y - LEVEL_HEIGHT / 2;
-
-        d += ` C${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
-      }
-
-      segments.push(d);
-    }
-
-    return segments;
-  }, [learningPath]);
-
-  const handleLevelPress = (level: Level) => {
-    if ((level.itemCount ?? 0) <= 0) {
-      openDialog('Thông báo', 'Màn chơi này chưa có vật phẩm rác để chơi.');
-      return;
-    }
-
-    const updatedPath = applyCurrentStage(learningPath, level.id);
-    setLearningPath(updatedPath);
-    setSelectedStage(updatedPath.find(item => String(item.id) === String(level.id)) || level);
-  };
-
-  const handlePlayPress = () => {
-    if (!selectedStage) return;
-
-    if ((selectedStage.itemCount ?? 0) <= 0) {
-      openDialog('Thông báo', 'Màn chơi này chưa có vật phẩm rác để chơi.');
-      return;
-    }
-
-    navigation.navigate('DragDropGamePlay', {
-      levelId: selectedStage.id,
-    });
-  };
-
-  const handleHistoryPress = () => {
-    navigation.navigate('GameHistory');
-  };
-
-  const handleBackPress = () => {
+  const handleBackPress = useCallback(() => {
     if (navigation.canGoBack()) {
       navigation.goBack();
       return;
     }
     navigation.navigate('Home', { screen: 'Game' } as never);
-  };
+  }, [navigation]);
 
-  const numberOfSeparators = Math.floor(learningPath.length / LESSONS_PER_UNIT);
-  const contentHeight =
-    START_OFFSET_Y +
-    learningPath.length * LEVEL_HEIGHT +
-    numberOfSeparators * SEPARATOR_HEIGHT +
-    100;
+  // ── render ─────────────────────────────────────────────────────────────────
+  const renderItem: ListRenderItem<Level> = useCallback(
+    ({ item, index }) => (
+      <GameLevelListItem
+        level={item}
+        index={index}
+        onPlayPress={handlePlayLevel}
+        onHistoryPress={handleViewHistory}
+      />
+    ),
+    [handlePlayLevel, handleViewHistory]
+  );
 
-  if (isLoading && learningPath.length === 0) {
-    return null;
+  if (isLoading && levels.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <StatusBar style="dark" backgroundColor={colors.background} translucent={false} />
+        <ScreenBackground />
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
       <StatusBar style="dark" backgroundColor={colors.background} translucent={false} />
-
       <ScreenBackground />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Top Header */}
         <TopHeaderBar
           onBack={handleBackPress}
-          onHistoryPress={handleHistoryPress}
           stats={{
             missions: 0,
             streak: Number(user?.streak ?? 0),
@@ -367,97 +214,14 @@ export default function GameScreen() {
           }}
         />
 
-        {/* Game Content Container with Green Background */}
-        <View style={styles.gameContent}>
-          {/* Current Stage Card */}
-          {selectedStage && <CurrentStageCard stage={selectedStage} onPlay={handlePlayPress} />}
-
-          {/* Learning Path */}
-          <ScrollView
-            contentContainerStyle={[styles.scrollContent, { height: contentHeight }]}
-            showsVerticalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-          >
-            {/* Background Decorations */}
-            <BackgroundDecorations width={SCREEN_WIDTH} height={contentHeight} />
-
-            {/* SVG Path Background */}
-            <Svg style={StyleSheet.absoluteFill} height={contentHeight} width={SCREEN_WIDTH}>
-              {/* Roadmap base path */}
-              {pathSegments.map((pathData, index) => (
-                <Path
-                  key={`base-${index}`}
-                  d={pathData}
-                  stroke={colors.text.disabled}
-                  strokeWidth="6"
-                  strokeDasharray="10, 10"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-              ))}
-
-              {/* Completed path segments (green solid) */}
-              {completedPathSegments.map((pathData, index) => (
-                <Path
-                  key={`completed-${index}`}
-                  d={pathData}
-                  stroke={colors.primaryDark}
-                  strokeWidth="6"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-              ))}
-            </Svg>
-
-            {/* Unit Separators */}
-            {Array.from({ length: numberOfSeparators }).map((_, unitIndex) => {
-              const lastNodeInUnit = (unitIndex + 1) * LESSONS_PER_UNIT - 1;
-              const separatorY = getNodePosition(lastNodeInUnit).y + LEVEL_HEIGHT / 2 + 10;
-
-              return (
-                <UnitSeparator
-                  key={`separator-${unitIndex}`}
-                  y={separatorY}
-                  width={SCREEN_WIDTH}
-                  unitIndex={unitIndex}
-                />
-              );
-            })}
-
-            {/* Nodes */}
-            {learningPath.map((level, index) => {
-              const isNew = index >= (learningPath.length - 10); // Simple logic for animation
-              return (
-                <AnimatedNode key={String(level.id)} index={index} isNew={isNew}>
-                  <LearningPathNode
-                    level={level}
-                    position={getNodePosition(index)}
-                    onPress={handleLevelPress}
-                  />
-                </AnimatedNode>
-              );
-            })}
-
-            {/* Bottom Preloader */}
-            {isLoadingMore && (
-              <Animated.View
-                style={[
-                  styles.loaderFooter,
-                  {
-                    top: contentHeight - 120,
-                    opacity: preloaderOpacity,
-                  },
-                ]}
-              >
-                <EcoPreloader
-                  isCompleting={isPreloaderCompleting}
-                  onCycleEnd={handlePreloaderCycleEnd}
-                />
-              </Animated.View>
-            )}
-          </ScrollView>
-        </View>
+        <FlatList
+          data={levels}
+          keyExtractor={item => String(item.id)}
+          renderItem={renderItem}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          ListFooterComponent={<View style={styles.footer} />}
+        />
       </SafeAreaView>
 
       <GameInfoDialog
@@ -472,27 +236,23 @@ export default function GameScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     backgroundColor: colors.background,
-    flex: 1,
-    position: 'relative',
   },
-  gameContent: {
-    backgroundColor: 'transparent',
+  loadingContainer: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
   },
   safeArea: {
     flex: 1,
-    zIndex: 10,
   },
-  scrollContent: {
-    paddingBottom: 150,
+  listContent: {
+    paddingTop: 8,
+    paddingBottom: 20,
   },
-  loaderFooter: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
+  footer: {
+    height: 40,
   },
 });
