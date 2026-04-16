@@ -26,7 +26,7 @@ export default function QuizQuestionOptions({
           <TouchableOpacity
             key={`option-${index}`}
             style={[styles.option, isSelected && styles.optionSelected]}
-            activeOpacity={0.75}
+            activeOpacity={0.7}
             onPress={() => onSelect(index)}
           >
             <View style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
@@ -38,8 +38,10 @@ export default function QuizQuestionOptions({
               {option}
             </Text>
             {isSelected ? (
-              <MaterialCommunityIcons name="check-circle" size={22} color={colors.primary} />
-            ) : null}
+              <MaterialCommunityIcons name="check-circle" size={24} color={colors.primary} />
+            ) : (
+              <View style={styles.unselectedRadio} />
+            )}
           </TouchableOpacity>
         );
       })}
@@ -49,49 +51,64 @@ export default function QuizQuestionOptions({
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   option: {
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderColor: '#E2E8F0',
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 2,
     flexDirection: 'row',
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: 16,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   optionLabel: {
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F1F5F9',
     borderRadius: borderRadius.full,
-    height: 28,
+    height: 32,
     justifyContent: 'center',
-    width: 28,
+    width: 32,
   },
   optionLabelSelected: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: colors.primary,
   },
   optionLabelText: {
     color: colors.text.secondary,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
   },
   optionLabelTextSelected: {
-    color: colors.primary,
+    color: colors.text.white,
   },
   optionSelected: {
-    backgroundColor: 'rgba(76, 175, 80, 0.08)',
-    borderColor: '#4CAF50',
+    backgroundColor: '#F0FDF4',
+    borderColor: colors.primary,
+    borderWidth: 2,
   },
   optionText: {
     color: colors.text.primary,
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
+    lineHeight: 22,
   },
   optionTextSelected: {
-    color: colors.primary,
+    color: colors.primaryDark,
+    fontWeight: '800',
+  },
+  unselectedRadio: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
   },
 });
