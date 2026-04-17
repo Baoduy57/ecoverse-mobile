@@ -1,15 +1,15 @@
 import React, { useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, InteractionManager } from 'react-native';
-import { Text, ProgressBar } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AppStackParamList } from '../../navigation/AppNavigator';
 import {
   DashboardHeader,
   GameCard,
-  ProgressCard,
   SectionHeader,
   CircularProgress,
 } from '../../components/dashboard';
@@ -18,10 +18,39 @@ import { ScheduledExamCard } from '../../components/exam';
 import { colors, spacing, borderRadius } from '@theme';
 import { getUnreadCount } from '../../data/notificationData';
 import { MOCK_SCHEDULED_EXAMS } from '../../data/examData';
-
 import { useAuthStore } from '../../store/authStore';
 
 type DashboardNavigationProp = StackNavigationProp<AppStackParamList>;
+
+// ─── Statistics Card component ──────────────────────────────────────────────
+
+type StatCardProps = {
+  icon: string;
+  iconColor: string;
+  gradientColors: [string, string];
+  value: string | number;
+  label: string;
+};
+
+function StatCard({ icon, iconColor, gradientColors, value, label }: StatCardProps) {
+  return (
+    <LinearGradient
+      colors={gradientColors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={statStyles.card}
+    >
+      <View style={statStyles.glowDot} />
+      <View style={[statStyles.iconBox, { backgroundColor: 'rgba(255,255,255,0.3)' }]}>
+        <MaterialCommunityIcons name={icon as any} size={26} color={colors.text.white} />
+      </View>
+      <Text style={statStyles.value}>{value}</Text>
+      <Text style={statStyles.label}>{label}</Text>
+    </LinearGradient>
+  );
+}
+
+// ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function DashboardScreen() {
   const navigation = useNavigation<DashboardNavigationProp>();
@@ -38,39 +67,7 @@ export default function DashboardScreen() {
     }, [refreshCurrentUser, user?.id])
   );
 
-  // Data cho Progress Card
-  const progressData = [
-    {
-      id: '1',
-      icon: 'book-open-variant',
-      iconColor: '#6366F1',
-      iconBgColor: '#EEF2FF',
-      title: 'Bài học',
-      progress: 0.8,
-      value: '80%',
-      barColor: '#6366F1',
-    },
-    {
-      id: '2',
-      icon: 'flag-checkered',
-      iconColor: '#10B981',
-      iconBgColor: '#D1FAE5',
-      title: 'Mục tiêu',
-      progress: 0.8,
-      value: '12/15',
-      barColor: '#10B981',
-    },
-    {
-      id: '3',
-      icon: 'trophy',
-      iconColor: '#F97316',
-      iconBgColor: '#FFEDD5',
-      title: 'Thử thách',
-      progress: 0.76,
-      value: '450 XP',
-      barColor: '#F97316',
-    },
-  ];
+  const stats = user?.statistics;
 
   return (
     <View style={styles.container}>
@@ -78,13 +75,12 @@ export default function DashboardScreen() {
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Header Component */}
+          {/* Header */}
           <DashboardHeader
             userName={user?.name || 'Học sinh'}
             avatarSource={
               user?.avatar ? { uri: user.avatar } : require('../../../assets/images/avatar.jpg')
             }
-            streakCount={user?.streak || 0}
             coinCount={user?.points || 0}
             notificationCount={getUnreadCount()}
             onNotificationPress={() => navigation.navigate('Notification')}
@@ -227,11 +223,42 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Tiến độ */}
+          {/* ── Thống kê học tập ── */}
           <View style={styles.section}>
-            <SectionHeader title="Tiến độ" onLinkPress={() => console.log('View all progress')} />
-            <View style={styles.progressCardWrapper}>
-              <ProgressCard items={progressData} />
+            <SectionHeader title="Thống kê học tập" />
+            <View style={styles.statsGrid}>
+              <View style={styles.statsRow2}>
+                <StatCard
+                  icon="gamepad-variant"
+                  iconColor="#EF5350"
+                  gradientColors={['#EF5350', '#C62828']}
+                  value={stats?.total_games_played ?? 0}
+                  label={'Tổng game đã chơi'}
+                />
+                <StatCard
+                  icon="bullseye-arrow"
+                  iconColor="#2196F3"
+                  gradientColors={['#29B6F6', '#0277BD']}
+                  value={`${stats?.total_average_accuracy ?? 0}%`}
+                  label={'Độ chính xác TB'}
+                />
+              </View>
+              <View style={styles.statsRow2}>
+                <StatCard
+                  icon="clipboard-check"
+                  iconColor="#8B5CF6"
+                  gradientColors={['#AB47BC', '#7B1FA2']}
+                  value={stats?.total_quizzes_completed ?? 0}
+                  label={'Bài kiểm tra xong'}
+                />
+                <StatCard
+                  icon="trophy"
+                  iconColor="#F59E0B"
+                  gradientColors={['#FFCA28', '#F57F17']}
+                  value={stats?.total_achievements_unlocked ?? 0}
+                  label={'Thành tích'}
+                />
+              </View>
             </View>
           </View>
 
@@ -264,15 +291,16 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingHorizontal: 20,
   },
+  // ── Quiz Card ──
   quizCard: {
     alignItems: 'center',
-    backgroundColor: '#F5F3FF', // Light purple
+    backgroundColor: '#F5F3FF',
     borderColor: '#8B5CF6',
     borderRadius: 24,
     borderWidth: 3,
     flexDirection: 'row',
     padding: spacing.base,
-    elevation: 0, // Flat design
+    elevation: 0,
   },
   quizLeftSection: {
     marginRight: spacing.md,
@@ -349,10 +377,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingHorizontal: 20,
   },
-  // Weekly Goal Card
+  // ── Weekly Goal Card ──
   weeklyGoalCard: {
     alignItems: 'center',
-    backgroundColor: '#ECFDF5', // Light emerald
+    backgroundColor: '#ECFDF5',
     borderColor: '#10B981',
     borderRadius: 24,
     borderWidth: 3,
@@ -387,9 +415,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
-  // Daily Check Card
+  // ── Daily Check Card ──
   dailyCheckCard: {
-    backgroundColor: '#EFF6FF', // Light blue
+    backgroundColor: '#EFF6FF',
     borderColor: '#3B82F6',
     borderRadius: 24,
     borderWidth: 3,
@@ -436,20 +464,65 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   dailyProgressBar: {
-    backgroundColor: '#BFDBFE', // Darker blue base
+    backgroundColor: '#BFDBFE',
     borderRadius: 10,
     height: 8,
     overflow: 'hidden',
     width: '100%',
   },
   dailyProgressFill: {
-    backgroundColor: '#3B82F6', // Blue fill
+    backgroundColor: '#3B82F6',
     borderRadius: 10,
     height: '100%',
   },
-  progressCardWrapper: {
-    borderRadius: 24,
-    elevation: 0,
-    overflow: 'visible',
+  // stats 2x2 grid
+  statsGrid: {
+    gap: 10,
+  },
+  statsRow2: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+});
+const statStyles = StyleSheet.create({
+  card: {
+    alignItems: 'center',
+    borderRadius: 20,
+    flex: 1,
+    paddingVertical: 18,
+    paddingHorizontal: 8,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    gap: 6,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  glowDot: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 60,
+    height: 90,
+    position: 'absolute',
+    right: -20,
+    top: -25,
+    width: 90,
+  },
+  iconBox: {
+    padding: 10,
+    borderRadius: 14,
+    marginBottom: 2,
+  },
+  value: {
+    color: colors.text.white,
+    fontSize: 26,
+    fontWeight: '900',
+  },
+  label: {
+    color: 'rgba(255,255,255,0.88)',
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

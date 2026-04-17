@@ -18,6 +18,13 @@ export interface IUser {
   parentName?: string;
   parentEmail?: string;
   partnerId?: string;
+  // API statistics block
+  statistics?: {
+    total_games_played: number;
+    total_average_accuracy: number;
+    total_quizzes_completed: number;
+    total_achievements_unlocked: number;
+  };
 }
 
 export interface IUserStats {

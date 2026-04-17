@@ -9,7 +9,6 @@ import { HomeTabParamList } from '@/navigation/TabNavigator';
 interface DashboardHeaderProps {
   userName: string;
   avatarSource: any;
-  streakCount: number;
   coinCount: number;
   notificationCount?: number;
   onNotificationPress?: () => void;
@@ -18,7 +17,6 @@ interface DashboardHeaderProps {
 export default function DashboardHeader({
   userName,
   avatarSource,
-  streakCount,
   coinCount,
   notificationCount = 0,
   onNotificationPress,
@@ -40,12 +38,8 @@ export default function DashboardHeader({
         </View>
       </View>
       <View style={styles.headerRight}>
-        <View style={styles.streakBadge}>
-          <MaterialCommunityIcons name="fire" size={18} color="#F97316" />
-          <Text style={styles.streakText}>{streakCount}</Text>
-        </View>
         <View style={styles.coinBadge}>
-          <Text style={styles.coinIcon}>$</Text>
+          <MaterialCommunityIcons name="star" size={18} color="#FBBF24" />
           <Text style={styles.coinText}>{coinCount.toLocaleString('de-DE')}</Text>
         </View>
         <TouchableOpacity
