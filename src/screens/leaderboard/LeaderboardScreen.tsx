@@ -11,18 +11,20 @@ import {
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, NavigationProp } from '@react-navigation/native';
 import ScreenBackground from '../../components/common/ScreenBackground';
 import { colors, spacing, borderRadius } from '../../theme';
 import { PodiumDisplay, RankingItem } from '../../components/leaderboard';
 import { leaderboardApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import type { ILeaderboardEntry } from '../../types/leaderboard';
+import type { AppStackParamList } from '../../navigation/AppNavigator';
 
 type TabType = 'class' | 'school';
 const PAGE_SIZE = 10;
 
 export default function LeaderboardScreen() {
+  const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const [activeTab, setActiveTab] = useState<TabType>('class');
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
   const [entries, setEntries] = useState<ILeaderboardEntry[]>([]);
@@ -48,84 +50,87 @@ export default function LeaderboardScreen() {
   }, [activeTab]);
 
   const fetchLeaderboard = useCallback(async (tab: TabType, page: number, append: boolean) => {
-      const currentUser = useAuthStore.getState().user;
+    const currentUser = useAuthStore.getState().user;
 
-      if (!currentUser?.partnerId) {
-        setEntries([]);
-        setHasMore(false);
-        setErrorText('Khong tim thay partner_id, vui long dang nhap lai.');
-        setIsLoading(false);
-        setIsLoadingMore(false);
-        return;
-      }
+    if (!currentUser?.partnerId) {
+      setEntries([]);
+      setHasMore(false);
+      setErrorText('Khong tim thay partner_id, vui long dang nhap lai.');
+      setIsLoading(false);
+      setIsLoadingMore(false);
+      return;
+    }
 
-      if (append) {
-        setIsLoadingMore(true);
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+    }
+
+    try {
+      setErrorText(null);
+
+      const scope = tab === 'class' ? 'CLASS' : 'SCHOOL';
+      const shouldSendGrade = tab === 'class' && currentUser.grade;
+      const grade = shouldSendGrade ? String(currentUser.grade).trim() : undefined;
+
+      const apiRows = await leaderboardApi.getStudentLeaderboard(currentUser.partnerId, {
+        scope,
+        page,
+        size: PAGE_SIZE,
+        ...(grade ? { grade } : {}),
+      });
+
+      const mappedRows: ILeaderboardEntry[] = apiRows.map((row, index) => ({
+        rank: (page - 1) * PAGE_SIZE + index + 1,
+        userId: String(row.student_id || ''),
+        userName: String(row.student_name || 'Hoc sinh'),
+        points: Number(row.points ?? 0),
+        grade: row.grade ? String(row.grade) : undefined,
+        minDuration:
+          typeof row.min_duration === 'number' && Number.isFinite(row.min_duration)
+            ? row.min_duration
+            : undefined,
+        isCurrentUser: String(row.student_id || '') === String(currentUser.id || ''),
+      }));
+
+      setEntries(prev => (append ? [...prev, ...mappedRows] : mappedRows));
+      setCurrentPage(page);
+      setHasMore(apiRows.length === PAGE_SIZE);
+    } catch (error: any) {
+      const responseStatus = error?.response?.status;
+      const responseMessage = error?.response?.data?.message;
+
+      if (responseStatus === 404) {
+        setErrorText(responseMessage || 'Not found partner');
       } else {
-        setIsLoading(true);
+        setErrorText('Khong the tai bang xep hang. Vui long thu lai.');
       }
 
-      try {
-        setErrorText(null);
-
-        const scope = tab === 'class' ? 'CLASS' : 'SCHOOL';
-        const shouldSendGrade = tab === 'class' && currentUser.grade;
-        const grade = shouldSendGrade ? String(currentUser.grade).trim() : undefined;
-
-        const apiRows = await leaderboardApi.getStudentLeaderboard(currentUser.partnerId, {
-          scope,
-          page,
-          size: PAGE_SIZE,
-          ...(grade ? { grade } : {}),
-        });
-
-        const mappedRows: ILeaderboardEntry[] = apiRows.map((row, index) => ({
-          rank: (page - 1) * PAGE_SIZE + index + 1,
-          userId: String(row.student_id || ''),
-          userName: String(row.student_name || 'Hoc sinh'),
-          points: Number(row.points ?? 0),
-          grade: row.grade ? String(row.grade) : undefined,
-          minDuration:
-            typeof row.min_duration === 'number' && Number.isFinite(row.min_duration)
-              ? row.min_duration
-              : undefined,
-          isCurrentUser: String(row.student_id || '') === String(currentUser.id || ''),
-        }));
-
-        setEntries(prev => (append ? [...prev, ...mappedRows] : mappedRows));
-        setCurrentPage(page);
-        setHasMore(apiRows.length === PAGE_SIZE);
-      } catch (error: any) {
-        const responseStatus = error?.response?.status;
-        const responseMessage = error?.response?.data?.message;
-
-        if (responseStatus === 404) {
-          setErrorText(responseMessage || 'Not found partner');
-        } else {
-          setErrorText('Khong the tai bang xep hang. Vui long thu lai.');
-        }
-
-        if (!append) {
-          setEntries([]);
-        }
-
-        setHasMore(false);
-      } finally {
-        if (append) {
-          setIsLoadingMore(false);
-        } else {
-          setIsLoading(false);
-        }
+      if (!append) {
+        setEntries([]);
       }
+
+      setHasMore(false);
+    } finally {
+      if (append) {
+        setIsLoadingMore(false);
+      } else {
+        setIsLoading(false);
+      }
+    }
   }, []);
 
-  const syncLeaderboard = useCallback(async (tab: TabType) => {
-    try {
-      await refreshCurrentUser(true);
-    } finally {
-      await fetchLeaderboard(tab, 1, false);
-    }
-  }, [fetchLeaderboard, refreshCurrentUser]);
+  const syncLeaderboard = useCallback(
+    async (tab: TabType) => {
+      try {
+        await refreshCurrentUser(true);
+      } finally {
+        await fetchLeaderboard(tab, 1, false);
+      }
+    },
+    [fetchLeaderboard, refreshCurrentUser]
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -199,6 +204,14 @@ export default function LeaderboardScreen() {
               </Text>
             </View>
           </View>
+          <TouchableOpacity
+            style={styles.historyButton}
+            onPress={() => navigation.navigate('ScheduledExam')}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="trophy-variant-outline" size={20} color="#F59E0B" />
+            <Text style={styles.historyButtonText}>Cuộc thi</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Tabs */}
@@ -246,7 +259,7 @@ export default function LeaderboardScreen() {
         {isLoading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Dang tai bang xep hang...</Text>
+            <Text style={styles.loadingText}>Đang tải bảng xếp hạng...</Text>
           </View>
         ) : errorText ? (
           <View style={styles.emptyWrap}>
@@ -261,7 +274,7 @@ export default function LeaderboardScreen() {
               onPress={() => fetchLeaderboard(activeTab, 1, false)}
               activeOpacity={0.85}
             >
-              <Text style={styles.retryText}>Thu lai</Text>
+              <Text style={styles.retryText}>Thử lại</Text>
             </TouchableOpacity>
           </View>
         ) : currentData.length === 0 ? (
@@ -271,7 +284,7 @@ export default function LeaderboardScreen() {
               size={28}
               color={colors.text.secondary}
             />
-            <Text style={styles.emptyText}>Chua co du lieu bang xep hang</Text>
+            <Text style={styles.emptyText}>Chưa có dữ liệu bảng xếp hạng</Text>
           </View>
         ) : (
           <>
@@ -280,8 +293,8 @@ export default function LeaderboardScreen() {
 
             {/* Section label + list */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Tu hang 4</Text>
-              <Text style={styles.sectionCount}>{remaining.length} hoc sinh</Text>
+              <Text style={styles.sectionTitle}>Từ hạng 4</Text>
+              <Text style={styles.sectionCount}>{remaining.length} học sinh</Text>
             </View>
 
             <ScrollView
@@ -316,7 +329,7 @@ export default function LeaderboardScreen() {
                     {isLoadingMore ? (
                       <ActivityIndicator size="small" color={colors.primary} />
                     ) : (
-                      <Text style={styles.loadMoreText}>Tai them</Text>
+                      <Text style={styles.loadMoreText}>Tải thêm</Text>
                     )}
                   </TouchableOpacity>
                 )}
@@ -352,9 +365,28 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingBottom: spacing.md,
     paddingHorizontal: spacing.base,
     paddingTop: spacing.sm,
+  },
+  historyButton: {
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    borderColor: '#F59E0B',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  historyButtonText: {
+    color: '#B45309',
+    fontSize: 12,
+    fontWeight: '700',
   },
   loadMoreButton: {
     alignItems: 'center',

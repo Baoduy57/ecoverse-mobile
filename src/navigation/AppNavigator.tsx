@@ -6,10 +6,11 @@ import { EditAvatarScreen, SettingsScreen } from '../screens/profile';
 import { RewardHistoryScreen } from '../screens/reward';
 import { DragDropGamePlayScreen, GameHistoryScreen, GameResultDetailScreen } from '../screens/game';
 import { QuizListScreen, QuizQuestionScreen, QuizResultScreen } from '../screens/quiz';
-import { ScheduledExamScreen, ExamQuestionScreen, ExamResultScreen } from '../screens/exam';
+import { ScheduledExamScreen, ExamQuestionScreen, ExamResultScreen, CompetitionLeaderboardScreen } from '../screens/exam';
 import { NotificationScreen } from '../screens/notification';
 import { DevApiTestScreen } from '../screens/dev';
 import { QuizAnswer, QuizAnswerDetail, StudentQuizSubmitResult } from '../types/quiz';
+import type { StudentQuizPlacement } from '../types/quiz';
 import TabNavigator, { HomeTabParamList } from './TabNavigator';
 import { NavigatorScreenParams } from '@react-navigation/native';
 
@@ -21,7 +22,7 @@ export type AppStackParamList = {
   RewardHistory: undefined;
   Notification: undefined;
   GameHistory: { gameRoundId: string; gameRoundTitle: string };
-  DragDropGamePlay: { levelId: string | number; gameAttemptId?: string };
+  DragDropGamePlay: { levelId: string | number; gameAttemptId?: string; competitionId?: string };
   GameResultDetail: {
     gameAttemptId?: string;
     skipServerRefresh?: boolean;
@@ -53,15 +54,26 @@ export type AppStackParamList = {
   QuizResult: { attempt: StudentQuizSubmitResult };
   QuizAnswerDetail: { answerDetails: QuizAnswerDetail[] };
   ScheduledExam: undefined;
-  ExamQuestion: { examId: string };
+  ExamQuestion: {
+    examId?: string;
+    competitionId?: string;
+    quizTemplateId?: string;
+  };
   ExamResult: {
-    examId: string;
+    examId?: string;
+    competitionId?: string;
+    // Real result fields from quiz API
+    quizTitle?: string;
     totalQuestions: number;
     correctAnswers: number;
     wrongAnswers: number;
     totalPoints: number;
-    answers: QuizAnswer[];
+    duration?: number;
+    placements?: StudentQuizPlacement[];
+    // Legacy mock-based fields
+    answers?: QuizAnswer[];
   };
+  CompetitionLeaderboard: { competitionId: string; competitionTitle: string };
   DevApiTest: undefined;
 };
 
@@ -169,6 +181,13 @@ export default function AppNavigator() {
       <Stack.Screen
         name="ScheduledExam"
         component={ScheduledExamScreen}
+        options={{
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="CompetitionLeaderboard"
+        component={CompetitionLeaderboardScreen}
         options={{
           presentation: 'card',
         }}

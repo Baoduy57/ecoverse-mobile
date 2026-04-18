@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, InteractionManager } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,11 +14,11 @@ import {
   CircularProgress,
 } from '../../components/dashboard';
 import ScreenBackground from '../../components/common/ScreenBackground';
-import { ScheduledExamCard } from '../../components/exam';
 import { colors, spacing, borderRadius } from '@theme';
 import { getUnreadCount } from '../../data/notificationData';
-import { MOCK_SCHEDULED_EXAMS } from '../../data/examData';
 import { useAuthStore } from '../../store/authStore';
+import { competitionApi } from '../../services/api/competition';
+import { ICompetition, parseCompetitionDateTime, getCompetitionType } from '../../types/competition';
 
 type DashboardNavigationProp = StackNavigationProp<AppStackParamList>;
 
@@ -55,6 +55,7 @@ function StatCard({ icon, iconColor, gradientColors, value, label }: StatCardPro
 export default function DashboardScreen() {
   const navigation = useNavigation<DashboardNavigationProp>();
   const { user, refreshCurrentUser } = useAuthStore();
+  const [activeCompetition, setActiveCompetition] = useState<ICompetition | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -62,9 +63,18 @@ export default function DashboardScreen() {
         if (user?.id) {
           refreshCurrentUser(true);
         }
+        // Load active competition
+        if (user?.partnerId) {
+          competitionApi.getCompetitions(user.partnerId)
+            .then(data => {
+              const active = data.find(c => c.status === 'ACTIVE');
+              setActiveCompetition(active || null);
+            })
+            .catch(() => setActiveCompetition(null));
+        }
       });
       return () => task.cancel();
-    }, [refreshCurrentUser, user?.id])
+    }, [refreshCurrentUser, user?.id, user?.partnerId])
   );
 
   const stats = user?.statistics;
@@ -112,16 +122,66 @@ export default function DashboardScreen() {
             />
           </View>
 
-          {/* Kiểm tra định kỳ */}
+          {/* Cuộc thi */}
           <View style={styles.section}>
             <SectionHeader
-              title="Kiểm tra định kỳ"
+              title="Cuộc thi"
               onLinkPress={() => navigation.navigate('ScheduledExam')}
             />
-            <ScheduledExamCard
-              exam={MOCK_SCHEDULED_EXAMS[0] ?? null}
-              onPress={() => navigation.navigate('ScheduledExam')}
-            />
+            {activeCompetition ? (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('ScheduledExam')}
+              >
+                <View style={styles.competitionCard}>
+                  <View style={styles.competitionHeader}>
+                    <View style={styles.competitionIconBox}>
+                      <MaterialCommunityIcons
+                        name={getCompetitionType(activeCompetition) === 'QUIZ' ? 'clipboard-check' : 'gamepad-variant'}
+                        size={28}
+                        color="#F59E0B"
+                      />
+                    </View>
+                    <View style={styles.competitionBadge}>
+                      <MaterialCommunityIcons name="play-circle" size={12} color="#10B981" />
+                      <Text style={styles.competitionBadgeText}>Đang diễn ra</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.competitionTitle} numberOfLines={1}>
+                    {activeCompetition.title}
+                  </Text>
+                  {activeCompetition.description && (
+                    <Text style={styles.competitionDesc} numberOfLines={1}>
+                      {activeCompetition.description}
+                    </Text>
+                  )}
+                  <View style={styles.competitionMeta}>
+                    <View style={styles.competitionMetaItem}>
+                      <MaterialCommunityIcons name="trophy" size={14} color="#F59E0B" />
+                      <Text style={styles.competitionMetaText}>
+                        {getCompetitionType(activeCompetition) === 'QUIZ' ? 'Trắc nghiệm' : 'Trò chơi'}
+                      </Text>
+                    </View>
+                    <View style={styles.competitionMetaItem}>
+                      <MaterialCommunityIcons name="target" size={14} color="#F59E0B" />
+                      <Text style={styles.competitionMetaText}>
+                        {activeCompetition.scope === 'SCHOOL' ? 'Toàn trường' : `Lớp ${activeCompetition.target_class}`}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('ScheduledExam')}
+              >
+                <View style={styles.competitionEmptyCard}>
+                  <MaterialCommunityIcons name="trophy-outline" size={32} color="#9CA3AF" />
+                  <Text style={styles.competitionEmptyText}>Chưa có cuộc thi nào</Text>
+                </View>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Bài tập kiểm tra */}
@@ -290,6 +350,82 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
     paddingHorizontal: 20,
+  },
+  // ── Competition Card ──
+  competitionCard: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#F59E0B',
+    borderRadius: 20,
+    borderWidth: 2,
+    padding: spacing.base,
+  },
+  competitionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  competitionIconBox: {
+    alignItems: 'center',
+    backgroundColor: '#FDE68A',
+    borderRadius: 14,
+    height: 48,
+    justifyContent: 'center',
+    width: 48,
+  },
+  competitionBadge: {
+    alignItems: 'center',
+    backgroundColor: '#D1FAE5',
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  competitionBadgeText: {
+    color: '#10B981',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  competitionTitle: {
+    color: colors.text.primary,
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  competitionDesc: {
+    color: '#92400E',
+    fontSize: 12,
+    marginBottom: spacing.sm,
+  },
+  competitionMeta: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  competitionMetaItem: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  competitionMetaText: {
+    color: '#B45309',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  competitionEmptyCard: {
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderColor: '#E5E7EB',
+    borderRadius: 20,
+    borderWidth: 2,
+    gap: spacing.sm,
+    justifyContent: 'center',
+    paddingVertical: spacing.xl,
+  },
+  competitionEmptyText: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    fontWeight: '600',
   },
   // ── Quiz Card ──
   quizCard: {

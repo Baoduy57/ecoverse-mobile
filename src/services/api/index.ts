@@ -6,3 +6,4 @@ export * from './student';
 export * from './leaderboard';
 export * from './reward';
 export * from './quiz';
+export * from './competition';

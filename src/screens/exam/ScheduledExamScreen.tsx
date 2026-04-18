@@ -1,18 +1,24 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Modal, ActivityIndicator, RefreshControl } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
 import { colors, spacing, borderRadius } from '../../theme';
-import { ExamStatus, ScheduledExam } from '../../types/exam';
-import { MOCK_SCHEDULED_EXAMS } from '../../data/examData';
+import { competitionApi } from '../../services/api/competition';
+import {
+  ICompetition,
+  CompetitionStatus,
+  parseCompetitionDateTime,
+  getCompetitionType,
+  getCompetitionActivityId,
+} from '../../types/competition';
+import { useAuthStore } from '../../store/authStore';
 import type { AppStackParamList } from '../../navigation/AppNavigator';
 import ScreenBackground from '../../components/common/ScreenBackground';
 
-function formatFullDateTime(isoString: string): string {
-  const date = new Date(isoString);
+function formatFullDateTime(date: Date): string {
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
@@ -21,144 +27,240 @@ function formatFullDateTime(isoString: string): string {
   return `${hours}:${minutes} - ${day}/${month}/${year}`;
 }
 
-function getStatusInfo(status: ExamStatus): {
+function getStatusInfo(status: CompetitionStatus): {
   label: string;
   color: string;
   bgColor: string;
   icon: string;
 } {
   switch (status) {
-    case ExamStatus.ACTIVE:
+    case 'ACTIVE':
       return {
         label: 'Đang diễn ra',
         color: '#10B981',
         bgColor: '#D1FAE5',
         icon: 'play-circle',
       };
-    case ExamStatus.UPCOMING:
+    case 'DRAFT':
       return {
-        label: 'Sắp diễn ra',
+        label: 'Nháp',
         color: '#F59E0B',
         bgColor: '#FEF3C7',
-        icon: 'clock-outline',
+        icon: 'pencil-outline',
       };
-    case ExamStatus.ENDED:
+    case 'FINISHED':
       return {
         label: 'Đã kết thúc',
         color: '#6B7280',
         bgColor: '#F3F4F6',
         icon: 'check-circle',
       };
+    case 'CANCELED':
+      return {
+        label: 'Đã hủy',
+        color: '#EF4444',
+        bgColor: '#FEE2E2',
+        icon: 'close-circle',
+      };
+    default:
+      return {
+        label: String(status),
+        color: '#6B7280',
+        bgColor: '#F3F4F6',
+        icon: 'help-circle',
+      };
   }
 }
 
-interface ExamItemCardProps {
-  exam: ScheduledExam;
-  onPress: (exam: ScheduledExam) => void;
+interface CompetitionCardProps {
+  competition: ICompetition;
+  onPress: (c: ICompetition) => void;
+  onLeaderboard: (c: ICompetition) => void;
 }
 
-function ExamItemCard({ exam, onPress }: ExamItemCardProps) {
-  const statusInfo = getStatusInfo(exam.status);
-  const canStart = exam.status === ExamStatus.ACTIVE;
+function CompetitionCard({ competition, onPress, onLeaderboard }: CompetitionCardProps) {
+  const statusInfo = getStatusInfo(competition.status);
+  const canStart = competition.status === 'ACTIVE';
+  const type = getCompetitionType(competition);
+  const startDate = parseCompetitionDateTime(competition.start_time);
+  const endDate = parseCompetitionDateTime(competition.end_time);
+
+  const typeInfo =
+    type === 'QUIZ'
+      ? { icon: 'clipboard-check', label: 'Trắc nghiệm', color: '#8B5CF6', bg: '#F5F3FF' }
+      : { icon: 'gamepad-variant', label: 'Trò chơi', color: '#EF5350', bg: '#FFF5F5' };
 
   return (
-    <TouchableOpacity activeOpacity={canStart ? 0.7 : 1} onPress={() => canStart && onPress(exam)}>
-      <View style={[styles.examCard, !canStart && styles.examCardDisabled]}>
-        {/* Header row */}
-        <View style={styles.examCardHeader}>
-          <View style={styles.examIconBox}>
-            <MaterialCommunityIcons
-              name="file-document-edit"
-              size={28}
-              color={canStart ? '#0EA5E9' : '#9CA3AF'}
-            />
+    <View style={[styles.examCard, !canStart && styles.examCardDisabled]}>
+      {/* Header row */}
+      <View style={styles.examCardHeader}>
+        <View style={[styles.examIconBox, { backgroundColor: typeInfo.bg, borderColor: typeInfo.color + '33' }]}>
+          <MaterialCommunityIcons name={typeInfo.icon as any} size={28} color={canStart ? typeInfo.color : '#9CA3AF'} />
+        </View>
+        <View style={styles.headerBadges}>
+          <View style={[styles.typeBadge, { backgroundColor: typeInfo.bg }]}>
+            <Text style={[styles.typeBadgeText, { color: typeInfo.color }]}>{typeInfo.label}</Text>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
-            <MaterialCommunityIcons
-              name={statusInfo.icon as any}
-              size={12}
-              color={statusInfo.color}
-            />
-            <Text style={[styles.statusBadgeText, { color: statusInfo.color }]}>
-              {statusInfo.label}
-            </Text>
+            <MaterialCommunityIcons name={statusInfo.icon as any} size={12} color={statusInfo.color} />
+            <Text style={[styles.statusBadgeText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
           </View>
         </View>
+      </View>
 
-        {/* Title & school */}
-        <Text style={styles.examTitle}>{exam.title}</Text>
-        <Text style={styles.examSchool}>
-          <MaterialCommunityIcons name="school" size={13} color="#6B7280" /> {exam.createdBy}
-        </Text>
+      {/* Title & description */}
+      <Text style={styles.examTitle}>{competition.title}</Text>
+      {competition.description && (
         <Text style={styles.examDescription} numberOfLines={2}>
-          {exam.description}
+          {competition.description}
         </Text>
+      )}
 
-        {/* Meta info */}
-        <View style={styles.metaGrid}>
+      {/* Meta info */}
+      <View style={styles.metaGrid}>
+        <View style={styles.metaItem}>
+          <MaterialCommunityIcons name="target" size={16} color="#0EA5E9" />
+          <Text style={styles.metaLabel}>
+            {competition.scope === 'SCHOOL' ? 'Toàn trường' : `Lớp ${competition.target_class}`}
+          </Text>
+        </View>
+        {type === 'QUIZ' && competition.quiz_template && (
           <View style={styles.metaItem}>
             <MaterialCommunityIcons name="help-circle-outline" size={16} color="#0EA5E9" />
-            <Text style={styles.metaLabel}>{exam.questionCount} câu hỏi</Text>
+            <Text style={styles.metaLabel}>{competition.quiz_template.question_count} câu hỏi</Text>
           </View>
-          <View style={styles.metaItem}>
-            <MaterialCommunityIcons name="clock-outline" size={16} color="#0EA5E9" />
-            <Text style={styles.metaLabel}>{exam.duration} phút</Text>
-          </View>
-          <View style={styles.metaItem}>
-            <MaterialCommunityIcons name="star-circle-outline" size={16} color="#0EA5E9" />
-            <Text style={styles.metaLabel}>{exam.totalPoints} điểm</Text>
-          </View>
-          <View style={styles.metaItem}>
-            <MaterialCommunityIcons name="book-open-variant" size={16} color="#0EA5E9" />
-            <Text style={styles.metaLabel}>{exam.subject}</Text>
-          </View>
-        </View>
-
-        {/* Time range */}
-        <View style={styles.timeSection}>
-          <View style={styles.timeRow}>
-            <MaterialCommunityIcons name="calendar-arrow-right" size={14} color="#6B7280" />
-            <Text style={styles.timeLabel}>Bắt đầu:</Text>
-            <Text style={styles.timeValue}>{formatFullDateTime(exam.startTime)}</Text>
-          </View>
-          <View style={styles.timeRow}>
-            <MaterialCommunityIcons name="calendar-arrow-left" size={14} color="#6B7280" />
-            <Text style={styles.timeLabel}>Kết thúc:</Text>
-            <Text style={styles.timeValue}>{formatFullDateTime(exam.endTime)}</Text>
-          </View>
-        </View>
-
-        {/* Action button */}
-        {canStart && (
-          <TouchableOpacity
-            style={styles.startButton}
-            activeOpacity={0.8}
-            onPress={() => onPress(exam)}
-          >
-            <MaterialCommunityIcons name="play" size={18} color={colors.text.white} />
-            <Text style={styles.startButtonText}>Bắt đầu làm bài</Text>
-          </TouchableOpacity>
         )}
-        {exam.status === ExamStatus.UPCOMING && (
-          <View style={styles.upcomingNote}>
-            <MaterialCommunityIcons name="information-outline" size={14} color="#F59E0B" />
-            <Text style={styles.upcomingNoteText}>Bài kiểm tra chưa đến giờ mở</Text>
+        {type === 'GAME' && competition.game_round && (
+          <View style={styles.metaItem}>
+            <MaterialCommunityIcons name="package-variant" size={16} color="#0EA5E9" />
+            <Text style={styles.metaLabel}>{competition.game_round.item_count} vật phẩm</Text>
           </View>
         )}
       </View>
-    </TouchableOpacity>
+
+      {/* Time range */}
+      <View style={styles.timeSection}>
+        <View style={styles.timeRow}>
+          <MaterialCommunityIcons name="calendar-arrow-right" size={14} color="#6B7280" />
+          <Text style={styles.timeLabel}>Bắt đầu:</Text>
+          <Text style={styles.timeValue}>{formatFullDateTime(startDate)}</Text>
+        </View>
+        <View style={styles.timeRow}>
+          <MaterialCommunityIcons name="calendar-arrow-left" size={14} color="#6B7280" />
+          <Text style={styles.timeLabel}>Kết thúc:</Text>
+          <Text style={styles.timeValue}>{formatFullDateTime(endDate)}</Text>
+        </View>
+      </View>
+
+      {/* Action buttons */}
+      <View style={styles.actionRow}>
+        {canStart && (
+          <TouchableOpacity style={styles.startButton} activeOpacity={0.8} onPress={() => onPress(competition)}>
+            <MaterialCommunityIcons name="play" size={18} color={colors.text.white} />
+            <Text style={styles.startButtonText}>
+              {type === 'QUIZ' ? 'Bắt đầu làm bài' : 'Bắt đầu chơi'}
+            </Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity style={styles.leaderboardButton} activeOpacity={0.8} onPress={() => onLeaderboard(competition)}>
+          <MaterialCommunityIcons name="trophy-outline" size={18} color="#F59E0B" />
+          <Text style={styles.leaderboardButtonText}>BXH</Text>
+        </TouchableOpacity>
+      </View>
+
+      {competition.status === 'DRAFT' && (
+        <View style={styles.upcomingNote}>
+          <MaterialCommunityIcons name="information-outline" size={14} color="#F59E0B" />
+          <Text style={styles.upcomingNoteText}>Cuộc thi chưa mở</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
 export default function ScheduledExamScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const [pendingExam, setPendingExam] = useState<ScheduledExam | null>(null);
+  const { user } = useAuthStore();
+  const [competitions, setCompetitions] = useState<ICompetition[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pendingCompetition, setPendingCompetition] = useState<ICompetition | null>(null);
 
-  const handleStartExam = () => {
-    if (!pendingExam) return;
-    const exam = pendingExam;
-    setPendingExam(null);
-    navigation.navigate('ExamQuestion', { examId: exam.id });
+  const fetchCompetitions = useCallback(async () => {
+    if (!user?.partnerId) {
+      setError('Không tìm thấy thông tin trường học.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setError(null);
+      const data = await competitionApi.getCompetitions(user.partnerId);
+
+      // FE filter logic theo spec
+      const filtered = data.filter(comp => {
+        // Filter by status: only show ACTIVE
+        if (comp.status !== 'ACTIVE') return false;
+
+        // Filter by scope
+        if (comp.scope === 'SCHOOL') return true;
+        if (comp.scope === 'CLASS') {
+          const userGrade = String(user.grade || '').trim();
+          const targetClass = String(comp.target_class || '').trim();
+          return targetClass === 'ALL' || targetClass === userGrade;
+        }
+        return true;
+      });
+
+      setCompetitions(filtered);
+    } catch (err: any) {
+      console.error('Error fetching competitions:', err);
+      setError('Không thể tải danh sách cuộc thi. Vui lòng thử lại.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.partnerId, user?.grade]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsLoading(true);
+      fetchCompetitions();
+    }, [fetchCompetitions])
+  );
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchCompetitions();
+    setIsRefreshing(false);
+  };
+
+  const handleStartCompetition = () => {
+    if (!pendingCompetition) return;
+    const comp = pendingCompetition;
+    setPendingCompetition(null);
+
+    const type = getCompetitionType(comp);
+    const activityId = getCompetitionActivityId(comp);
+
+    if (type === 'QUIZ') {
+      navigation.navigate('ExamQuestion', {
+        competitionId: comp.competition_id,
+        quizTemplateId: activityId,
+      });
+    } else {
+      navigation.navigate('DragDropGamePlay', {
+        levelId: activityId,
+        competitionId: comp.competition_id,
+      });
+    }
+  };
+
+  const handleLeaderboard = (comp: ICompetition) => {
+    navigation.navigate('CompetitionLeaderboard', {
+      competitionId: comp.competition_id,
+      competitionTitle: comp.title,
+    });
   };
 
   return (
@@ -174,92 +276,134 @@ export default function ScheduledExamScreen() {
           >
             <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Kiểm tra định kỳ</Text>
+          <Text style={styles.headerTitle}>Cuộc thi</Text>
           <View style={styles.headerIconBox}>
-            <MaterialCommunityIcons name="calendar-check" size={22} color="#0EA5E9" />
+            <MaterialCommunityIcons name="trophy" size={22} color="#F59E0B" />
           </View>
         </View>
 
         {/* Sub-header label */}
         <View style={styles.subHeaderRow}>
           <MaterialCommunityIcons name="school-outline" size={15} color={colors.text.secondary} />
-          <Text style={styles.subHeaderText}>Bài kiểm tra do nhà trường lên lịch</Text>
+          <Text style={styles.subHeaderText}>Các cuộc thi đang diễn ra</Text>
         </View>
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {MOCK_SCHEDULED_EXAMS.length === 0 ? (
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIconBox}>
-                <MaterialCommunityIcons name="calendar-remove" size={48} color="#9CA3AF" />
-              </View>
-              <Text style={styles.emptyTitle}>Không có bài kiểm tra</Text>
-              <Text style={styles.emptySubtitle}>
-                Nhà trường chưa lên lịch bài kiểm tra định kỳ nào.{'\n'}Hãy kiểm tra lại sau!
-              </Text>
+        {isLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="large" color="#F59E0B" />
+            <Text style={styles.loadingText}>Đang tải cuộc thi...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconBox}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={48} color="#9CA3AF" />
             </View>
-          ) : (
-            MOCK_SCHEDULED_EXAMS.map(exam => (
-              <ExamItemCard key={exam.id} exam={exam} onPress={setPendingExam} />
-            ))
-          )}
-
-          <View style={{ height: 40 }} />
-        </ScrollView>
+            <Text style={styles.emptyTitle}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchCompetitions}>
+              <Text style={styles.retryText}>Thử lại</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor="#F59E0B" colors={['#F59E0B']} />
+            }
+          >
+            {competitions.length === 0 ? (
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIconBox}>
+                  <MaterialCommunityIcons name="trophy-broken" size={48} color="#9CA3AF" />
+                </View>
+                <Text style={styles.emptyTitle}>Không có cuộc thi</Text>
+                <Text style={styles.emptySubtitle}>
+                  Hiện chưa có cuộc thi nào đang diễn ra.{'\n'}Hãy kiểm tra lại sau!
+                </Text>
+              </View>
+            ) : (
+              competitions.map(comp => (
+                <CompetitionCard
+                  key={comp.competition_id}
+                  competition={comp}
+                  onPress={setPendingCompetition}
+                  onLeaderboard={handleLeaderboard}
+                />
+              ))
+            )}
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        )}
       </SafeAreaView>
 
       {/* Confirmation Dialog */}
       <Modal
-        visible={pendingExam !== null}
+        visible={pendingCompetition !== null}
         transparent
         animationType="fade"
-        onRequestClose={() => setPendingExam(null)}
+        onRequestClose={() => setPendingCompetition(null)}
       >
         <View style={styles.dialogOverlay}>
           <View style={styles.dialogBox}>
             <View style={styles.dialogIconRow}>
               <View style={styles.dialogIconBg}>
                 <MaterialCommunityIcons
-                  name="file-document-edit-outline"
+                  name={
+                    pendingCompetition && getCompetitionType(pendingCompetition) === 'QUIZ'
+                      ? 'clipboard-check'
+                      : 'gamepad-variant'
+                  }
                   size={32}
-                  color="#0EA5E9"
+                  color="#F59E0B"
                 />
               </View>
             </View>
-            <Text style={styles.dialogTitle}>Bắt đầu làm bài?</Text>
+            <Text style={styles.dialogTitle}>
+              {pendingCompetition && getCompetitionType(pendingCompetition) === 'QUIZ'
+                ? 'Bắt đầu làm bài?'
+                : 'Bắt đầu chơi?'}
+            </Text>
             <Text style={styles.dialogExamTitle} numberOfLines={2}>
-              {pendingExam?.title}
+              {pendingCompetition?.title}
             </Text>
             <View style={styles.dialogMetaRow}>
               <View style={styles.dialogMetaChip}>
-                <MaterialCommunityIcons name="help-circle-outline" size={14} color="#0EA5E9" />
-                <Text style={styles.dialogMetaText}>{pendingExam?.questionCount} câu</Text>
+                <MaterialCommunityIcons name="trophy" size={14} color="#F59E0B" />
+                <Text style={styles.dialogMetaText}>Cuộc thi</Text>
               </View>
               <View style={styles.dialogMetaChip}>
-                <MaterialCommunityIcons name="clock-outline" size={14} color="#0EA5E9" />
-                <Text style={styles.dialogMetaText}>{pendingExam?.duration} phút</Text>
-              </View>
-              <View style={styles.dialogMetaChip}>
-                <MaterialCommunityIcons name="star-circle-outline" size={14} color="#0EA5E9" />
-                <Text style={styles.dialogMetaText}>{pendingExam?.totalPoints} điểm</Text>
+                <MaterialCommunityIcons
+                  name={
+                    pendingCompetition && getCompetitionType(pendingCompetition) === 'QUIZ'
+                      ? 'clipboard-check'
+                      : 'gamepad-variant'
+                  }
+                  size={14}
+                  color="#F59E0B"
+                />
+                <Text style={styles.dialogMetaText}>
+                  {pendingCompetition && getCompetitionType(pendingCompetition) === 'QUIZ'
+                    ? 'Trắc nghiệm'
+                    : 'Trò chơi'}
+                </Text>
               </View>
             </View>
             <Text style={styles.dialogWarning}>
-              Sau khi bắt đầu, thời gian sẽ được tính liên tục.
+              {pendingCompetition && getCompetitionType(pendingCompetition) === 'QUIZ'
+                ? 'Sau khi bắt đầu, thời gian sẽ được tính liên tục.'
+                : 'Điểm sẽ được ghi nhận vào bảng xếp hạng cuộc thi.'}
             </Text>
             <View style={styles.dialogButtons}>
               <TouchableOpacity
                 style={styles.dialogCancelBtn}
-                onPress={() => setPendingExam(null)}
+                onPress={() => setPendingCompetition(null)}
                 activeOpacity={0.8}
               >
                 <Text style={styles.dialogCancelText}>Hủy</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.dialogConfirmBtn}
-                onPress={handleStartExam}
+                onPress={handleStartCompetition}
                 activeOpacity={0.8}
               >
                 <MaterialCommunityIcons name="play" size={18} color={colors.text.white} />
@@ -310,7 +454,7 @@ const styles = StyleSheet.create({
   },
   headerIconBox: {
     alignItems: 'center',
-    backgroundColor: '#E0F2FE',
+    backgroundColor: '#FEF3C7',
     borderRadius: borderRadius.full,
     height: 40,
     justifyContent: 'center',
@@ -330,16 +474,26 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
   },
+  loadingWrap: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  loadingText: {
+    color: colors.text.secondary,
+    fontSize: 14,
+    marginTop: spacing.md,
+  },
   // Exam card
   examCard: {
     backgroundColor: colors.surface,
-    borderColor: 'rgba(14, 165, 233, 0.15)',
+    borderColor: 'rgba(245, 158, 11, 0.2)',
     borderRadius: 20,
     borderWidth: 2,
     elevation: 6,
     marginBottom: 16,
     padding: spacing.base,
-    shadowColor: '#0EA5E9',
+    shadowColor: '#F59E0B',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
@@ -357,13 +511,26 @@ const styles = StyleSheet.create({
   },
   examIconBox: {
     alignItems: 'center',
-    backgroundColor: '#E0F2FE',
-    borderColor: 'rgba(14, 165, 233, 0.2)',
+    borderColor: 'rgba(245, 158, 11, 0.2)',
     borderRadius: 14,
     borderWidth: 2,
     height: 52,
     justifyContent: 'center',
     width: 52,
+  },
+  headerBadges: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  typeBadge: {
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  typeBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   statusBadge: {
     alignItems: 'center',
@@ -383,12 +550,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     marginBottom: 4,
-  },
-  examSchool: {
-    color: '#6B7280',
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 6,
   },
   examDescription: {
     color: colors.text.secondary,
@@ -439,10 +600,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   startButton: {
     alignItems: 'center',
-    backgroundColor: '#0EA5E9',
+    backgroundColor: '#F59E0B',
     borderRadius: 14,
+    flex: 1,
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'center',
@@ -453,6 +619,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  leaderboardButton: {
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    borderColor: '#F59E0B',
+    borderRadius: 14,
+    borderWidth: 2,
+    flexDirection: 'row',
+    gap: 6,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  leaderboardButtonText: {
+    color: '#B45309',
+    fontSize: 14,
+    fontWeight: '700',
+  },
   upcomingNote: {
     alignItems: 'center',
     backgroundColor: '#FEF3C7',
@@ -460,6 +643,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 6,
     justifyContent: 'center',
+    marginTop: spacing.sm,
     paddingVertical: 8,
   },
   upcomingNoteText: {
@@ -487,12 +671,25 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     marginBottom: spacing.xs,
+    textAlign: 'center',
   },
   emptySubtitle: {
     color: colors.text.secondary,
     fontSize: 13,
     lineHeight: 20,
     textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#F59E0B',
+    borderRadius: borderRadius.lg,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  retryText: {
+    color: colors.text.white,
+    fontSize: 14,
+    fontWeight: '700',
   },
   // Confirmation dialog
   dialogOverlay: {
@@ -519,7 +716,7 @@ const styles = StyleSheet.create({
   },
   dialogIconBg: {
     alignItems: 'center',
-    backgroundColor: '#E0F2FE',
+    backgroundColor: '#FEF3C7',
     borderRadius: 50,
     height: 64,
     justifyContent: 'center',
@@ -549,7 +746,7 @@ const styles = StyleSheet.create({
   },
   dialogMetaChip: {
     alignItems: 'center',
-    backgroundColor: '#E0F2FE',
+    backgroundColor: '#FEF3C7',
     borderRadius: 10,
     flexDirection: 'row',
     gap: 4,
@@ -557,7 +754,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   dialogMetaText: {
-    color: '#0EA5E9',
+    color: '#B45309',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -594,7 +791,7 @@ const styles = StyleSheet.create({
   },
   dialogConfirmBtn: {
     alignItems: 'center',
-    backgroundColor: '#0EA5E9',
+    backgroundColor: '#F59E0B',
     borderRadius: 14,
     flex: 1,
     flexDirection: 'row',
