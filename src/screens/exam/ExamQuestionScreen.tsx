@@ -129,11 +129,13 @@ export default function ExamQuestionScreen() {
       const finalCorrectCount = countCorrect();
 
       try {
-        const result = await quizApi.submitQuiz({
+        const payload = {
           quiz_template_id: quizTemplateId,
           duration,
           answers: finalAnswers,
-        });
+        };
+        console.log('[Quiz] Submitting quiz:', JSON.stringify(payload, null, 2));
+        const result = await quizApi.submitQuiz(payload);
 
         // Register participant for competition leaderboard
         if (competitionId && user?.id) {
@@ -163,7 +165,7 @@ export default function ExamQuestionScreen() {
           placements: result.placements,
         });
       } catch (err: any) {
-        console.error('Error submitting quiz:', err);
+        console.error('Error submitting quiz:', err?.response?.status, JSON.stringify(err?.response?.data || err?.message));
         navigation.navigate('ExamResult', {
           competitionId,
           quizTitle,
