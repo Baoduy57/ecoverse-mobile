@@ -1,63 +1,192 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { colors, spacing, borderRadius } from '../../theme';
-import { QuizAnswer } from '../../types/quiz';
-import { MOCK_EXAM_QUESTIONS, MOCK_SCHEDULED_EXAMS } from '../../data/examData';
+import { quizApi } from '../../services/api/quiz';
+import { competitionApi } from '../../services/api/competition';
+import { useAuthStore } from '../../store/authStore';
 import type { AppStackParamList } from '../../navigation/AppNavigator';
+import type { StudentQuizQuestion, StudentQuizSubmitPayloadAnswer } from '../../types/quiz';
 import ScreenBackground from '../../components/common/ScreenBackground';
 
 type ExamQuestionRouteProp = RouteProp<AppStackParamList, 'ExamQuestion'>;
 
-const ACCENT = '#0EA5E9';
-const ACCENT_LIGHT = '#E0F2FE';
-const ACCENT_DARK = '#0284C7';
+const ACCENT = '#F59E0B';
+const ACCENT_LIGHT = '#FEF3C7';
 
 export default function ExamQuestionScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const route = useRoute<ExamQuestionRouteProp>();
-  const examId = route.params?.examId ?? 'exam-2';
+  const { user } = useAuthStore();
 
-  const exam = MOCK_SCHEDULED_EXAMS.find(e => e.id === examId) ?? MOCK_SCHEDULED_EXAMS[0];
-  const questions = MOCK_EXAM_QUESTIONS;
+  const competitionId = route.params?.competitionId;
+  const quizTemplateId = route.params?.quizTemplateId || route.params?.examId || '';
 
+  // Data states
+  const [questions, setQuestions] = useState<StudentQuizQuestion[]>([]);
+  const [quizTitle, setQuizTitle] = useState('Cuộc thi');
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Quiz progress states
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [answers, setAnswers] = useState<QuizAnswer[]>([]);
-  const [totalPoints, setTotalPoints] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(exam.duration * 60); // seconds
+  // selections: map from questionId -> selected option text (for UI display)
+  const [selections, setSelections] = useState<Record<string, string>>({});
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimeRef = useRef<number>(Date.now());
 
   const currentQuestion = questions[currentIndex];
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const selectedOption = currentQuestion ? selections[currentQuestion.id] || null : null;
 
+  // Load quiz data from API
+  useEffect(() => {
+    const loadQuiz = async () => {
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+        const template = await quizApi.startQuiz(quizTemplateId);
+        setQuizTitle(template.title || 'Cuộc thi');
+        if (template.questions && template.questions.length > 0) {
+          setQuestions(template.questions);
+          const autoTime = Math.max(5, template.questions.length) * 60;
+          setTimeLeft(autoTime);
+          startTimeRef.current = Date.now();
+        } else {
+          setLoadError('Bài kiểm tra này chưa có câu hỏi.');
+        }
+      } catch (err: any) {
+        console.error('Error loading quiz for competition:', err);
+        setLoadError('Không thể tải câu hỏi. Vui lòng thử lại.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadQuiz();
+  }, [quizTemplateId]);
+
+  // Detect BE answer format: letter ("A") or full text ("Rác tái chế")
+  const resolveAnswer = useCallback((q: StudentQuizQuestion, sel: string) => {
+    const idx = q.options.indexOf(sel);
+    if (idx < 0) return '';
+    const letter = String.fromCharCode(65 + idx);
+    // If BE correct_answer is a single letter (A-D), submit letter
+    if (q.correct_answer && /^[A-Da-d]$/.test(q.correct_answer)) {
+      return letter;
+    }
+    // Otherwise BE uses full text, submit full option text
+    return sel;
+  }, []);
+
+  const isAnswerCorrect = useCallback((q: StudentQuizQuestion, sel: string) => {
+    const idx = q.options.indexOf(sel);
+    if (idx < 0) return false;
+    const letter = String.fromCharCode(65 + idx);
+    const ca = q.correct_answer;
+    if (!ca) return false;
+    // Match letter format
+    if (/^[A-Da-d]$/.test(ca)) return letter.toUpperCase() === ca.toUpperCase();
+    // Match full text
+    return sel === ca;
+  }, []);
+
+  // Build answers from selections map
+  const buildAnswers = useCallback(() => {
+    return questions.map(q => {
+      const sel = selections[q.id];
+      if (!sel) return null;
+      return {
+        question_id: q.id,
+        selected_answer: resolveAnswer(q, sel),
+      } as StudentQuizSubmitPayloadAnswer;
+    }).filter((a): a is StudentQuizSubmitPayloadAnswer => a !== null && a.selected_answer !== '');
+  }, [questions, selections, resolveAnswer]);
+
+  const countCorrect = useCallback(() => {
+    let count = 0;
+    for (const q of questions) {
+      const sel = selections[q.id];
+      if (!sel) continue;
+      if (isAnswerCorrect(q, sel)) count++;
+    }
+    return count;
+  }, [questions, selections, isAnswerCorrect]);
+
+  // Submit function
   const submitExam = useCallback(
-    (finalAnswers: QuizAnswer[], finalPoints: number) => {
+    async () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      const correctCount = finalAnswers.filter(a => a.isCorrect).length;
-      const wrongCount = finalAnswers.length - correctCount;
-      navigation.navigate('ExamResult', {
-        examId,
-        totalQuestions: questions.length,
-        correctAnswers: correctCount,
-        wrongAnswers: wrongCount,
-        totalPoints: finalPoints,
-        answers: finalAnswers,
-      });
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+
+      const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
+      const finalAnswers = buildAnswers();
+      const finalCorrectCount = countCorrect();
+
+      try {
+        const payload = {
+          quiz_template_id: quizTemplateId,
+          duration,
+          answers: finalAnswers,
+        };
+        console.log('[Quiz] Submitting quiz:', JSON.stringify(payload, null, 2));
+        const result = await quizApi.submitQuiz(payload);
+
+        // Register participant for competition leaderboard
+        if (competitionId && user?.id) {
+          const now = new Date();
+          const pad = (n: number) => n.toString().padStart(2, '0');
+          const joinedAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+          try {
+            console.log('[Competition] Registering quiz participant:', { competitionId, studentId: user.id, joinedAt, totalScore: Math.round(result.score) });
+            await competitionApi.registerParticipant(competitionId, user.id, {
+              joinedAt,
+              totalScore: Math.round(result.score),
+            });
+            console.log('[Competition] Quiz participant registered successfully');
+          } catch (regErr: any) {
+            console.error('Error registering competition participant:', regErr?.response?.status, regErr?.response?.data || regErr?.message);
+          }
+        }
+
+        navigation.navigate('ExamResult', {
+          competitionId,
+          quizTitle: result.quiz_title || quizTitle,
+          totalQuestions: result.total_questions,
+          correctAnswers: result.correct_amount,
+          wrongAnswers: result.wrong_amount,
+          totalPoints: result.score,
+          duration: result.duration,
+          placements: result.placements,
+        });
+      } catch (err: any) {
+        console.error('Error submitting quiz:', err?.response?.status, JSON.stringify(err?.response?.data || err?.message));
+        navigation.navigate('ExamResult', {
+          competitionId,
+          quizTitle,
+          totalQuestions: questions.length,
+          correctAnswers: finalCorrectCount,
+          wrongAnswers: questions.length - finalCorrectCount,
+          totalPoints: finalCorrectCount * 10,
+          duration,
+        });
+      }
     },
-    [examId, navigation, questions.length]
+    [competitionId, quizTemplateId, user?.id, navigation, quizTitle, questions.length, isSubmitting, buildAnswers, countCorrect]
   );
 
   // Countdown timer
   useEffect(() => {
+    if (isLoading || questions.length === 0) return;
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          // Time's up — auto submit with whatever we have
-          submitExam(answers, totalPoints);
+          submitExam();
           return 0;
         }
         return prev - 1;
@@ -66,84 +195,71 @@ export default function ExamQuestionScreen() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [answers, totalPoints, submitExam]);
-
-  const delayRef = useRef<NodeJS.Timeout | null>(null);
-  const advanceRef = useRef<(() => void) | null>(null);
-  const isAnsweringRef = useRef(false);
-
-  useEffect(() => {
-    return () => {
-      if (delayRef.current) clearTimeout(delayRef.current);
-    };
-  }, []);
+  }, [isLoading, questions.length, submitExam]);
 
   const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, '0');
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
   };
 
   const isTimeLow = timeLeft <= 60;
+  const answeredCount = Object.keys(selections).length;
 
-  const handleSelectOption = (optionId: string) => {
-    if (showFeedback) return;
-    setSelectedOption(optionId);
+  const handleSelectOption = (option: string) => {
+    if (!currentQuestion) return;
+    setSelections(prev => ({ ...prev, [currentQuestion.id]: option }));
   };
 
   const handleNext = () => {
-    if (!selectedOption) return;
-    if (isAnsweringRef.current) return;
-    isAnsweringRef.current = true;
-
-    const isCorrect = selectedOption === currentQuestion.correctOptionId;
-    const points = isCorrect ? currentQuestion.points : 0;
-
-    const answer: QuizAnswer = {
-      questionId: currentQuestion.id,
-      selectedOptionId: selectedOption,
-      isCorrect,
-      timeSpent: 0,
-    };
-    const newAnswers = [...answers, answer];
-    const newPoints = totalPoints + points;
-
-    setAnswers(newAnswers);
-    setTotalPoints(newPoints);
-    setShowFeedback(true);
-
-    const advance = () => {
-      isAnsweringRef.current = false;
-      if (currentIndex < questions.length - 1) {
-        setCurrentIndex(currentIndex + 1);
-        setSelectedOption(null);
-        setShowFeedback(false);
-      } else {
-        submitExam(newAnswers, newPoints);
-      }
-    };
-
-    delayRef.current = setTimeout(advance, 1200);
-    advanceRef.current = advance;
-  };
-
-  const handleNextFromFeedback = () => {
-    if (delayRef.current) clearTimeout(delayRef.current);
-    if (advanceRef.current) {
-      advanceRef.current();
-      advanceRef.current = null;
+    if (!selectedOption || !currentQuestion) return;
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      submitExam();
     }
   };
 
-  const isCorrectOption = (optionId: string) =>
-    showFeedback && optionId === currentQuestion.correctOptionId;
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
 
-  const isWrongOption = (optionId: string) =>
-    showFeedback &&
-    optionId === selectedOption &&
-    selectedOption !== currentQuestion.correctOptionId;
+  // Loading screen
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <ScreenBackground />
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={ACCENT} />
+          <Text style={styles.loadingText}>Đang tải câu hỏi...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Error screen
+  if (loadError || !currentQuestion) {
+    return (
+      <View style={styles.container}>
+        <ScreenBackground />
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <View style={styles.loadingWrap}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color="#9CA3AF" />
+            <Text style={styles.loadingText}>{loadError || 'Không thể tải câu hỏi.'}</Text>
+            <TouchableOpacity
+              style={styles.errorBackButton}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.errorBackText}>Quay lại</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -154,7 +270,7 @@ export default function ExamQuestionScreen() {
           <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
             <MaterialCommunityIcons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Kiểm tra định kỳ</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>Cuộc thi</Text>
           {/* Timer */}
           <View style={[styles.timerBadge, isTimeLow && styles.timerBadgeLow]}>
             <MaterialCommunityIcons
@@ -174,8 +290,8 @@ export default function ExamQuestionScreen() {
             CÂU {currentIndex + 1}/{questions.length}
           </Text>
           <View style={styles.pointsBadge}>
-            <MaterialCommunityIcons name="star" size={16} color={colors.accent} />
-            <Text style={styles.pointsText}>{totalPoints}</Text>
+            <MaterialCommunityIcons name="check-decagram" size={16} color={ACCENT} />
+            <Text style={styles.pointsText}>{answeredCount}/{questions.length}</Text>
           </View>
         </View>
         <View style={styles.progressBar}>
@@ -195,130 +311,83 @@ export default function ExamQuestionScreen() {
         >
           {/* Question Card */}
           <View style={styles.questionCard}>
-            <Text style={styles.questionText}>{currentQuestion.question}</Text>
+            <Text style={styles.questionText}>{currentQuestion.text}</Text>
             <Text style={styles.questionSubtext}>Chọn đáp án đúng bên dưới.</Text>
           </View>
 
-          {/* Options */}
+          {/* Options - map from string[] */}
           <View style={styles.optionsContainer}>
-            {currentQuestion.options.map(option => (
-              <TouchableOpacity
-                key={`${currentQuestion.id}-${option.id}`}
-                style={[
-                  styles.optionButton,
-                  selectedOption === option.id && !showFeedback && styles.optionButtonSelected,
-                  isCorrectOption(option.id) && styles.optionButtonCorrect,
-                  isWrongOption(option.id) && styles.optionButtonWrong,
-                ]}
-                onPress={() => handleSelectOption(option.id)}
-                disabled={showFeedback}
-                activeOpacity={0.7}
-              >
-                <View
+            {currentQuestion.options.map((option, index) => {
+              const label = String.fromCharCode(65 + index); // A, B, C, D...
+              return (
+                <TouchableOpacity
+                  key={`${currentQuestion.id}-${index}`}
                   style={[
-                    styles.optionIcon,
-                    selectedOption === option.id && !showFeedback && styles.optionIconSelected,
-                    isCorrectOption(option.id) && styles.optionIconCorrect,
-                    isWrongOption(option.id) && styles.optionIconWrong,
+                    styles.optionButton,
+                    selectedOption === option && styles.optionButtonSelected,
                   ]}
+                  onPress={() => handleSelectOption(option)}
+                  activeOpacity={0.7}
                 >
-                  {option.icon && (
-                    <MaterialCommunityIcons
-                      name={option.icon as any}
-                      size={24}
-                      color={
-                        isCorrectOption(option.id)
-                          ? colors.status.success
-                          : isWrongOption(option.id)
-                            ? colors.status.error
-                            : selectedOption === option.id
-                              ? ACCENT
-                              : colors.text.secondary
-                      }
-                    />
-                  )}
-                </View>
-                <Text
-                  style={[
-                    styles.optionText,
-                    selectedOption === option.id && !showFeedback && styles.optionTextSelected,
-                    isCorrectOption(option.id) && styles.optionTextCorrect,
-                    isWrongOption(option.id) && styles.optionTextWrong,
-                  ]}
-                >
-                  {option.text}
-                </Text>
-                {isCorrectOption(option.id) && (
-                  <MaterialCommunityIcons
-                    name="check-circle"
-                    size={24}
-                    color={colors.status.success}
-                  />
-                )}
-                {isWrongOption(option.id) && (
-                  <MaterialCommunityIcons
-                    name="close-circle"
-                    size={24}
-                    color={colors.status.error}
-                  />
-                )}
+                  <View
+                    style={[
+                      styles.optionIcon,
+                      selectedOption === option && styles.optionIconSelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.optionLabel,
+                        selectedOption === option && styles.optionLabelSelected,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.optionText,
+                      selectedOption === option && styles.optionTextSelected,
+                    ]}
+                  >
+                    {option}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Navigation buttons */}
+          <View style={styles.navButtonRow}>
+            {currentIndex > 0 && (
+              <TouchableOpacity style={styles.prevButton} onPress={handlePrev} activeOpacity={0.8}>
+                <MaterialCommunityIcons name="arrow-left" size={22} color={ACCENT} />
+                <Text style={styles.prevButtonText}>QUAY LẠI</Text>
               </TouchableOpacity>
-            ))}
+            )}
+            {selectedOption && (
+              <TouchableOpacity
+                style={[styles.nextButton, currentIndex === 0 && { flex: 1 }]}
+                onPress={handleNext}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.nextButtonText}>
+                  {currentIndex < questions.length - 1 ? 'CÂU TIẾP THEO' : 'NỘP BÀI'}
+                </Text>
+                <MaterialCommunityIcons name="arrow-right" size={22} color={colors.text.white} />
+              </TouchableOpacity>
+            )}
           </View>
-
-          {/* Next button (before feedback) */}
-          {selectedOption && !showFeedback && (
-            <TouchableOpacity style={styles.nextButton} onPress={handleNext} activeOpacity={0.8}>
-              <Text style={styles.nextButtonText}>CÂU TIẾP THEO</Text>
-              <MaterialCommunityIcons name="arrow-right" size={24} color={colors.text.white} />
-            </TouchableOpacity>
-          )}
         </ScrollView>
-
-        {/* Feedback bar */}
-        {showFeedback && (
-          <View
-            style={[
-              styles.feedbackContainer,
-              selectedOption === currentQuestion.correctOptionId
-                ? styles.feedbackSuccess
-                : styles.feedbackError,
-            ]}
-          >
-            <View style={styles.feedbackContent}>
-              <View style={styles.feedbackIconCircle}>
-                <MaterialCommunityIcons
-                  name={
-                    selectedOption === currentQuestion.correctOptionId
-                      ? 'check-circle'
-                      : 'close-circle'
-                  }
-                  size={28}
-                  color={selectedOption === currentQuestion.correctOptionId ? '#2E7D32' : '#D32F2F'}
-                />
-              </View>
-              <View style={styles.feedbackTextContainer}>
-                <Text style={styles.feedbackTitle}>
-                  {selectedOption === currentQuestion.correctOptionId ? 'Chính xác!' : 'Sai rồi!'}
-                </Text>
-                <Text style={styles.feedbackMessage} numberOfLines={2}>
-                  {currentQuestion.explanation ?? 'Hãy ghi nhớ để lần sau không bị sai nhé!'}
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              style={styles.feedbackNextButton}
-              onPress={handleNextFromFeedback}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.feedbackNextButtonText}>
-                {currentIndex < questions.length - 1 ? 'CÂU TIẾP THEO' : 'NỘP BÀI'}
-              </Text>
-              <MaterialCommunityIcons name="arrow-right" size={20} color={colors.text.primary} />
-            </TouchableOpacity>
-          </View>
-        )}
       </SafeAreaView>
+
+      {/* Submitting overlay */}
+      {isSubmitting && (
+        <View style={styles.submittingOverlay}>
+          <ActivityIndicator size="large" color={colors.text.white} />
+          <Text style={styles.submittingText}>Đang nộp bài...</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -328,6 +397,30 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 220 },
+  loadingWrap: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    padding: spacing.xl,
+  },
+  loadingText: {
+    color: colors.text.secondary,
+    fontSize: 14,
+    marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  errorBackButton: {
+    backgroundColor: ACCENT,
+    borderRadius: borderRadius.lg,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  errorBackText: {
+    color: colors.text.white,
+    fontSize: 14,
+    fontWeight: '700',
+  },
   // Header
   header: {
     alignItems: 'center',
@@ -393,8 +486,8 @@ const styles = StyleSheet.create({
   },
   pointsBadge: {
     alignItems: 'center',
-    backgroundColor: '#FFF3E0',
-    borderColor: colors.accent,
+    backgroundColor: ACCENT_LIGHT,
+    borderColor: ACCENT,
     borderRadius: borderRadius.full,
     borderWidth: 2,
     flexDirection: 'row',
@@ -403,7 +496,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   pointsText: {
-    color: colors.accent,
+    color: ACCENT,
     fontSize: 15,
     fontWeight: '800',
   },
@@ -488,28 +581,60 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 44,
   },
-  optionIconSelected: { backgroundColor: '#BAE6FD' },
+  optionIconSelected: { backgroundColor: '#FDE68A' },
   optionIconCorrect: { backgroundColor: '#C8E6C9' },
   optionIconWrong: { backgroundColor: '#FFCDD2' },
+  optionLabel: {
+    color: colors.text.secondary,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  optionLabelSelected: { color: '#B45309' },
+  optionLabelCorrect: { color: '#2E7D32' },
+  optionLabelWrong: { color: '#D32F2F' },
   optionText: {
     color: colors.text.primary,
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
   },
-  optionTextSelected: { color: ACCENT },
+  optionTextSelected: { color: '#B45309' },
   optionTextCorrect: { color: '#2E7D32' },
   optionTextWrong: { color: '#D32F2F' },
-  // Next button
+  // Navigation buttons
+  navButtonRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.base,
+  },
+  prevButton: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderColor: ACCENT,
+    borderRadius: 16,
+    borderWidth: 2,
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    justifyContent: 'center',
+    paddingVertical: 14,
+  },
+  prevButtonText: {
+    color: ACCENT,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   nextButton: {
     alignItems: 'center',
     backgroundColor: ACCENT,
     borderRadius: 16,
     elevation: 4,
+    flex: 1,
     flexDirection: 'row',
     gap: spacing.sm,
     justifyContent: 'center',
-    marginHorizontal: spacing.base,
     paddingVertical: 14,
     shadowColor: ACCENT,
     shadowOffset: { width: 0, height: 4 },
@@ -518,65 +643,26 @@ const styles = StyleSheet.create({
   },
   nextButtonText: {
     color: colors.text.white,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  // Feedback
-  feedbackContainer: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+  // Submitting overlay
+  submittingOverlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     bottom: 0,
-    elevation: 10,
+    justifyContent: 'center',
     left: 0,
-    padding: spacing.base,
-    paddingBottom: 34,
     position: 'absolute',
     right: 0,
+    top: 0,
+    zIndex: 999,
   },
-  feedbackSuccess: { backgroundColor: '#F0FDF4' },
-  feedbackError: { backgroundColor: '#FFF5F5' },
-  feedbackContent: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.md,
-  },
-  feedbackIconCircle: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 22,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
-  feedbackTextContainer: { flex: 1 },
-  feedbackTitle: {
-    color: colors.text.primary,
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  feedbackMessage: {
-    color: colors.text.secondary,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  feedbackNextButton: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: '#E2E8F0',
-    borderRadius: 14,
-    borderWidth: 2,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    justifyContent: 'center',
-    paddingVertical: 12,
-  },
-  feedbackNextButtonText: {
-    color: colors.text.primary,
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+  submittingText: {
+    color: colors.text.white,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: spacing.md,
   },
 });

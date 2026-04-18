@@ -13,6 +13,7 @@ import { colors } from '../../theme';
 import type { AppStackParamList } from '../../navigation/AppNavigator';
 import { useAuthStore } from '../../store/authStore';
 import { gameApi } from '../../services/api/game';
+import { competitionApi } from '../../services/api/competition';
 import type { IWasteBin, IGameAttempt, IPlacementResponse, BinCode } from '../../types';
 import {
   GamePlayHeader,
@@ -54,7 +55,9 @@ export default function DragDropGamePlayScreen() {
   const { user, refreshCurrentUser } = useAuthStore();
   const levelId = route.params?.levelId || '';
   const replayAttemptId = route.params?.gameAttemptId;
+  const competitionId = route.params?.competitionId;
   const isReplayMode = Boolean(replayAttemptId);
+  const isCompetitionMode = Boolean(competitionId);
 
   const [isLoading, setIsLoading] = useState(true);
   const [bins, setBins] = useState<IWasteBin[]>([]);
@@ -562,6 +565,24 @@ export default function DragDropGamePlayScreen() {
 
     setFinalSummary(summaryPayload);
     setShowResult(true);
+
+    // Competition mode: register participant on leaderboard
+    if (isCompetitionMode && competitionId && user?.id) {
+      try {
+        const now = new Date();
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        const joinedAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        const body = {
+          joinedAt,
+          totalScore: Math.round(finalScore),
+        };
+        console.log('[Competition] Registering participant:', { competitionId, studentId: user.id, body });
+        await competitionApi.registerParticipant(competitionId, user.id, body);
+        console.log('[Competition] Participant registered successfully');
+      } catch (regErr: any) {
+        console.error('Error registering competition game participant:', regErr?.response?.status, regErr?.response?.data || regErr?.message);
+      }
+    }
 
     isFinishingRef.current = false;
   };

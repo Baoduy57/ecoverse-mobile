@@ -36,6 +36,7 @@ export * from './game';
 export * from './leaderboard';
 export * from './reward';
 export * from './student';
+export * from './competition';
 
 // Re-export enums and types từ constants
 export { GameType, Difficulty, WasteType } from '../constants/game';

@@ -82,7 +82,7 @@ export default function RewardHistoryItem({
     <View style={[styles.wrapper, isFirst && styles.wrapperFirst, isLast && styles.wrapperLast]}>
       {/* Timeline line */}
       {!isLast && <View style={styles.timelineLine} />}
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.container, { borderLeftColor: statusInfo.color }]}
         activeOpacity={onPress ? 0.7 : 1}
         onPress={onPress}
@@ -155,9 +155,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   image: {
-    height: '100%',
+    height: '110%',
     resizeMode: 'cover',
-    width: '100%',
+    width: '110%',
   },
   imageContainer: {
     backgroundColor: colors.background,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
   timelineLine: {
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text.primary,
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '600',
   },
   wrapper: {

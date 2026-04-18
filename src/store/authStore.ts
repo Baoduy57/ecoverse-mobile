@@ -108,6 +108,14 @@ const mapApiUserToStoreUser = (rawResponse: any, fallbackUser: IUser | null): IU
       fallbackUser?.parentName,
     parentEmail: apiUser.parent_email || apiUser.parentEmail || fallbackUser?.parentEmail,
     partnerId: apiUser.partner_id || responseData.partner_id || fallbackUser?.partnerId,
+    statistics: apiUser.statistics
+      ? {
+          total_games_played: Number(apiUser.statistics.total_games_played ?? 0),
+          total_average_accuracy: Number(apiUser.statistics.total_average_accuracy ?? 0),
+          total_quizzes_completed: Number(apiUser.statistics.total_quizzes_completed ?? 0),
+          total_achievements_unlocked: Number(apiUser.statistics.total_achievements_unlocked ?? 0),
+        }
+      : fallbackUser?.statistics,
   };
 };
 

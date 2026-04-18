@@ -5,14 +5,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { colors, spacing, borderRadius } from '../../theme';
-import { MOCK_EXAM_QUESTIONS, MOCK_SCHEDULED_EXAMS } from '../../data/examData';
 import type { AppStackParamList } from '../../navigation/AppNavigator';
 import ScreenBackground from '../../components/common/ScreenBackground';
 
 type ExamResultRouteProp = RouteProp<AppStackParamList, 'ExamResult'>;
 
-const ACCENT = '#0EA5E9';
-const ACCENT_LIGHT = '#E0F2FE';
+const ACCENT = '#F59E0B';
 
 export default function ExamResultScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
@@ -20,15 +18,16 @@ export default function ExamResultScreen() {
   const [showBreakdown, setShowBreakdown] = React.useState(false);
 
   const {
-    examId,
-    totalQuestions = 15,
+    competitionId,
+    quizTitle,
+    totalQuestions = 0,
     correctAnswers = 0,
     wrongAnswers = 0,
     totalPoints = 0,
-    answers = [],
+    duration,
+    placements,
   } = route.params ?? {};
 
-  const exam = MOCK_SCHEDULED_EXAMS.find(e => e.id === examId) ?? MOCK_SCHEDULED_EXAMS[0];
   const percentage = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
   const stars = percentage >= 90 ? 3 : percentage >= 70 ? 2 : 1;
 
@@ -41,19 +40,12 @@ export default function ExamResultScreen() {
 
   const grade = getGrade();
 
-  const answerDetails = answers.map((answer, index) => {
-    const question = MOCK_EXAM_QUESTIONS.find(q => q.id === answer.questionId);
-    const selectedOption = question?.options.find(opt => opt.id === answer.selectedOptionId);
-    const correctOption = question?.options.find(opt => opt.id === question.correctOptionId);
-    return {
-      id: answer.questionId,
-      question: question?.question ?? `Câu ${index + 1}`,
-      userAnswer: selectedOption?.text ?? '',
-      correctAnswer: correctOption?.text ?? '',
-      isCorrect: answer.isCorrect,
-      explanation: question?.explanation,
-    };
-  });
+  const formatDuration = (seconds?: number) => {
+    if (!seconds) return '';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m} phút ${s} giây`;
+  };
 
   return (
     <View style={styles.container}>
@@ -70,27 +62,32 @@ export default function ExamResultScreen() {
                 key={`star-${starIndex}`}
                 name="star"
                 size={starIndex === 2 ? 100 : 80}
-                color={starIndex <= stars ? colors.accent : '#E0E0E0'}
+                color={starIndex <= stars ? ACCENT : '#E0E0E0'}
               />
             ))}
           </View>
 
           {/* Title */}
           <Text style={[styles.gradeLabel, { color: grade.color }]}>{grade.label}</Text>
-          <Text style={styles.subTitle}>Bài kiểm tra đã được nộp</Text>
+          <Text style={styles.subTitle}>Bài thi đã được nộp</Text>
 
-          {/* Exam info */}
-          <View style={styles.examInfoRow}>
-            <MaterialCommunityIcons name="school" size={14} color={ACCENT} />
-            <Text style={styles.examInfoText} numberOfLines={1}>
-              {exam.title}
-            </Text>
-          </View>
+          {/* Quiz info */}
+          {quizTitle && (
+            <View style={styles.examInfoRow}>
+              <MaterialCommunityIcons name="trophy" size={14} color={ACCENT} />
+              <Text style={styles.examInfoText} numberOfLines={1}>
+                {quizTitle}
+              </Text>
+            </View>
+          )}
 
           {/* Points card */}
           <View style={styles.pointsCard}>
             <Text style={styles.pointsLabel}>+{totalPoints} Điểm</Text>
             <Text style={styles.pointsSubLabel}>{Math.round(percentage)}% chính xác</Text>
+            {duration != null && duration > 0 && (
+              <Text style={styles.durationLabel}>⏱ {formatDuration(duration)}</Text>
+            )}
           </View>
 
           {/* Stats row */}
@@ -109,64 +106,93 @@ export default function ExamResultScreen() {
             </View>
           </View>
 
-          {/* Answer breakdown */}
-          <View style={styles.breakdownContainer}>
-            <TouchableOpacity
-              style={styles.breakdownHeader}
-              onPress={() => setShowBreakdown(v => !v)}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons name="format-list-checks" size={20} color={ACCENT} />
-              <Text style={[styles.breakdownTitle, { flex: 1 }]}>Xem lại kết quả</Text>
-              <MaterialCommunityIcons
-                name={showBreakdown ? 'chevron-up' : 'chevron-down'}
-                size={22}
-                color={colors.text.secondary}
-              />
-            </TouchableOpacity>
+          {/* Answer breakdown from placements */}
+          {placements && placements.length > 0 && (
+            <View style={styles.breakdownContainer}>
+              <TouchableOpacity
+                style={styles.breakdownHeader}
+                onPress={() => setShowBreakdown(v => !v)}
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons name="format-list-checks" size={20} color={ACCENT} />
+                <Text style={[styles.breakdownTitle, { flex: 1 }]}>Xem lại kết quả</Text>
+                <MaterialCommunityIcons
+                  name={showBreakdown ? 'chevron-up' : 'chevron-down'}
+                  size={22}
+                  color={colors.text.secondary}
+                />
+              </TouchableOpacity>
 
-            {showBreakdown &&
-              answerDetails.map((detail, index) => (
-                <View key={`${detail.id}-${index}`} style={styles.answerItem}>
-                  <View
-                    style={[
-                      styles.answerIcon,
-                      detail.isCorrect ? styles.answerIconCorrect : styles.answerIconError,
-                    ]}
-                  >
+              {showBreakdown &&
+                placements.map((placement, index) => (
+                  <View key={`${placement.question_id}-${index}`} style={styles.answerItem}>
+                    <View
+                      style={[
+                        styles.answerIcon,
+                        placement.is_correct ? styles.answerIconCorrect : styles.answerIconError,
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name={placement.is_correct ? 'check' : 'close'}
+                        size={18}
+                        color={colors.text.white}
+                      />
+                    </View>
+                    <View style={styles.answerContent}>
+                      <Text style={styles.answerQuestion} numberOfLines={2}>
+                        {placement.question_text || `Câu ${index + 1}`}
+                      </Text>
+                      {!placement.is_correct && placement.correct_answer && (
+                        <Text style={styles.answerCorrect} numberOfLines={1}>
+                          ✓ {placement.correct_answer}
+                        </Text>
+                      )}
+                      {placement.selected_answer && (
+                        <Text
+                          style={[
+                            styles.answerSelected,
+                            !placement.is_correct && { color: colors.status.error },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          Bạn chọn: {placement.selected_answer}
+                        </Text>
+                      )}
+                    </View>
                     <MaterialCommunityIcons
-                      name={detail.isCorrect ? 'check' : 'close'}
-                      size={18}
-                      color={colors.text.white}
+                      name={placement.is_correct ? 'check-circle' : 'close-circle'}
+                      size={22}
+                      color={placement.is_correct ? colors.status.success : colors.status.error}
                     />
                   </View>
-                  <View style={styles.answerContent}>
-                    <Text style={styles.answerQuestion} numberOfLines={1}>
-                      {detail.question}
-                    </Text>
-                    {!detail.isCorrect && (
-                      <Text style={styles.answerCorrect} numberOfLines={1}>
-                        ✓ {detail.correctAnswer}
-                      </Text>
-                    )}
-                  </View>
-                  <MaterialCommunityIcons
-                    name={detail.isCorrect ? 'check-circle' : 'close-circle'}
-                    size={22}
-                    color={detail.isCorrect ? colors.status.success : colors.status.error}
-                  />
-                </View>
-              ))}
-          </View>
+                ))}
+            </View>
+          )}
 
           {/* Actions */}
+          {competitionId && (
+            <TouchableOpacity
+              style={styles.leaderboardButton}
+              onPress={() =>
+                navigation.navigate('CompetitionLeaderboard', {
+                  competitionId,
+                  competitionTitle: quizTitle || 'Cuộc thi',
+                })
+              }
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons name="trophy" size={22} color={ACCENT} />
+              <Text style={styles.leaderboardButtonText}>Xem Bảng xếp hạng</Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => navigation.navigate('ScheduledExam')}
             activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name="calendar-check" size={22} color={colors.text.white} />
-            <Text style={styles.primaryButtonText}>Về danh sách kiểm tra</Text>
+            <MaterialCommunityIcons name="trophy-variant" size={22} color={colors.text.white} />
+            <Text style={styles.primaryButtonText}>Về danh sách cuộc thi</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -191,6 +217,11 @@ const styles = StyleSheet.create({
     color: colors.status.success,
     fontSize: 12,
     fontWeight: '600',
+  },
+  answerSelected: {
+    color: colors.text.secondary,
+    fontSize: 11,
+    fontWeight: '500',
   },
   answerIcon: {
     alignItems: 'center',
@@ -240,6 +271,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   container: { backgroundColor: colors.background, flex: 1 },
+  durationLabel: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+  },
   examInfoRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -258,10 +295,27 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textAlign: 'center',
   },
+  leaderboardButton: {
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    borderColor: ACCENT,
+    borderRadius: 16,
+    borderWidth: 2,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+    paddingVertical: 14,
+  },
+  leaderboardButtonText: {
+    color: '#B45309',
+    fontSize: 16,
+    fontWeight: '800',
+  },
   pointsCard: {
     alignItems: 'center',
     backgroundColor: ACCENT,
-    borderColor: '#0284C7',
+    borderColor: '#D97706',
     borderRadius: 24,
     borderWidth: 3,
     elevation: 6,
