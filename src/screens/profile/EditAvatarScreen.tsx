@@ -4,74 +4,19 @@ import { Text, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import type { StackNavigationProp } from '@react-navigation/stack';
-import type { AppStackParamList } from '@navigation/AppNavigator';
-import ScreenBackground from '../../components/common/ScreenBackground';
-import { colors, spacing, borderRadius } from '@theme';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-
-type NavigationProp = StackNavigationProp<AppStackParamList>;
-
-interface AvatarOption {
-  id: string;
-  source: any;
-  bgColor: string;
-  isLocked?: boolean;
-}
-
-const avatarOptions: AvatarOption[] = [
-  {
-    id: '1',
-    source: require('../../../assets/images/avatar.jpg'),
-    bgColor: '#FFE0B2',
-  },
-  {
-    id: '2',
-    source: require('../../../assets/images/avatar.jpg'),
-    bgColor: '#C8E6C9',
-  },
-  {
-    id: '3',
-    source: require('../../../assets/images/avatar.jpg'),
-    bgColor: '#BBDEFB',
-  },
-  {
-    id: '4',
-    source: require('../../../assets/images/avatar.jpg'),
-    bgColor: '#B0BEC5',
-  },
-  {
-    id: '5',
-    source: require('../../../assets/images/avatar.jpg'),
-    bgColor: '#E1BEE7',
-  },
-  {
-    id: '6',
-    source: require('../../../assets/images/avatar.jpg'),
-    bgColor: '#F0F4C3',
-  },
-  {
-    id: '7',
-    source: require('../../../assets/images/avatar.jpg'),
-    bgColor: '#CFD8DC',
-  },
-  {
-    id: '8',
-    source: require('../../../assets/images/avatar.jpg'),
-    bgColor: '#FFCCBC',
-  },
-  {
-    id: '9',
-    isLocked: true,
-    source: null,
-    bgColor: '#F5F5F5',
-  },
-];
+import { useAuthStore } from '../../store/authStore';
+import { studentApi } from '../../services/api/student';
+import { colors } from '../../theme';
+import ScreenBackground from '../../components/common/ScreenBackground';
 
 export default function EditAvatarScreen() {
-  const navigation = useNavigation<NavigationProp>();
-  const [selectedAvatar, setSelectedAvatar] = useState<string>('1');
+  const navigation = useNavigation();
+  const { user, refreshCurrentUser } = useAuthStore();
+  
   const [customImage, setCustomImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleBack = () => {
     navigation.goBack();
@@ -95,7 +40,6 @@ export default function EditAvatarScreen() {
 
       if (!result.canceled && result.assets[0]) {
         setCustomImage(result.assets[0].uri);
-        setSelectedAvatar('custom');
       }
     } catch (error) {
       console.log('Error picking image:', error);
@@ -103,27 +47,30 @@ export default function EditAvatarScreen() {
     }
   };
 
-  const handleConfirm = () => {
-    // TODO: Save avatar to store/API
-    console.log('Selected avatar:', selectedAvatar);
-    navigation.goBack();
+  const handleConfirm = async () => {
+    if (!user?.id || !customImage) return;
+    setIsLoading(true);
+    try {
+      await studentApi.updateStudentAvatar(user.id, customImage);
+      await refreshCurrentUser(true);
+      Alert.alert('Thành công', 'Đã cập nhật ảnh đại diện mới!');
+      navigation.goBack();
+    } catch (e: any) {
+      console.error(e);
+      Alert.alert('Lỗi', 'Không thể cập nhật ảnh đại diện');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getDisplayAvatar = () => {
-    if (selectedAvatar === 'custom' && customImage) {
-      return { uri: customImage };
-    }
-    const avatar = avatarOptions.find(a => a.id === selectedAvatar);
-    return avatar?.source;
+    if (customImage) return { uri: customImage };
+    if (user?.avatar) return { uri: user.avatar };
+    return require('../../../assets/images/avatar.jpg');
   };
 
-  const getDisplayBgColor = () => {
-    if (selectedAvatar === 'custom') {
-      return '#E8F5E9';
-    }
-    const avatar = avatarOptions.find(a => a.id === selectedAvatar);
-    return avatar?.bgColor || '#FFE0B2';
-  };
+  const displayGrade = user?.grade ? String(user.grade) : 'Chưa cập nhật';
+  const displayClass = (user as any)?.class_name || (user as any)?.class_number || 'Chưa phân lớp';
 
   return (
     <View style={styles.container}>
@@ -133,264 +80,291 @@ export default function EditAvatarScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <MaterialCommunityIcons name="chevron-left" size={28} color={colors.text.primary} />
+            <MaterialCommunityIcons name="chevron-left" size={32} color={colors.text.primary} />
           </TouchableOpacity>
-          <Text variant="titleLarge" style={styles.headerTitle}>
-            Chọn ảnh đại diện
-          </Text>
-          <View style={styles.backButton} />
+          <Text style={styles.headerTitle}>Hồ sơ cá nhân</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {/* Combined Section: Avatar + Upload + Grid */}
-          <View style={styles.combinedSection}>
-            {/* Current Avatar Preview */}
-            <View style={styles.avatarPreviewContainer}>
-              <View style={[styles.largeAvatarContainer, { backgroundColor: getDisplayBgColor() }]}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {/* Avatar Hero Section */}
+          <View style={styles.heroSection}>
+            <LinearGradient
+              colors={['#E8F5E9', '#FFFFFF']}
+              style={styles.avatarBackdrop}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+            />
+            <View style={styles.avatarWrapper}>
+              <LinearGradient
+                colors={['#4CAF50', '#81C784']}
+                style={styles.avatarBorder}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
                 <Image source={getDisplayAvatar()} style={styles.largeAvatar} />
-                <TouchableOpacity style={styles.editBadge} onPress={handleUploadImage}>
-                  <MaterialCommunityIcons name="pencil" size={16} color={colors.surface} />
-                </TouchableOpacity>
-              </View>
+              </LinearGradient>
+              <TouchableOpacity activeOpacity={0.8} style={styles.cameraBadge} onPress={handleUploadImage}>
+                <MaterialCommunityIcons name="camera-plus" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
             </View>
+            <Text style={styles.heroName}>{user?.name || 'Học sinh EcoVerse'}</Text>
+            <Text style={styles.heroRole}>Thành viên hệ sinh thái</Text>
+          </View>
 
-            {/* Upload Button */}
-            <TouchableOpacity style={styles.uploadButton} onPress={handleUploadImage}>
-              <MaterialCommunityIcons name="folder-image" size={20} color={colors.primary} />
-              <Text style={styles.uploadButtonText}>Tải ảnh lên</Text>
-            </TouchableOpacity>
+          {/* Info Section */}
+          <View style={styles.infoSection}>
+            <Text style={styles.sectionTitle}>Thông tin tài khoản</Text>
+            <Text style={styles.sectionSubtitle}>Các thông tin bên dưới chỉ được xem</Text>
 
-            {/* Avatar Grid */}
-            <View style={styles.avatarGridContainer}>
-              <View style={styles.sectionHeader}>
-                <MaterialCommunityIcons name="grid" size={20} color={colors.primary} />
-                <Text variant="titleMedium" style={styles.sectionTitle}>
-                  Kho nhân vật
-                </Text>
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
+                <View style={[styles.iconWrap, { backgroundColor: '#E3F2FD' }]}>
+                  <MaterialCommunityIcons name="account" size={24} color="#1E88E5" />
+                </View>
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Họ và tên</Text>
+                  <Text style={styles.infoValue}>{user?.name || 'Chưa cập nhật'}</Text>
+                </View>
+                <MaterialCommunityIcons name="lock-outline" size={20} color="#CBD5E1" />
               </View>
-
-              <View style={styles.avatarGrid}>
-                {avatarOptions.map(avatar => (
-                  <TouchableOpacity
-                    key={avatar.id}
-                    style={[
-                      styles.avatarOption,
-                      { backgroundColor: avatar.bgColor },
-                      selectedAvatar === avatar.id && styles.avatarOptionSelected,
-                    ]}
-                    onPress={() => !avatar.isLocked && setSelectedAvatar(avatar.id)}
-                    disabled={avatar.isLocked}
-                  >
-                    {avatar.isLocked ? (
-                      <MaterialCommunityIcons name="lock" size={32} color={colors.text.disabled} />
-                    ) : (
-                      <Image source={avatar.source} style={styles.avatarOptionImage} />
-                    )}
-                    {selectedAvatar === avatar.id && !avatar.isLocked && (
-                      <View style={styles.selectedCheckmark}>
-                        <MaterialCommunityIcons
-                          name="check-circle"
-                          size={24}
-                          color={colors.primary}
-                        />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                ))}
+              <View style={styles.divider} />
+              <View style={styles.infoRow}>
+                <View style={[styles.iconWrap, { backgroundColor: '#F3E5F5' }]}>
+                  <MaterialCommunityIcons name="school" size={24} color="#8E24AA" />
+                </View>
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Khối học</Text>
+                  <Text style={styles.infoValue}>Khối {displayGrade}</Text>
+                </View>
+                <MaterialCommunityIcons name="lock-outline" size={20} color="#CBD5E1" />
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.infoRow}>
+                <View style={[styles.iconWrap, { backgroundColor: '#E8F5E9' }]}>
+                  <MaterialCommunityIcons name="google-classroom" size={24} color="#43A047" />
+                </View>
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Lớp</Text>
+                  <Text style={styles.infoValue}>{displayClass}</Text>
+                </View>
+                <MaterialCommunityIcons name="lock-outline" size={20} color="#CBD5E1" />
               </View>
             </View>
           </View>
         </ScrollView>
 
-        {/* Confirm Button */}
-        <View style={styles.footer}>
-          <Button
-            mode="contained"
-            onPress={handleConfirm}
-            style={styles.confirmButton}
-            contentStyle={styles.confirmButtonContent}
-            labelStyle={styles.confirmButtonLabel}
-            icon="check-circle"
-          >
-            Xác nhận
-          </Button>
-        </View>
+        {/* Action Button (only visible if customImage is selected) */}
+        {customImage && (
+          <View style={styles.footer}>
+            <Button
+              mode="contained"
+              onPress={handleConfirm}
+              loading={isLoading}
+              disabled={isLoading}
+              style={styles.confirmButton}
+              contentStyle={styles.confirmButtonContent}
+              labelStyle={styles.confirmButtonLabel}
+            >
+              Lưu ảnh diện mới
+            </Button>
+          </View>
+        )}
       </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  avatarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    justifyContent: 'center',
-  },
-  avatarGridContainer: {
-    paddingHorizontal: spacing.base,
-  },
-  avatarOption: {
-    alignItems: 'center',
-    borderColor: 'transparent',
-    borderRadius: borderRadius.lg,
-    borderWidth: 3,
-    elevation: 2,
-    height: 90,
-    justifyContent: 'center',
-    position: 'relative',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    width: 90,
-  },
-  avatarOptionImage: {
-    borderRadius: borderRadius.md,
-    height: '100%',
-    width: '100%',
-  },
-  avatarOptionSelected: {
-    borderColor: colors.primary,
-    borderWidth: 4,
-    elevation: 4,
-    shadowOpacity: 0.2,
-  },
-  avatarPreviewContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing['2xl'],
-  },
-  backButton: {
-    alignItems: 'center',
-    height: 40,
-    justifyContent: 'center',
-    width: 40,
-  },
-  combinedSection: {
-    backgroundColor: 'transparent',
-    paddingBottom: spacing.xl,
-  },
-  confirmButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.xl,
-    elevation: 5,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  confirmButtonContent: {
-    paddingVertical: spacing.sm,
-  },
-  confirmButtonLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
   container: {
-    backgroundColor: colors.background,
     flex: 1,
-    position: 'relative',
-  },
-  editBadge: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderColor: colors.surface,
-    borderRadius: borderRadius.full,
-    borderWidth: 3,
-    bottom: 4,
-    elevation: 3,
-    height: 36,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: 4,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    width: 36,
-  },
-  footer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderTopWidth: 0,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.base,
-  },
-  header: {
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    borderBottomWidth: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-  },
-  headerTitle: {
-    color: colors.text.primary,
-    fontWeight: 'bold',
-  },
-  largeAvatar: {
-    borderRadius: borderRadius.full,
-    height: '100%',
-    width: '100%',
-  },
-  largeAvatarContainer: {
-    borderRadius: borderRadius.full,
-    elevation: 5,
-    height: 140,
-    padding: 8,
-    position: 'relative',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    width: 140,
+    backgroundColor: '#F8FAFC',
   },
   safeArea: {
     flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'transparent',
     zIndex: 10,
   },
-  scrollContent: {
-    paddingBottom: spacing['2xl'],
-  },
-  sectionHeader: {
+  backButton: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.xs,
-    marginBottom: spacing.base,
+    justifyContent: 'center',
+    marginLeft: -8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  heroSection: {
+    alignItems: 'center',
+    paddingTop: 10,
+    paddingBottom: 30,
+    position: 'relative',
+  },
+  avatarBackdrop: {
+    position: 'absolute',
+    top: -50,
+    left: 0,
+    right: 0,
+    height: 200,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  avatarWrapper: {
+    position: 'relative',
+    marginBottom: 20,
+    paddingTop: 20,
+    alignItems: 'center',
+  },
+  avatarBorder: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  largeAvatar: {
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 4,
+    backgroundColor: '#388E3C',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  heroName: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  heroRole: {
+    fontSize: 15,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  infoSection: {
+    paddingHorizontal: 20,
   },
   sectionTitle: {
-    color: colors.text.primary,
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#94A3B8',
+    marginBottom: 16,
+  },
+  infoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+  },
+  iconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  infoContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  infoLabel: {
+    fontSize: 13,
+    color: '#64748B',
+    marginBottom: 2,
+    fontWeight: '600',
+  },
+  infoValue: {
+    fontSize: 16,
+    color: '#0F172A',
     fontWeight: 'bold',
   },
-  selectedCheckmark: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.full,
-    position: 'absolute',
-    right: -8,
-    top: -8,
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginLeft: 60,
   },
-  uploadButton: {
-    alignItems: 'center',
+  footer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     backgroundColor: 'transparent',
-    borderColor: colors.primary,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1.5,
-    flexDirection: 'row',
-    gap: spacing.xs,
-    justifyContent: 'center',
-    marginBottom: spacing.xl,
-    marginHorizontal: spacing.xl,
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
-  uploadButtonText: {
-    color: colors.primary,
-    fontSize: 15,
-    fontWeight: '600',
+  confirmButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 100,
+    elevation: 8,
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+  },
+  confirmButtonContent: {
+    paddingVertical: 6,
+    height: 56,
+  },
+  confirmButtonLabel: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 });

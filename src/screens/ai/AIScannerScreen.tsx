@@ -20,14 +20,20 @@ import ScreenBackground from '../../components/common/ScreenBackground';
 import { WasteClassification } from '@/types/wasteClassification';
 import { analyzeAndClassifyWaste, VisionServiceError } from '@/services/api/vision';
 import { colors } from '@/theme';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { AppStackParamList } from '@/navigation/AppNavigator';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { wasteApi } from '@/services/api/waste';
+import { getCorrectBinCode } from '@/types/wasteClassification';
+import { useAuthStore } from '@/store/authStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type GameState = 'initial' | 'camera' | 'analyzing' | 'game' | 'success';
 
 export default function AIScannerScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<AppStackParamList>>();
+  const { user } = useAuthStore();
   const [gameState, setGameState] = useState<GameState>('initial');
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
@@ -161,8 +167,20 @@ export default function AIScannerScreen() {
     }
   };
 
-  const handleCorrectClassification = (feedback: string) => {
+  const handleCorrectClassification = async (feedback: string) => {
     setGameState('success');
+
+    if (classification && user?.id) {
+      // Fire and forget API call to save history
+      const correctBinCode = getCorrectBinCode(classification.suggestedType, classification.detectedLabels || []);
+      wasteApi.createWasteItem(user.id, {
+        name: classification.displayName || classification.suggestedType.name,
+        description: classification.description || '',
+        correctBinCode,
+        imageUri: classification.imageUri,
+      }).catch(err => console.error("Lỗi lưu lịch sử quét rác:", err));
+    }
+
     setTimeout(() => {
       Alert.alert('Tuyệt vời! 🎉', feedback, [
         {
@@ -197,7 +215,7 @@ export default function AIScannerScreen() {
         <ScreenBackground />
 
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <View style={styles.header}>
+          <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
             <Button
               mode="text"
               onPress={() => navigation.goBack()}
@@ -207,6 +225,15 @@ export default function AIScannerScreen() {
               labelStyle={styles.backButtonLabel}
             >
               Quay lại
+            </Button>
+            <Button
+              mode="text"
+              onPress={() => navigation.navigate('AIWasteHistory')}
+              icon="history"
+              compact
+              labelStyle={styles.backButtonLabel}
+            >
+              Lịch sử
             </Button>
           </View>
 

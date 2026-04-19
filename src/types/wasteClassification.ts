@@ -37,6 +37,28 @@ export interface DragDropGameResult {
   feedback: string;
 }
 
+export interface WasteHistoryItem {
+  id: string;
+  name: string;
+  description: string;
+  correct_bin_code: 'PLASTIC' | 'PAPER' | 'ORGANIC' | 'OTHERS';
+  image_url: string;
+  created_by: string;
+  order_index: number | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const getCorrectBinCode = (wasteType: WasteType, labels: string[]): 'PLASTIC' | 'PAPER' | 'ORGANIC' | 'OTHERS' => {
+  if (wasteType.id === 'organic') return 'ORGANIC';
+  if (wasteType.id === 'recyclable') {
+    const paperKeywords = ['paper', 'cardboard', 'carton', 'newspaper', 'magazine', 'tissue', 'towel', 'roll', 'box'];
+    const isPaper = labels.some(l => paperKeywords.some(k => l.toLowerCase().includes(k)));
+    return isPaper ? 'PAPER' : 'PLASTIC';
+  }
+  return 'OTHERS';
+};
+
 // 4 loại rác chính
 export const WASTE_TYPES: WasteType[] = [
   {

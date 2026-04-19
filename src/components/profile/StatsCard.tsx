@@ -13,14 +13,14 @@ interface StatsCardProps {
 
 export const StatsCard: React.FC<StatsCardProps> = ({ icon, iconColor, label, value }) => {
   return (
-    <View style={[styles.container, { backgroundColor: iconColor + '10', borderColor: iconColor + '30' }]}>
-      <View style={[styles.iconContainer, { backgroundColor: iconColor + '20' }]}>
-        <MaterialCommunityIcons name={icon} size={28} color={iconColor} />
+    <View style={[styles.container, { backgroundColor: iconColor }]}>
+      <View style={[styles.iconContainer, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
+        <MaterialCommunityIcons name={icon} size={28} color="#FFFFFF" />
       </View>
       <Text variant="labelSmall" style={styles.label}>
         {label}
       </Text>
-      <Text variant="titleMedium" style={[styles.value, { color: iconColor }]}>
+      <Text variant="titleMedium" style={styles.value}>
         {value}
       </Text>
     </View>
@@ -30,9 +30,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({ icon, iconColor, label, va
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    borderRadius: 20, // Playful rounded corners
-    borderWidth: 2,
-    elevation: 0, // Flat design with colors
+    borderRadius: 24, // Playful rounded corners
     flex: 1,
     padding: spacing.md,
   },
@@ -45,13 +43,14 @@ const styles = StyleSheet.create({
     width: 48,
   },
   label: {
-    color: colors.text.secondary,
+    color: 'rgba(255, 255, 255, 0.9)',
     fontSize: 10,
     fontWeight: '800',
     marginBottom: spacing.xs,
     textTransform: 'uppercase',
   },
   value: {
+    color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '900',
   },

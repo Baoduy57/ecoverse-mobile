@@ -15,13 +15,27 @@ import { useFocusEffect, useNavigation, NavigationProp } from '@react-navigation
 import ScreenBackground from '../../components/common/ScreenBackground';
 import { colors, spacing, borderRadius } from '../../theme';
 import { PodiumDisplay, RankingItem } from '../../components/leaderboard';
-import { leaderboardApi } from '../../services/api';
+import { leaderboardApi, resolveLeaderboardAssetUrl } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import type { ILeaderboardEntry } from '../../types/leaderboard';
 import type { AppStackParamList } from '../../navigation/AppNavigator';
 
 type TabType = 'class' | 'school';
 const PAGE_SIZE = 10;
+
+const pickAvatarValue = (row: any): unknown =>
+  row?.avatar_url ??
+  row?.avatar ??
+  row?.student?.avatar_url ??
+  row?.student?.avatar ??
+  row?.student_avatar ??
+  row?.profile_image ??
+  row?.student?.profile_image ??
+  row?.user?.avatar_url ??
+  row?.user?.avatar ??
+  row?.student?.user?.avatar_url ??
+  row?.student?.user?.avatar ??
+  null;
 
 export default function LeaderboardScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
@@ -34,7 +48,6 @@ export default function LeaderboardScreen() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
-  const { refreshCurrentUser } = useAuthStore();
 
   // Animations
   const tabIndicatorAnim = useRef(new Animated.Value(0)).current; // 0 for class, 1 for school
@@ -81,18 +94,32 @@ export default function LeaderboardScreen() {
         ...(grade ? { grade } : {}),
       });
 
-      const mappedRows: ILeaderboardEntry[] = apiRows.map((row, index) => ({
-        rank: (page - 1) * PAGE_SIZE + index + 1,
-        userId: String(row.student_id || ''),
-        userName: String(row.student_name || 'Hoc sinh'),
-        points: Number(row.points ?? 0),
-        grade: row.grade ? String(row.grade) : undefined,
-        minDuration:
-          typeof row.min_duration === 'number' && Number.isFinite(row.min_duration)
-            ? row.min_duration
-            : undefined,
-        isCurrentUser: String(row.student_id || '') === String(currentUser.id || ''),
-      }));
+      const mappedRows: ILeaderboardEntry[] = apiRows.map((row: any, index) => {
+        const studentId = String(row.student_id || row.student?.student_id || row.id || '');
+        const isCurrentUser = studentId === String(currentUser.id || '');
+        const avatarFromRow = resolveLeaderboardAssetUrl(pickAvatarValue(row));
+        const avatar = avatarFromRow || (isCurrentUser ? resolveLeaderboardAssetUrl(currentUser.avatar) : null);
+        const minDurationValue = Number(row.min_duration ?? row.minDuration);
+
+        return {
+          rank: (page - 1) * PAGE_SIZE + index + 1,
+          userId: studentId,
+          userName: String(
+            row.student_name || row.full_name || row.name || row.student?.full_name || row.student?.name || 'Hoc sinh'
+          ),
+          avatar: avatar || undefined,
+          points: Number(row.points ?? 0),
+          grade:
+            row.grade || row.student?.grade || row.class_number || row.student?.class_number
+              ? String(row.grade || row.student?.grade || row.class_number || row.student?.class_number)
+              : undefined,
+          minDuration:
+            Number.isFinite(minDurationValue) && minDurationValue > 0
+              ? minDurationValue
+              : undefined,
+          isCurrentUser,
+        };
+      });
 
       setEntries(prev => (append ? [...prev, ...mappedRows] : mappedRows));
       setCurrentPage(page);
@@ -123,13 +150,9 @@ export default function LeaderboardScreen() {
 
   const syncLeaderboard = useCallback(
     async (tab: TabType) => {
-      try {
-        await refreshCurrentUser(true);
-      } finally {
-        await fetchLeaderboard(tab, 1, false);
-      }
+      await fetchLeaderboard(tab, 1, false);
     },
-    [fetchLeaderboard, refreshCurrentUser]
+    [fetchLeaderboard]
   );
 
   useFocusEffect(
