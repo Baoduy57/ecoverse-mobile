@@ -12,6 +12,26 @@ const getLeaderboardBaseUrl = () => {
   return currentBase.replace(/\/api\/?$/, '');
 };
 
+const ABSOLUTE_URI_REGEX = /^(https?:\/\/|data:|file:)/i;
+
+export const resolveLeaderboardAssetUrl = (value: unknown): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (ABSOLUTE_URI_REGEX.test(trimmed)) {
+    return trimmed;
+  }
+
+  const normalizedPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${getLeaderboardBaseUrl()}${normalizedPath}`;
+};
+
 export const leaderboardApi = {
   getStudentRank: async (
     partnerId: string,

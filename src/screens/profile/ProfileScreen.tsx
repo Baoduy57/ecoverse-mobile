@@ -202,13 +202,13 @@ export default function ProfileScreen() {
             />
             <StatsCard
               icon="account-group"
-              iconColor={colors.secondary}
+              iconColor={colors.waste.hazardous}
               label="HẠNG LỚP"
               value={stats.classRank}
             />
             <StatsCard
               icon="school"
-              iconColor={colors.accentBlue}
+              iconColor={colors.accentPurple}
               label="HẠNG TRƯỜNG"
               value={stats.schoolRank}
             />

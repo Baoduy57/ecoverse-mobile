@@ -80,6 +80,41 @@ export const colors = {
     ['#FFCA28', '#F57F17'] as [string, string], // Amber
     ['#66BB6A', '#2E7D32'] as [string, string], // Light Green
   ] as const,
+
+  // History Screen Colors
+  history: {
+    heroGradient: ['#66BB6A', '#42A5F5', '#FFA726'] as const,
+    emptyIconGradient: ['#B3E5FC', '#C8E6C9', '#FFF9C4'] as const,
+    summaryCard: {
+      total: '#E8F5E9',
+      plastic: '#E3F2FD',
+      paper: '#EDE7F6',
+      organic: '#FBE9E7',
+      totalBorder: 'rgba(255,255,255,0.8)',
+    },
+    bin: {
+      plastic: {
+        main: '#1E88E5',
+        soft: '#E3F2FD',
+        gradient: ['#E3F2FD', '#FFFFFF'] as const,
+      },
+      paper: {
+        main: '#5E35B1',
+        soft: '#EDE7F6',
+        gradient: ['#EDE7F6', '#FFFFFF'] as const,
+      },
+      organic: {
+        main: '#43A047',
+        soft: '#E8F5E9',
+        gradient: ['#E8F5E9', '#FFFFFF'] as const,
+      },
+      others: {
+        main: '#FF7043',
+        soft: '#FBE9E7',
+        gradient: ['#FBE9E7', '#FFFFFF'] as const,
+      },
+    },
+  },
 };
 
 // Độ mờ cho overlay và disabled states

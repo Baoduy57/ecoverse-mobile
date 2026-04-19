@@ -41,4 +41,6 @@ export interface IStudentLeaderboardEntry {
   grade?: string | null;
   points: number;
   min_duration?: number | null;
+  avatar_url?: string | null;
+  avatar?: string | null;
 }

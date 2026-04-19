@@ -1,7 +1,7 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 
-import { AIScannerScreen } from '../screens/ai';
+import { AIScannerScreen, AIWasteHistoryScreen } from '../screens/ai';
 import { EditAvatarScreen, SettingsScreen } from '../screens/profile';
 import { RewardHistoryScreen } from '../screens/reward';
 import { DragDropGamePlayScreen, GameHistoryScreen, GameResultDetailScreen } from '../screens/game';
@@ -17,6 +17,7 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 export type AppStackParamList = {
   Home: NavigatorScreenParams<HomeTabParamList>;
   AIScanner: undefined;
+  AIWasteHistory: undefined;
   EditAvatar: undefined;
   Settings: undefined;
   RewardHistory: undefined;
@@ -92,6 +93,13 @@ export default function AppNavigator() {
         component={AIScannerScreen}
         options={{
           presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="AIWasteHistory"
+        component={AIWasteHistoryScreen}
+        options={{
+          presentation: 'card',
         }}
       />
       <Stack.Screen

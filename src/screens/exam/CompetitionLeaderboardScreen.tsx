@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -137,6 +138,17 @@ export default function CompetitionLeaderboardScreen() {
                       <MaterialCommunityIcons name={medal.name as any} size={24} color={medal.color} />
                     ) : (
                       <Text style={styles.rankNumber}>{rank}</Text>
+                    )}
+                  </View>
+
+                  {/* Avatar */}
+                  <View style={styles.participantAvatarWrap}>
+                    {participant.student.avatar_url ? (
+                      <Image source={{ uri: participant.student.avatar_url }} style={styles.participantAvatar} />
+                    ) : (
+                      <View style={[styles.participantAvatar, styles.participantAvatarPlaceholder]}>
+                        <MaterialCommunityIcons name="account" size={18} color={colors.text.secondary} />
+                      </View>
                     )}
                   </View>
 
@@ -300,6 +312,19 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     fontSize: 16,
     fontWeight: '800',
+  },
+  participantAvatarWrap: {
+    marginRight: 4,
+  },
+  participantAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  participantAvatarPlaceholder: {
+    backgroundColor: '#E5E7EB',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   participantInfo: {
     flex: 1,
