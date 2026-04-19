@@ -10,9 +10,22 @@ export const formatTime = (seconds: number): string => {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
+// Parse API date (handles array format [YYYY, MM, DD, HH, mm, ss] and standard strings)
+export const parseApiDate = (date: string | number[] | Date | null | undefined): Date | null => {
+  if (!date) return null;
+  if (date instanceof Date) return date;
+  if (Array.isArray(date)) {
+    const [year, month, day, hour = 0, minute = 0, second = 0] = date;
+    return new Date(year, month - 1, day, hour, minute, second);
+  }
+  const parsed = new Date(date);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 // Format ngày tháng
-export const formatDate = (date: string | Date, format: string = 'DD/MM/YYYY'): string => {
-  const d = new Date(date);
+export const formatDate = (date: string | number[] | Date, format: string = 'DD/MM/YYYY'): string => {
+  const d = parseApiDate(date);
+  if (!d) return '';
   const day = d.getDate().toString().padStart(2, '0');
   const month = (d.getMonth() + 1).toString().padStart(2, '0');
   const year = d.getFullYear();

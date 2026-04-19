@@ -19,6 +19,7 @@ import type { AppStackParamList } from '../../navigation/AppNavigator';
 import { useAuthStore } from '../../store/authStore';
 import { gameApi } from '../../services/api/game';
 import { StatusBar } from 'expo-status-bar';
+import { parseApiDate } from '../../utils/helpers';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -50,12 +51,10 @@ const getLatestAttempt = (attempts: IGameAttempt[]): IGameAttempt | undefined =>
   if (!attempts.length) return undefined;
   return [...attempts].sort((a, b) => {
     if (b.attempt_number !== a.attempt_number) return b.attempt_number - a.attempt_number;
-    const tA = new Date(
-      a.updated_at || a.completed_at || a.created_at || a.started_at || 0
-    ).getTime();
-    const tB = new Date(
-      b.updated_at || b.completed_at || b.created_at || b.started_at || 0
-    ).getTime();
+    const dateA = parseApiDate(a.updated_at || a.completed_at || a.created_at || a.started_at);
+    const dateB = parseApiDate(b.updated_at || b.completed_at || b.created_at || b.started_at);
+    const tA = dateA ? dateA.getTime() : 0;
+    const tB = dateB ? dateB.getTime() : 0;
     return tB - tA;
   })[0];
 };
@@ -98,7 +97,7 @@ export default function GameScreen() {
         await refreshCurrentUser(true);
 
         const rounds = await gameApi.getGameRounds(user.partnerId, 1, 100, null);
-        const active = rounds.filter(r => r.active !== false);
+        const active = rounds.filter(r => r.active !== false && r.shared === true);
 
         if (!active.length) {
           setLevels([]);

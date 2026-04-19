@@ -246,7 +246,7 @@ export default function ProfileScreen() {
           <View style={styles.infoSection}>
             <MaterialCommunityIcons name="shield-check" size={24} color="#0284C7" />
             <Text variant="bodyMedium" style={styles.infoText}>
-              Da lien ket voi phu huynh! <Text style={styles.infoBold}>{mappedParentName}</Text>
+              Đã liên kết với phụ huynh! <Text style={styles.infoBold}>{mappedParentName}</Text>
             </Text>
           </View>
 
