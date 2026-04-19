@@ -70,7 +70,7 @@ export default function EditAvatarScreen() {
   };
 
   const displayGrade = user?.grade ? String(user.grade) : 'Chưa cập nhật';
-  const displayClass = (user as any)?.class_name || (user as any)?.class_number || 'Chưa phân lớp';
+  const displayStudentCode = (user as any)?.student_code || 'Chưa cập nhật';
 
   return (
     <View style={styles.container}>
@@ -142,11 +142,11 @@ export default function EditAvatarScreen() {
               <View style={styles.divider} />
               <View style={styles.infoRow}>
                 <View style={[styles.iconWrap, { backgroundColor: '#E8F5E9' }]}>
-                  <MaterialCommunityIcons name="google-classroom" size={24} color="#43A047" />
+                  <MaterialCommunityIcons name="card-account-details" size={24} color="#43A047" />
                 </View>
                 <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Lớp</Text>
-                  <Text style={styles.infoValue}>{displayClass}</Text>
+                  <Text style={styles.infoLabel}>Mã học sinh</Text>
+                  <Text style={styles.infoValue}>{displayStudentCode}</Text>
                 </View>
                 <MaterialCommunityIcons name="lock-outline" size={20} color="#CBD5E1" />
               </View>

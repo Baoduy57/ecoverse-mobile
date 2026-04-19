@@ -61,7 +61,7 @@ export default function GameCard({
               <ImageBackground
                 source={illustration}
                 style={styles.illustration}
-                resizeMode="contain"
+                resizeMode="cover"
               />
             </View>
           )}
@@ -142,17 +142,13 @@ const styles = StyleSheet.create({
   },
   // Background illustration
   illustrationContainer: {
-    bottom: 0,
-    height: '100%',
-    position: 'absolute',
-    right: 0,
-    width: '100%',
+    ...StyleSheet.absoluteFillObject,
     zIndex: 1,
   },
   illustration: {
     height: '100%',
     opacity: 0.6,
-    width: '110%',
+    width: '100%',
   },
   // Content
   content: {

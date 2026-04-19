@@ -22,6 +22,7 @@ import {
   HistoryLoadMoreFooter,
   type PlacementStats,
 } from '../../components/game/history';
+import { parseApiDate } from '../../utils/helpers';
 
 const INITIAL_VISIBLE_COUNT = 5;
 const LOAD_MORE_STEP = 5;
@@ -33,8 +34,8 @@ const toTimestamp = (attempt: IGameAttempt) => {
   const value =
     attempt.updated_at || attempt.completed_at || attempt.created_at || attempt.started_at;
   if (!value) return 0;
-  const parsed = new Date(value).getTime();
-  return Number.isFinite(parsed) ? parsed : 0;
+  const parsed = parseApiDate(value)?.getTime();
+  return typeof parsed === 'number' && Number.isFinite(parsed) ? parsed : 0;
 };
 
 export default function GameHistoryScreen() {

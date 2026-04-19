@@ -127,10 +127,10 @@ export interface IGameAttempt {
   total_items: number;
   attempt_number: number;
   completed: boolean;
-  created_at?: string | null;
-  updated_at?: string | null;
-  started_at?: string | null;
-  completed_at?: string | null;
+  created_at?: string | number[] | null;
+  updated_at?: string | number[] | null;
+  started_at?: string | number[] | null;
+  completed_at?: string | number[] | null;
 }
 
 export interface IGameAttemptUpsertPayload {

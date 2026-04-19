@@ -4,6 +4,7 @@ import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { borderRadius, colors, spacing } from '../../../theme';
 import type { IGameAttempt } from '../../../types';
+import { parseApiDate } from '../../../utils/helpers';
 
 export type PlacementStats = {
   total: number;
@@ -27,9 +28,9 @@ const formatDuration = (seconds: number) => {
 const formatDate = (attempt: IGameAttempt) => {
   const value =
     attempt.updated_at || attempt.completed_at || attempt.created_at || attempt.started_at;
-  if (!value) return '';
-  const d = new Date(value);
-  return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const d = parseApiDate(value);
+  if (!d) return '--/--/---- --:--';
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
 export default function HistoryAttemptCard({

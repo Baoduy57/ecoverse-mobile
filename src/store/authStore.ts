@@ -97,6 +97,7 @@ const mapApiUserToStoreUser = (rawResponse: any, fallbackUser: IUser | null): IU
       apiUser.updated_at || apiUser.updatedAt || apiUser.updated_date || apiUser.updatedDate,
       fallbackUser?.updatedAt || nowIso
     ),
+    student_code: apiUser.student_code || fallbackUser?.student_code,
     className: apiUser.class_name || apiUser.className || fallbackUser?.className,
     schoolName: apiUser.school_name || apiUser.schoolName || fallbackUser?.schoolName,
     grade: apiUser.grade ?? fallbackUser?.grade,

@@ -18,7 +18,11 @@ import { colors, spacing, borderRadius } from '@theme';
 import { getUnreadCount } from '../../data/notificationData';
 import { useAuthStore } from '../../store/authStore';
 import { competitionApi } from '../../services/api/competition';
-import { ICompetition, parseCompetitionDateTime, getCompetitionType } from '../../types/competition';
+import {
+  ICompetition,
+  parseCompetitionDateTime,
+  getCompetitionType,
+} from '../../types/competition';
 
 type DashboardNavigationProp = StackNavigationProp<AppStackParamList>;
 
@@ -65,7 +69,8 @@ export default function DashboardScreen() {
         }
         // Load active competition
         if (user?.partnerId) {
-          competitionApi.getCompetitions(user.partnerId)
+          competitionApi
+            .getCompetitions(user.partnerId)
             .then(data => {
               const active = data.find(c => c.status === 'ACTIVE');
               setActiveCompetition(active || null);
@@ -137,7 +142,11 @@ export default function DashboardScreen() {
                   <View style={styles.competitionHeader}>
                     <View style={styles.competitionIconBox}>
                       <MaterialCommunityIcons
-                        name={getCompetitionType(activeCompetition) === 'QUIZ' ? 'clipboard-check' : 'gamepad-variant'}
+                        name={
+                          getCompetitionType(activeCompetition) === 'QUIZ'
+                            ? 'clipboard-check'
+                            : 'gamepad-variant'
+                        }
                         size={28}
                         color="#F59E0B"
                       />
@@ -159,13 +168,17 @@ export default function DashboardScreen() {
                     <View style={styles.competitionMetaItem}>
                       <MaterialCommunityIcons name="trophy" size={14} color="#F59E0B" />
                       <Text style={styles.competitionMetaText}>
-                        {getCompetitionType(activeCompetition) === 'QUIZ' ? 'Trắc nghiệm' : 'Trò chơi'}
+                        {getCompetitionType(activeCompetition) === 'QUIZ'
+                          ? 'Trắc nghiệm'
+                          : 'Trò chơi'}
                       </Text>
                     </View>
                     <View style={styles.competitionMetaItem}>
                       <MaterialCommunityIcons name="target" size={14} color="#F59E0B" />
                       <Text style={styles.competitionMetaText}>
-                        {activeCompetition.scope === 'SCHOOL' ? 'Toàn trường' : `Lớp ${activeCompetition.target_class}`}
+                        {activeCompetition.scope === 'SCHOOL'
+                          ? 'Toàn trường'
+                          : `Lớp ${activeCompetition.target_class}`}
                       </Text>
                     </View>
                   </View>
@@ -201,18 +214,22 @@ export default function DashboardScreen() {
                 <View style={styles.quizContent}>
                   <View style={styles.quizBadge}>
                     <MaterialCommunityIcons name="star" size={12} color="#F59E0B" />
-                    <Text style={styles.quizBadgeText}>Quiz tuần</Text>
+                    <Text style={styles.quizBadgeText}>Quiz hàng ngày</Text>
                   </View>
                   <Text style={styles.quizTitle}>Kiểm thức cơ bản</Text>
                   <View style={styles.quizMetaRow}>
                     <View style={styles.quizMetaItem}>
-                      <MaterialCommunityIcons name="help-circle" size={14} color="#8B5CF6" />
-                      <Text style={styles.quizMetaText}>10 câu</Text>
+                      <MaterialCommunityIcons
+                        name="help-circle-outline"
+                        size={14}
+                        color="#8B5CF6"
+                      />
+                      <Text style={styles.quizMetaText}>Trắc nghiệm</Text>
                     </View>
                     <View style={styles.quizMetaDot} />
                     <View style={styles.quizMetaItem}>
-                      <MaterialCommunityIcons name="clock-outline" size={14} color="#8B5CF6" />
-                      <Text style={styles.quizMetaText}>4 phút</Text>
+                      <MaterialCommunityIcons name="school-outline" size={14} color="#8B5CF6" />
+                      <Text style={styles.quizMetaText}>Kiến thức xanh</Text>
                     </View>
                   </View>
                 </View>
@@ -224,9 +241,9 @@ export default function DashboardScreen() {
           </View>
 
           {/* Mục tiêu tuần & Kiểm tra hàng ngày */}
-          <View style={styles.statsRow}>
-            {/* Weekly Goal Card */}
-            <View style={styles.weeklyGoalCard}>
+          {/* <View style={styles.statsRow}> */}
+          {/* Weekly Goal Card */}
+          {/* <View style={styles.weeklyGoalCard}>
               <View style={styles.weeklyGoalHeader}>
                 <Text variant="titleSmall" style={styles.weeklyGoalTitle}>
                   Mục tiêu tuần
@@ -241,10 +258,10 @@ export default function DashboardScreen() {
               <Text variant="bodySmall" style={styles.weeklyGoalSubtitle}>
                 35/50 Tái chế
               </Text>
-            </View>
+            </View> */}
 
-            {/* Daily Check Card */}
-            <TouchableOpacity
+          {/* Daily Check Card */}
+          {/* <TouchableOpacity
               style={styles.dailyCheckCard}
               activeOpacity={0.7}
               onPress={() => console.log('Daily check pressed')}
@@ -280,8 +297,8 @@ export default function DashboardScreen() {
                   </View>
                 </View>
               </View>
-            </TouchableOpacity>
-          </View>
+            </TouchableOpacity> */}
+          {/* </View> */}
 
           {/* ── Thống kê học tập ── */}
           <View style={styles.section}>

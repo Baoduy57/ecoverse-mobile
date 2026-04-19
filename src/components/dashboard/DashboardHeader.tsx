@@ -39,10 +39,10 @@ export default function DashboardHeader({
       </View>
       <View style={styles.headerRight}>
         <View style={styles.coinBadge}>
-          <MaterialCommunityIcons name="star" size={18} color="#FBBF24" />
+          <MaterialCommunityIcons name="star" size={24} color="#FBBF24" />
           <Text style={styles.coinText}>{coinCount.toLocaleString('de-DE')}</Text>
         </View>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.notificationButton}
           onPress={onNotificationPress}
           activeOpacity={0.7}
@@ -55,7 +55,7 @@ export default function DashboardHeader({
               </Text>
             </View>
           )}
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </View>
   );
@@ -91,9 +91,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     elevation: 2,
     flexDirection: 'row',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     shadowColor: '#F59E0B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -106,8 +106,8 @@ const styles = StyleSheet.create({
   },
   coinText: {
     color: '#D97706',
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
   },
   greeting: {
     color: colors.text.secondary,

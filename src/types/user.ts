@@ -12,6 +12,7 @@ export interface IUser {
   createdAt: string;
   updatedAt: string;
   // Student specific info
+  student_code?: string;
   className?: string;
   schoolName?: string;
   grade?: string | number;
