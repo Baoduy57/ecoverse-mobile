@@ -32,15 +32,9 @@ const getOptionLetter = (index: number | null) => {
 
 const getSelectedIndex = (answers: AnswerMap, question: StudentQuizQuestion) => {
   const selected = answers[question.id];
-  if (!selected || selected.length === 0) {
-    return null;
-  }
-  const normalized = selected.toUpperCase();
-  const letterIndex = normalized.charCodeAt(0) - 65;
-  if (letterIndex >= 0 && letterIndex < question.options.length) {
-    return letterIndex;
-  }
-  return null;
+  if (!selected) return null;
+  const idx = question.options.indexOf(selected);
+  return idx >= 0 ? idx : null;
 };
 
 export default function QuizQuestionScreen() {
@@ -107,10 +101,10 @@ export default function QuizQuestionScreen() {
       return;
     }
 
-    const selectedLetter = getOptionLetter(index);
+    const selectedOptionText = currentQuestion.options[index];
     setAnswersByQuestionId(prev => ({
       ...prev,
-      [currentQuestion.id]: selectedLetter,
+      [currentQuestion.id]: selectedOptionText,
     }));
   };
 

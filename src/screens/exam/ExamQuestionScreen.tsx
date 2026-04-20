@@ -24,6 +24,7 @@ export default function ExamQuestionScreen() {
 
   const competitionId = route.params?.competitionId;
   const quizTemplateId = route.params?.quizTemplateId || route.params?.examId || '';
+  const competitionScore = route.params?.competitionScore;
 
   // Data states
   const [questions, setQuestions] = useState<StudentQuizQuestion[]>([]);
@@ -54,7 +55,7 @@ export default function ExamQuestionScreen() {
         setQuizTitle(template.title || 'Cuộc thi');
         if (template.questions && template.questions.length > 0) {
           setQuestions(template.questions);
-          const autoTime = Math.max(5, template.questions.length) * 60;
+          const autoTime = template.questions.length * 60;
           setTimeLeft(autoTime);
           startTimeRef.current = Date.now();
         } else {
@@ -137,16 +138,20 @@ export default function ExamQuestionScreen() {
         console.log('[Quiz] Submitting quiz:', JSON.stringify(payload, null, 2));
         const result = await quizApi.submitQuiz(payload);
 
+        const overriddenScore = (competitionScore !== undefined && competitionScore > 0)
+          ? (result.correct_amount / result.total_questions) * competitionScore 
+          : result.score;
+
         // Register participant for competition leaderboard
         if (competitionId && user?.id) {
           const now = new Date();
           const pad = (n: number) => n.toString().padStart(2, '0');
           const joinedAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
           try {
-            console.log('[Competition] Registering quiz participant:', { competitionId, studentId: user.id, joinedAt, totalScore: Math.round(result.score) });
+            console.log('[Competition] Registering quiz participant:', { competitionId, studentId: user.id, joinedAt, totalScore: Math.round(overriddenScore) });
             await competitionApi.registerParticipant(competitionId, user.id, {
               joinedAt,
-              totalScore: Math.round(result.score),
+              totalScore: Math.round(overriddenScore),
             });
             console.log('[Competition] Quiz participant registered successfully');
           } catch (regErr: any) {
@@ -160,7 +165,7 @@ export default function ExamQuestionScreen() {
           totalQuestions: result.total_questions,
           correctAnswers: result.correct_amount,
           wrongAnswers: result.wrong_amount,
-          totalPoints: result.score,
+          totalPoints: overriddenScore,
           duration: result.duration,
           placements: result.placements,
         });
@@ -172,7 +177,9 @@ export default function ExamQuestionScreen() {
           totalQuestions: questions.length,
           correctAnswers: finalCorrectCount,
           wrongAnswers: questions.length - finalCorrectCount,
-          totalPoints: finalCorrectCount * 10,
+          totalPoints: (competitionScore !== undefined && competitionScore > 0)
+            ? (finalCorrectCount / questions.length) * competitionScore
+            : finalCorrectCount * 10,
           duration,
         });
       }

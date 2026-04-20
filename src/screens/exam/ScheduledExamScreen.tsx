@@ -136,6 +136,10 @@ function CompetitionCard({ competition, onPress, onLeaderboard }: CompetitionCar
             <Text style={styles.metaLabel}>{competition.game_round.item_count} vật phẩm</Text>
           </View>
         )}
+        <View style={[styles.metaItem, { backgroundColor: '#FEF3C7' }]}>
+          <MaterialCommunityIcons name="star-circle" size={16} color="#F59E0B" />
+          <Text style={[styles.metaLabel, { color: '#B45309' }]}>{competition.score !== undefined && competition.score !== null ? competition.score : '0'} điểm</Text>
+        </View>
       </View>
 
       {/* Time range */}
@@ -168,10 +172,16 @@ function CompetitionCard({ competition, onPress, onLeaderboard }: CompetitionCar
         </TouchableOpacity>
       </View>
 
-      {competition.status === 'DRAFT' && (
-        <View style={styles.upcomingNote}>
-          <MaterialCommunityIcons name="information-outline" size={14} color="#F59E0B" />
-          <Text style={styles.upcomingNoteText}>Cuộc thi chưa mở</Text>
+      {competition.status === 'FINISHED' && (
+        <View style={[styles.upcomingNote, { backgroundColor: '#F3F4F6' }]}>
+          <MaterialCommunityIcons name="check-circle" size={14} color="#6B7280" />
+          <Text style={[styles.upcomingNoteText, { color: '#6B7280' }]}>Cuộc thi đã kết thúc</Text>
+        </View>
+      )}
+      {competition.status === 'CANCELED' && (
+        <View style={[styles.upcomingNote, { backgroundColor: '#FEE2E2' }]}>
+          <MaterialCommunityIcons name="close-circle" size={14} color="#EF4444" />
+          <Text style={[styles.upcomingNoteText, { color: '#EF4444' }]}>Cuộc thi đã bị hủy</Text>
         </View>
       )}
     </View>
@@ -186,30 +196,23 @@ export default function ScheduledExamScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingCompetition, setPendingCompetition] = useState<ICompetition | null>(null);
+  const [alreadyDoneCompetition, setAlreadyDoneCompetition] = useState<ICompetition | null>(null);
+  const [isCheckingParticipant, setIsCheckingParticipant] = useState(false);
 
   const fetchCompetitions = useCallback(async () => {
-    if (!user?.partnerId) {
-      setError('Không tìm thấy thông tin trường học.');
+    if (!user?.id) {
+      setError('Không tìm thấy thông tin học sinh.');
       setIsLoading(false);
       return;
     }
 
     try {
       setError(null);
-      const data = await competitionApi.getCompetitions(user.partnerId);
+      const data = await competitionApi.getCompetitions(user.id);
 
-      // FE filter logic theo spec
+      // FE filter: ẩn DRAFT, hiển thị ACTIVE / FINISHED / CANCELED
       const filtered = data.filter(comp => {
-        // Filter by status: only show ACTIVE
-        if (comp.status !== 'ACTIVE') return false;
-
-        // Filter by scope
-        if (comp.scope === 'SCHOOL') return true;
-        if (comp.scope === 'CLASS') {
-          const userGrade = String(user.grade || '').trim();
-          const targetClass = String(comp.target_class || '').trim();
-          return targetClass === 'ALL' || targetClass === userGrade;
-        }
+        if (comp.status === 'DRAFT') return false;
         return true;
       });
 
@@ -220,7 +223,7 @@ export default function ScheduledExamScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.partnerId, user?.grade]);
+  }, [user?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -235,6 +238,25 @@ export default function ScheduledExamScreen() {
     setIsRefreshing(false);
   };
 
+  const handlePressCompetition = async (comp: ICompetition) => {
+    if (!user?.id || isCheckingParticipant) return;
+
+    setIsCheckingParticipant(true);
+    try {
+      const participant = await competitionApi.checkParticipant(comp.competition_id, user.id);
+      if (participant !== null) {
+        setAlreadyDoneCompetition(comp);
+      } else {
+        setPendingCompetition(comp);
+      }
+    } catch (err: any) {
+      console.error('Error checking participant:', err);
+      setPendingCompetition(comp);
+    } finally {
+      setIsCheckingParticipant(false);
+    }
+  };
+
   const handleStartCompetition = () => {
     if (!pendingCompetition) return;
     const comp = pendingCompetition;
@@ -247,11 +269,13 @@ export default function ScheduledExamScreen() {
       navigation.navigate('ExamQuestion', {
         competitionId: comp.competition_id,
         quizTemplateId: activityId,
+        competitionScore: comp.score,
       });
     } else {
       navigation.navigate('DragDropGamePlay', {
         levelId: activityId,
         competitionId: comp.competition_id,
+        competitionScore: comp.score,
       });
     }
   };
@@ -285,7 +309,7 @@ export default function ScheduledExamScreen() {
         {/* Sub-header label */}
         <View style={styles.subHeaderRow}>
           <MaterialCommunityIcons name="school-outline" size={15} color={colors.text.secondary} />
-          <Text style={styles.subHeaderText}>Các cuộc thi đang diễn ra</Text>
+          <Text style={styles.subHeaderText}>Danh sách cuộc thi</Text>
         </View>
 
         {isLoading ? (
@@ -318,7 +342,7 @@ export default function ScheduledExamScreen() {
                 </View>
                 <Text style={styles.emptyTitle}>Không có cuộc thi</Text>
                 <Text style={styles.emptySubtitle}>
-                  Hiện chưa có cuộc thi nào đang diễn ra.{'\n'}Hãy kiểm tra lại sau!
+                  Hiện chưa có cuộc thi nào dành cho bạn.{'\n'}Hãy kiểm tra lại sau!
                 </Text>
               </View>
             ) : (
@@ -326,7 +350,7 @@ export default function ScheduledExamScreen() {
                 <CompetitionCard
                   key={comp.competition_id}
                   competition={comp}
-                  onPress={setPendingCompetition}
+                  onPress={handlePressCompetition}
                   onLeaderboard={handleLeaderboard}
                 />
               ))
@@ -408,6 +432,68 @@ export default function ScheduledExamScreen() {
               >
                 <MaterialCommunityIcons name="play" size={18} color={colors.text.white} />
                 <Text style={styles.dialogConfirmText}>Bắt đầu</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Checking participant loading overlay */}
+      <Modal
+        visible={isCheckingParticipant}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
+        <View style={styles.dialogOverlay}>
+          <View style={[styles.dialogBox, { paddingVertical: 32, gap: 16 }]}>
+            <ActivityIndicator size="large" color="#F59E0B" />
+            <Text style={styles.dialogExamTitle}>Đang kiểm tra...</Text>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Already done modal */}
+      <Modal
+        visible={alreadyDoneCompetition !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAlreadyDoneCompetition(null)}
+      >
+        <View style={styles.dialogOverlay}>
+          <View style={styles.dialogBox}>
+            <View style={styles.dialogIconRow}>
+              <View style={[styles.dialogIconBg, { backgroundColor: '#D1FAE5' }]}>
+                <MaterialCommunityIcons name="check-circle" size={32} color="#10B981" />
+              </View>
+            </View>
+            <Text style={[styles.dialogTitle, { color: '#10B981' }]}>Đã hoàn thành!</Text>
+            <Text style={styles.dialogExamTitle} numberOfLines={2}>
+              {alreadyDoneCompetition?.title}
+            </Text>
+            <Text style={[styles.dialogWarning, { backgroundColor: '#D1FAE5', color: '#065F46' }]}>
+              Bạn đã tham gia cuộc thi này rồi. Mỗi học sinh chỉ được tham gia một lần.
+            </Text>
+            <View style={styles.dialogButtons}>
+              <TouchableOpacity
+                style={[styles.dialogCancelBtn, { flex: 1 }]}
+                onPress={() => setAlreadyDoneCompetition(null)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.dialogCancelText}>Đóng</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.dialogConfirmBtn, { backgroundColor: '#10B981' }]}
+                onPress={() => {
+                  if (alreadyDoneCompetition) {
+                    setAlreadyDoneCompetition(null);
+                    handleLeaderboard(alreadyDoneCompetition);
+                  }
+                }}
+                activeOpacity={0.8}
+              >
+                <MaterialCommunityIcons name="trophy-outline" size={18} color={colors.text.white} />
+                <Text style={styles.dialogConfirmText}>Xem BXH</Text>
               </TouchableOpacity>
             </View>
           </View>

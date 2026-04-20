@@ -16,11 +16,11 @@ const getCompetitionBaseUrl = () => {
 
 export const competitionApi = {
   /**
-   * 1. Lấy danh sách cuộc thi của nhà trường/trung tâm.
-   * GET /competitions/{partner_id}
+   * 1. Lấy danh sách cuộc thi dành cho học sinh.
+   * GET /students/{student_id}/competitions
    */
-  getCompetitions: async (partnerId: string): Promise<ICompetition[]> => {
-    const response = await apiClient.get<any>(`/competitions/${partnerId}`, {
+  getCompetitions: async (studentId: string): Promise<ICompetition[]> => {
+    const response = await apiClient.get<any>(`/students/${studentId}/competitions`, {
       baseURL: getCompetitionBaseUrl(),
     });
 
@@ -35,7 +35,28 @@ export const competitionApi = {
   },
 
   /**
-   * 2. Ghi danh lên Bảng xếp hạng Cuộc thi (Bước 2.3 / 3.4).
+   * 2. Kiểm tra xem học sinh đã tham gia cuộc thi chưa.
+   * GET /competitions/{competition_id}/students/{student_id}
+   * Trả về null nếu chưa tham gia, trả về ICompetitionParticipant nếu đã tham gia.
+   */
+  checkParticipant: async (
+    competitionId: string,
+    studentId: string
+  ): Promise<ICompetitionParticipant | null> => {
+    const response = await apiClient.get<any>(
+      `/competitions/${competitionId}/students/${studentId}`,
+      { baseURL: getCompetitionBaseUrl() }
+    );
+
+    const payload = response.data;
+    if (payload && typeof payload === 'object' && 'data' in payload) {
+      return payload.data as ICompetitionParticipant | null;
+    }
+    return null;
+  },
+
+  /**
+   * 3. Ghi danh lên Bảng xếp hạng Cuộc thi (Bước 2.3 / 3.4).
    * POST /competitions/{competition_id}/students/{student_id}/participant
    */
   registerParticipant: async (
@@ -57,16 +78,13 @@ export const competitionApi = {
   },
 
   /**
-   * 3. Xem Bảng xếp hạng Cuộc thi.
+   * 4. Xem Bảng xếp hạng Cuộc thi.
    * GET /competitions/{competition_id}/participants
    */
-  getCompetitionParticipants: async (
-    competitionId: string
-  ): Promise<ICompetitionParticipant[]> => {
-    const response = await apiClient.get<any>(
-      `/competitions/${competitionId}/participants`,
-      { baseURL: getCompetitionBaseUrl() }
-    );
+  getCompetitionParticipants: async (competitionId: string): Promise<ICompetitionParticipant[]> => {
+    const response = await apiClient.get<any>(`/competitions/${competitionId}/participants`, {
+      baseURL: getCompetitionBaseUrl(),
+    });
 
     const payload = response.data;
     if (payload && typeof payload === 'object' && Array.isArray(payload.data)) {

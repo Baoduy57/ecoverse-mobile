@@ -58,6 +58,7 @@ export default function DragDropGamePlayScreen() {
   const competitionId = route.params?.competitionId;
   const isReplayMode = Boolean(replayAttemptId);
   const isCompetitionMode = Boolean(competitionId);
+  const competitionScore = route.params?.competitionScore;
 
   const [isLoading, setIsLoading] = useState(true);
   const [bins, setBins] = useState<IWasteBin[]>([]);
@@ -189,7 +190,7 @@ export default function DragDropGamePlayScreen() {
         const mappedQuestions = buildGameQuestions(itemsData, binsData);
         setQuestions(mappedQuestions);
 
-        const computedTimeLimit = computeTimeLimit(itemsData.length);
+        const computedTimeLimit = 60;
         setTimeLimit(computedTimeLimit);
         setTimer(computedTimeLimit);
         timeLimitRef.current = computedTimeLimit;
@@ -315,14 +316,24 @@ export default function DragDropGamePlayScreen() {
       if (!isCorrect) setCombo(0);
 
       if (isCorrect) {
-        const newCombo = combo + 1;
-        const multiplier = newCombo >= COMBO_THRESHOLD ? COMBO_MULTIPLIER : 1;
-        const scoreToAdd = BASE_POINTS_PER_CORRECT * multiplier;
+        let scoreToAdd = BASE_POINTS_PER_CORRECT;
+        let newCombo = combo + 1;
+        let multiplier = 1;
+
+        if (isCompetitionMode && competitionScore !== undefined && competitionScore > 0) {
+          scoreToAdd = competitionScore / questions.length;
+          newCombo = 0; // Disable combo in competition mode
+        } else {
+          multiplier = newCombo >= COMBO_THRESHOLD ? COMBO_MULTIPLIER : 1;
+          scoreToAdd = BASE_POINTS_PER_CORRECT * multiplier;
+        }
+
+        const displayScoreAdd = isCompetitionMode ? Number(scoreToAdd.toFixed(1)) : scoreToAdd;
 
         setFeedbackText(
           multiplier > 1
-            ? `Chính xác! +${scoreToAdd} (x${multiplier})`
-            : `Chính xác! +${scoreToAdd}`
+            ? `Chính xác! +${displayScoreAdd} (x${multiplier})`
+            : `Chính xác! +${displayScoreAdd}`
         );
 
         Animated.parallel([
@@ -452,7 +463,12 @@ export default function DragDropGamePlayScreen() {
     const answerSnapshot = answeredQuestionsRef.current;
     const correctCount = answerSnapshot.filter(answer => answer.isCorrect).length;
     const totalQuestions = questions.length;
-    const finalScore = scoreRef.current;
+    
+    // Recalculate final score to avoid floating point accumulated imprecision
+    const finalScore = (isCompetitionMode && competitionScore !== undefined && competitionScore > 0)
+      ? (correctCount / totalQuestions) * competitionScore
+      : scoreRef.current;
+      
     const finalMaxCombo = maxComboRef.current;
 
     let summaryPayload: AttemptSummaryPayload = buildSummaryPayload(
