@@ -308,30 +308,21 @@ export default function DashboardScreen() {
                   iconColor="#EF5350"
                   gradientColors={['#EF5350', '#C62828']}
                   value={stats?.total_games_played ?? 0}
-                  label={'Tổng game đã chơi'}
+                  label={'Game đã chơi'}
                 />
                 <StatCard
                   icon="bullseye-arrow"
                   iconColor="#2196F3"
                   gradientColors={['#29B6F6', '#0277BD']}
-                  value={`${stats?.total_average_accuracy ?? 0}%`}
+                  value={`${typeof stats?.total_average_accuracy === 'number' ? stats.total_average_accuracy.toFixed(2) : '0.00'}%`}
                   label={'Độ chính xác TB'}
                 />
-              </View>
-              <View style={styles.statsRow2}>
                 <StatCard
                   icon="clipboard-check"
                   iconColor="#8B5CF6"
                   gradientColors={['#AB47BC', '#7B1FA2']}
                   value={stats?.total_quizzes_completed ?? 0}
-                  label={'Bài kiểm tra xong'}
-                />
-                <StatCard
-                  icon="trophy"
-                  iconColor="#F59E0B"
-                  gradientColors={['#FFCA28', '#F57F17']}
-                  value={stats?.total_achievements_unlocked ?? 0}
-                  label={'Thành tích'}
+                  label={'Bài KT xong'}
                 />
               </View>
             </View>

@@ -214,34 +214,6 @@ export default function ProfileScreen() {
             />
           </View>
 
-          {/* Achievements Section */}
-          <View style={styles.achievementsSection}>
-            <View style={styles.sectionHeader}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                Thành tựu
-              </Text>
-              <Text variant="bodySmall" style={styles.achievementCount}>
-                8/24
-              </Text>
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.achievementsList}
-            >
-              {achievements.map((achievement, index) => (
-                <AchievementBadge
-                  key={index}
-                  icon={achievement.icon as any}
-                  iconColor={achievement.iconColor}
-                  title={achievement.title}
-                  isLocked={achievement.isLocked}
-                />
-              ))}
-            </ScrollView>
-          </View>
-
           {/* Additional Info */}
           <View style={styles.infoSection}>
             <MaterialCommunityIcons name="shield-check" size={24} color="#0284C7" />
