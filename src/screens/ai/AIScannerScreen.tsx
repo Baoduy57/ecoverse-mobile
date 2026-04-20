@@ -98,7 +98,7 @@ export default function AIScannerScreen() {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.7,
+        quality: 0.2, // Giảm chất lượng ảnh để base64 nhỏ hơn, tránh Network Error
         base64: true,
         skipProcessing: false,
       });
@@ -134,7 +134,7 @@ export default function AIScannerScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.7,
+        quality: 0.2, // Giảm chất lượng để tối ưu base64 payload
         base64: true,
       });
 

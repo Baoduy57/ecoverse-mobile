@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, LayoutAnimation } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  LayoutAnimation,
+  Modal,
+  Linking,
+} from 'react-native';
 import { Text, Switch } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -43,6 +51,7 @@ export default function SettingsScreen() {
 
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const [soundExpanded, setSoundExpanded] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   // Master switch: any category enabled = master on
   const masterSoundEnabled = bgMusicEnabled || sfxInteractionEnabled || sfxFeedbackEnabled;
@@ -126,7 +135,7 @@ export default function SettingsScreen() {
   };
 
   const handleBack = () => navigation.goBack();
-  const handleHelp = () => console.log('Navigate to Help');
+  const handleHelp = () => setShowHelpModal(true);
   const handleLogout = async () => await logout();
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -263,27 +272,6 @@ export default function SettingsScreen() {
                       color={colors.primary}
                     />
                   </View>
-
-                  {/* Phản hồi */}
-                  <View style={[styles.subRow, !masterSoundEnabled && styles.disabledRow]}>
-                    <View style={styles.settingLeft}>
-                      <MaterialCommunityIcons
-                        name="check-circle"
-                        size={20}
-                        color="#66BB6A"
-                        style={styles.subIcon}
-                      />
-                      <Text variant="bodyMedium" style={styles.subLabel}>
-                        Phản hồi đúng/sai
-                      </Text>
-                    </View>
-                    <Switch
-                      disabled={!masterSoundEnabled}
-                      value={sfxFeedbackEnabled}
-                      onValueChange={handleFeedback}
-                      color={colors.primary}
-                    />
-                  </View>
                 </View>
               )}
             </View>
@@ -323,8 +311,8 @@ export default function SettingsScreen() {
               )}
             </View>
 
-            {/* ── Help & Feedback ──────────────────────────────────────── */}
-            <TouchableOpacity style={styles.settingItem} onPress={handleHelp}>
+            {/* ── Help & Feedback ────────────────────────────────────── */}
+            <TouchableOpacity style={styles.settingItem} onPress={handleHelp} activeOpacity={0.75}>
               <View style={styles.settingLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: '#E1BEE7' }]}>
                   <MaterialCommunityIcons
@@ -335,7 +323,10 @@ export default function SettingsScreen() {
                 </View>
                 <View style={styles.settingTextContainer}>
                   <Text variant="titleSmall" style={styles.settingTitle}>
-                    Trợ giúp & Phản hồi
+                    Trợ giúp &amp; Phản hồi
+                  </Text>
+                  <Text variant="bodySmall" style={styles.settingSubtitle}>
+                    Liên hệ hỗ trợ và gửi góp ý
                   </Text>
                 </View>
               </View>
@@ -350,8 +341,6 @@ export default function SettingsScreen() {
             </Text>
           </View>
 
-
-
           {/* Logout */}
           <View style={styles.logoutContainer}>
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -361,6 +350,91 @@ export default function SettingsScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      {/* ── Help & Support Modal ── */}
+      <Modal
+        visible={showHelpModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowHelpModal(false)}
+      >
+        <View style={helpStyles.overlay}>
+          <View style={helpStyles.sheet}>
+            {/* Handle */}
+            <View style={helpStyles.handle} />
+
+            <View style={helpStyles.iconRow}>
+              <View style={helpStyles.iconBg}>
+                <MaterialCommunityIcons name="headset" size={32} color={colors.accentPurple} />
+              </View>
+            </View>
+            <Text style={helpStyles.title}>Trợ giúp &amp; Hỗ trợ</Text>
+            <Text style={helpStyles.subtitle}>Liên hệ đội ngũ EcoVerse để được hỗ trợ</Text>
+
+            {/* Contact cards */}
+            <TouchableOpacity
+              style={helpStyles.contactRow}
+              activeOpacity={0.75}
+              onPress={() => Linking.openURL('mailto:ecoversesystem2026@gmail.com')}
+            >
+              <View style={[helpStyles.contactIcon, { backgroundColor: '#EDE7F6' }]}>
+                <MaterialCommunityIcons
+                  name="email-outline"
+                  size={22}
+                  color={colors.accentPurple}
+                />
+              </View>
+              <View style={helpStyles.contactText}>
+                <Text style={helpStyles.contactLabel}>Email hỗ trợ</Text>
+                <Text style={helpStyles.contactValue}>ecoversesystem2026@gmail.com</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={20} color="#BDBDBD" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={helpStyles.contactRow}
+              activeOpacity={0.75}
+              onPress={() => Linking.openURL('https://datn-ashy.vercel.app/')}
+            >
+              <View style={[helpStyles.contactIcon, { backgroundColor: '#E3F2FD' }]}>
+                <MaterialCommunityIcons name="web" size={22} color={colors.accentBlue} />
+              </View>
+              <View style={helpStyles.contactText}>
+                <Text style={helpStyles.contactLabel}>Trung tâm hỗ trợ</Text>
+                <Text style={helpStyles.contactValue}>datn-ashy.vercel.app</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={20} color="#BDBDBD" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={helpStyles.contactRow}
+              activeOpacity={0.75}
+              onPress={() => Linking.openURL('tel:090113095')}
+            >
+              <View style={[helpStyles.contactIcon, { backgroundColor: '#E8F5E9' }]}>
+                <MaterialCommunityIcons name="phone-outline" size={22} color={colors.primary} />
+              </View>
+              <View style={helpStyles.contactText}>
+                <Text style={helpStyles.contactLabel}>Hotline (7:00 – 21:00)</Text>
+                <Text style={helpStyles.contactValue}>090 1130 395</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={20} color="#BDBDBD" />
+            </TouchableOpacity>
+
+            <View style={helpStyles.versionNote}>
+              <Text style={helpStyles.versionNoteText}>Ứng dụng EcoVerse • Phiên bản 1.0.3</Text>
+            </View>
+
+            <TouchableOpacity
+              style={helpStyles.closeBtn}
+              onPress={() => setShowHelpModal(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={helpStyles.closeBtnText}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -540,4 +614,81 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   logoutText: { color: colors.status.error, fontSize: 15, fontWeight: '600' },
+});
+
+const helpStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingBottom: 36,
+    paddingTop: 12,
+  },
+  handle: {
+    alignSelf: 'center',
+    backgroundColor: '#E0E0E0',
+    borderRadius: 3,
+    height: 4,
+    marginBottom: 20,
+    width: 44,
+  },
+  iconRow: { alignItems: 'center', marginBottom: 12 },
+  iconBg: {
+    alignItems: 'center',
+    backgroundColor: '#EDE7F6',
+    borderRadius: 28,
+    height: 64,
+    justifyContent: 'center',
+    width: 64,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#1A1A2E',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: '#757575',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FAFAFA',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  contactIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactText: { flex: 1, gap: 2 },
+  contactLabel: { fontSize: 13, fontWeight: '700', color: '#424242' },
+  contactValue: { fontSize: 12, color: '#757575', fontWeight: '500' },
+  versionNote: { alignItems: 'center', paddingVertical: 16 },
+  versionNoteText: { fontSize: 11, color: '#BDBDBD', fontWeight: '600' },
+  closeBtn: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  closeBtnText: { fontSize: 15, fontWeight: '700', color: '#424242' },
 });
