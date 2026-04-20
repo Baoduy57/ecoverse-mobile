@@ -23,7 +23,7 @@ export type AppStackParamList = {
   RewardHistory: undefined;
   Notification: undefined;
   GameHistory: { gameRoundId: string; gameRoundTitle: string };
-  DragDropGamePlay: { levelId: string | number; gameAttemptId?: string; competitionId?: string };
+  DragDropGamePlay: { levelId: string | number; gameAttemptId?: string; competitionId?: string; competitionScore?: number; };
   GameResultDetail: {
     gameAttemptId?: string;
     skipServerRefresh?: boolean;
@@ -59,6 +59,7 @@ export type AppStackParamList = {
     examId?: string;
     competitionId?: string;
     quizTemplateId?: string;
+    competitionScore?: number;
   };
   ExamResult: {
     examId?: string;

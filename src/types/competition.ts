@@ -39,7 +39,7 @@ export interface ICompetitionGameRound {
   game_round_items: ICompetitionGameRoundItem[];
 }
 
-/** Main Competition object returned by GET /competitions/{partner_id} */
+/** Main Competition object returned by GET /students/{student_id}/competitions */
 export interface ICompetition {
   competition_id: string;
   title: string;
@@ -51,6 +51,7 @@ export interface ICompetition {
   status: CompetitionStatus;
   scope: CompetitionScope;
   target_class: string;
+  score: number;
   game_round: ICompetitionGameRound | null;
   quiz_template: ICompetitionQuizTemplate | null;
 }

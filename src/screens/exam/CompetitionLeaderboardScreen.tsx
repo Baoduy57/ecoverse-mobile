@@ -11,7 +11,13 @@ import {
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation, useRoute, RouteProp, NavigationProp, useFocusEffect } from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  NavigationProp,
+  useFocusEffect,
+} from '@react-navigation/native';
 import { colors, spacing, borderRadius } from '../../theme';
 import { competitionApi } from '../../services/api/competition';
 import type { ICompetitionParticipant } from '../../types/competition';
@@ -115,7 +121,12 @@ export default function CompetitionLeaderboardScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
             refreshControl={
-              <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={ACCENT} colors={[ACCENT]} />
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={ACCENT}
+                colors={[ACCENT]}
+              />
             }
           >
             {participants.map((participant, index) => {
@@ -133,9 +144,15 @@ export default function CompetitionLeaderboardScreen() {
                   ]}
                 >
                   {/* Rank */}
-                  <View style={[styles.rankBox, rank <= 3 && { backgroundColor: medal?.color + '22' }]}>
+                  <View
+                    style={[styles.rankBox, rank <= 3 && { backgroundColor: medal?.color + '22' }]}
+                  >
                     {medal ? (
-                      <MaterialCommunityIcons name={medal.name as any} size={24} color={medal.color} />
+                      <MaterialCommunityIcons
+                        name={medal.name as any}
+                        size={24}
+                        color={medal.color}
+                      />
                     ) : (
                       <Text style={styles.rankNumber}>{rank}</Text>
                     )}
@@ -144,22 +161,32 @@ export default function CompetitionLeaderboardScreen() {
                   {/* Avatar */}
                   <View style={styles.participantAvatarWrap}>
                     {participant.student.avatar_url ? (
-                      <Image source={{ uri: participant.student.avatar_url }} style={styles.participantAvatar} />
+                      <Image
+                        source={{ uri: participant.student.avatar_url }}
+                        style={styles.participantAvatar}
+                      />
                     ) : (
                       <View style={[styles.participantAvatar, styles.participantAvatarPlaceholder]}>
-                        <MaterialCommunityIcons name="account" size={18} color={colors.text.secondary} />
+                        <MaterialCommunityIcons
+                          name="account"
+                          size={18}
+                          color={colors.text.secondary}
+                        />
                       </View>
                     )}
                   </View>
 
                   {/* Info */}
                   <View style={styles.participantInfo}>
-                    <Text style={[styles.participantName, isMe && styles.participantNameMe]} numberOfLines={1}>
+                    <Text
+                      style={[styles.participantName, isMe && styles.participantNameMe]}
+                      numberOfLines={1}
+                    >
                       {participant.student.full_name}
                       {isMe ? ' (Bạn)' : ''}
                     </Text>
                     {participant.student.grade && (
-                      <Text style={styles.participantGrade}>Khối {participant.student.grade}</Text>
+                      <Text style={styles.participantGrade}>Lớp {participant.student.grade}</Text>
                     )}
                   </View>
 

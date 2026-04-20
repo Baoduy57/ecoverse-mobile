@@ -66,11 +66,9 @@ export default function DashboardScreen() {
       const task = InteractionManager.runAfterInteractions(() => {
         if (user?.id) {
           refreshCurrentUser(true);
-        }
-        // Load active competition
-        if (user?.partnerId) {
+          // Load active competition
           competitionApi
-            .getCompetitions(user.partnerId)
+            .getCompetitions(user.id)
             .then(data => {
               const active = data.find(c => c.status === 'ACTIVE');
               setActiveCompetition(active || null);
@@ -79,7 +77,7 @@ export default function DashboardScreen() {
         }
       });
       return () => task.cancel();
-    }, [refreshCurrentUser, user?.id, user?.partnerId])
+    }, [refreshCurrentUser, user?.id])
   );
 
   const stats = user?.statistics;
