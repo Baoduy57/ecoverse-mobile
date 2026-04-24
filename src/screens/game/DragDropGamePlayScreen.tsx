@@ -44,6 +44,22 @@ const BASE_POINTS_PER_CORRECT = 10;
 const COMBO_THRESHOLD = 3;
 const COMBO_MULTIPLIER = 2;
 
+const calculateCompetitionScore = (
+  maxScore: number,
+  correctCount: number,
+  totalQuestions: number
+): number => {
+  if (maxScore <= 0 || totalQuestions <= 0 || correctCount <= 0) {
+    return 0;
+  }
+
+  if (correctCount >= totalQuestions) {
+    return maxScore;
+  }
+
+  return (correctCount / totalQuestions) * maxScore;
+};
+
 export const WasteTypeObj = {}; // Retained for compatibility where needed by components, though most are decoupled.
 
 type DragDropGamePlayScreenRouteProp = RouteProp<AppStackParamList, 'DragDropGamePlay'>;
@@ -59,6 +75,11 @@ export default function DragDropGamePlayScreen() {
   const isReplayMode = Boolean(replayAttemptId);
   const isCompetitionMode = Boolean(competitionId);
   const competitionScore = route.params?.competitionScore;
+  const normalizedCompetitionScore = Number(competitionScore);
+  const hasCompetitionScore =
+    isCompetitionMode &&
+    Number.isFinite(normalizedCompetitionScore) &&
+    normalizedCompetitionScore > 0;
 
   const [isLoading, setIsLoading] = useState(true);
   const [bins, setBins] = useState<IWasteBin[]>([]);
@@ -124,7 +145,7 @@ export default function DragDropGamePlayScreen() {
   ]).current;
 
   const answeredQuestionsRef = useRef<AnswerSnapshotItem[]>([]);
-  const isFinishingRef = useRef(false);
+  const hasFinalizedAttemptRef = useRef(false);
   const isAnimatingRef = useRef(false);
   const formattedResultsRef = useRef<GameResultDetailItem[]>([]);
   const handleAnswerRef = useRef<(typeCode: BinCode, binIndex: number, releaseY: number) => void>(
@@ -320,15 +341,15 @@ export default function DragDropGamePlayScreen() {
         let newCombo = combo + 1;
         let multiplier = 1;
 
-        if (isCompetitionMode && competitionScore !== undefined && competitionScore > 0) {
-          scoreToAdd = competitionScore / questions.length;
+        if (hasCompetitionScore && questions.length > 0) {
+          scoreToAdd = normalizedCompetitionScore / questions.length;
           newCombo = 0; // Disable combo in competition mode
         } else {
           multiplier = newCombo >= COMBO_THRESHOLD ? COMBO_MULTIPLIER : 1;
           scoreToAdd = BASE_POINTS_PER_CORRECT * multiplier;
         }
 
-        const displayScoreAdd = isCompetitionMode ? Number(scoreToAdd.toFixed(1)) : scoreToAdd;
+        const displayScoreAdd = hasCompetitionScore ? Number(scoreToAdd.toFixed(1)) : scoreToAdd;
 
         setFeedbackText(
           multiplier > 1
@@ -448,27 +469,28 @@ export default function DragDropGamePlayScreen() {
       resetPanAndScale,
       combo,
       opacity,
+      hasCompetitionScore,
+      normalizedCompetitionScore,
     ]
   );
   handleAnswerRef.current = handleAnswer;
 
   const handleGameOver = async () => {
-    if (isFinishingRef.current) {
+    if (hasFinalizedAttemptRef.current) {
       return;
     }
-    isFinishingRef.current = true;
+    hasFinalizedAttemptRef.current = true;
     setIsGameOver(true);
 
     const playedSeconds = Math.max(0, timeLimitRef.current - timerRef.current);
     const answerSnapshot = answeredQuestionsRef.current;
     const correctCount = answerSnapshot.filter(answer => answer.isCorrect).length;
     const totalQuestions = questions.length;
-    
-    // Recalculate final score to avoid floating point accumulated imprecision
-    const finalScore = (isCompetitionMode && competitionScore !== undefined && competitionScore > 0)
-      ? (correctCount / totalQuestions) * competitionScore
+
+    const finalScore = hasCompetitionScore
+      ? calculateCompetitionScore(normalizedCompetitionScore, correctCount, totalQuestions)
       : scoreRef.current;
-      
+
     const finalMaxCombo = maxComboRef.current;
 
     let summaryPayload: AttemptSummaryPayload = buildSummaryPayload(
@@ -490,13 +512,14 @@ export default function DragDropGamePlayScreen() {
         console.error('Thiếu game attempt id khi chốt kết quả màn chơi.');
         setFinalSummary(summaryPayload);
         setShowResult(true);
-        isFinishingRef.current = false;
         return;
       }
 
       const attemptPayload = {
         duration: playedSeconds,
-        points_earned: finalScore,
+        // In competition mode, score is handled by competition participant registration.
+        // Keep attempt points neutral to avoid double counting with backend point pipelines.
+        points_earned: hasCompetitionScore ? 0 : finalScore,
         total_items: totalQuestions,
         correct_count: correctCount,
         completed: true,
@@ -585,22 +608,41 @@ export default function DragDropGamePlayScreen() {
     // Competition mode: register participant on leaderboard
     if (isCompetitionMode && competitionId && user?.id) {
       try {
-        const now = new Date();
-        const pad = (n: number) => n.toString().padStart(2, '0');
-        const joinedAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-        const body = {
-          joinedAt,
-          totalScore: Math.round(finalScore),
-        };
-        console.log('[Competition] Registering participant:', { competitionId, studentId: user.id, body });
-        await competitionApi.registerParticipant(competitionId, user.id, body);
-        console.log('[Competition] Participant registered successfully');
+        const existingParticipant = await competitionApi.checkParticipant(competitionId, user.id);
+
+        if (existingParticipant) {
+          console.log('[Competition] Participant already exists, skip duplicate registration.', {
+            competitionId,
+            studentId: user.id,
+            participantId: existingParticipant.competition_participant_id,
+          });
+        } else {
+          const now = new Date();
+          const pad = (n: number) => n.toString().padStart(2, '0');
+          const joinedAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+          const body = {
+            joinedAt,
+            totalScore: Math.round(finalScore),
+          };
+          console.log('[Competition] Registering participant:', {
+            competitionId,
+            studentId: user.id,
+            body,
+          });
+          await competitionApi.registerParticipant(competitionId, user.id, body);
+          console.log('[Competition] Participant registered successfully');
+
+          // Sync points again after competition registration in case backend updates student points here.
+          refreshCurrentUser(true);
+        }
       } catch (regErr: any) {
-        console.error('Error registering competition game participant:', regErr?.response?.status, regErr?.response?.data || regErr?.message);
+        console.error(
+          'Error registering competition game participant:',
+          regErr?.response?.status,
+          regErr?.response?.data || regErr?.message
+        );
       }
     }
-
-    isFinishingRef.current = false;
   };
 
   const handleViewDetails = () => {

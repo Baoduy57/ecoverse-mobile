@@ -75,8 +75,10 @@ export interface ICompetitionParticipant {
 
 /** Request body for registering a participant */
 export interface IRegisterParticipantPayload {
-  joinedAt: string; // Format YYYY-MM-DDTHH:mm:ss
-  totalScore: number;
+  joinedAt?: string; // Format YYYY-MM-DDTHH:mm:ss
+  totalScore?: number;
+  joined_at?: string;
+  total_score?: number;
 }
 
 /** Response data from participant registration */

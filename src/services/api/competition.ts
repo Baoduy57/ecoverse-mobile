@@ -43,16 +43,33 @@ export const competitionApi = {
     competitionId: string,
     studentId: string
   ): Promise<ICompetitionParticipant | null> => {
-    const response = await apiClient.get<any>(
-      `/competitions/${competitionId}/students/${studentId}`,
-      { baseURL: getCompetitionBaseUrl() }
-    );
+    try {
+      const response = await apiClient.get<any>(
+        `/competitions/${competitionId}/students/${studentId}`,
+        { baseURL: getCompetitionBaseUrl() }
+      );
 
-    const payload = response.data;
-    if (payload && typeof payload === 'object' && 'data' in payload) {
-      return payload.data as ICompetitionParticipant | null;
+      const payload = response.data;
+      if (payload && typeof payload === 'object' && 'data' in payload) {
+        const nested = (payload as { data?: unknown }).data;
+        if (nested && typeof nested === 'object' && 'competition_participant_id' in nested) {
+          return nested as ICompetitionParticipant;
+        }
+        return (nested as ICompetitionParticipant | null) ?? null;
+      }
+
+      if (payload && typeof payload === 'object' && 'competition_participant_id' in payload) {
+        return payload as ICompetitionParticipant;
+      }
+
+      return null;
+    } catch (error: unknown) {
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status === 404) {
+        return null;
+      }
+      throw error;
     }
-    return null;
   },
 
   /**
@@ -64,9 +81,18 @@ export const competitionApi = {
     studentId: string,
     payload: IRegisterParticipantPayload
   ): Promise<IRegisterParticipantResponse> => {
+    const joinedAt = payload.joinedAt ?? payload.joined_at;
+    const totalScore = payload.totalScore ?? payload.total_score;
+    const normalizedPayload = {
+      joinedAt,
+      totalScore,
+      joined_at: joinedAt,
+      total_score: totalScore,
+    };
+
     const response = await apiClient.post<any>(
       `/competitions/${competitionId}/students/${studentId}/participant`,
-      payload,
+      normalizedPayload,
       { baseURL: getCompetitionBaseUrl() }
     );
 
