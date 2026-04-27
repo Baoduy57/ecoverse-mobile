@@ -49,10 +49,23 @@ export interface WasteHistoryItem {
   updated_at?: string;
 }
 
-export const getCorrectBinCode = (wasteType: WasteType, labels: string[]): 'PLASTIC' | 'PAPER' | 'ORGANIC' | 'OTHERS' => {
+export const getCorrectBinCode = (
+  wasteType: WasteType,
+  labels: string[]
+): 'PLASTIC' | 'PAPER' | 'ORGANIC' | 'OTHERS' => {
   if (wasteType.id === 'organic') return 'ORGANIC';
   if (wasteType.id === 'recyclable') {
-    const paperKeywords = ['paper', 'cardboard', 'carton', 'newspaper', 'magazine', 'tissue', 'towel', 'roll', 'box'];
+    const paperKeywords = [
+      'paper',
+      'cardboard',
+      'carton',
+      'newspaper',
+      'magazine',
+      'tissue',
+      'towel',
+      'roll',
+      'box',
+    ];
     const isPaper = labels.some(l => paperKeywords.some(k => l.toLowerCase().includes(k)));
     return isPaper ? 'PAPER' : 'PLASTIC';
   }
@@ -102,7 +115,7 @@ export const WASTE_TYPES: WasteType[] = [
     id: 'recyclable',
     name: 'Rác tái chế',
     icon: 'recycle',
-    color: '#2196F3',
+    color: '#FFB74D',
     description: 'Rác có thể tái chế: nhựa, giấy, kim loại, thủy tinh',
     recyclingInfo: 'Rửa sạch và bỏ vào thùng rác màu xanh dương. Góp phần bảo vệ môi trường.',
     priority: 2,
@@ -141,9 +154,9 @@ export const WASTE_TYPES: WasteType[] = [
   },
   {
     id: 'hazardous',
-    name: 'Rác nguy hại',
+    name: 'Rác nhựa',
     icon: 'alert',
-    color: '#F44336',
+    color: '#2196F3',
     description: 'Rác độc hại: pin, bóng đèn, hóa chất, điện tử',
     recyclingInfo: 'Mang đến điểm thu gom chuyên dụng. KHÔNG vứt vào rác thông thường.',
     priority: 3,
@@ -174,7 +187,7 @@ export const WASTE_TYPES: WasteType[] = [
     id: 'general',
     name: 'Rác khác',
     icon: 'delete',
-    color: '#9E9E9E',
+    color: '#F44336',
     description: 'Rác thải khó phân hủy, không tái chế được',
     recyclingInfo: 'Bỏ vào thùng rác màu xám. Giảm thiểu sử dụng để bảo vệ môi trường.',
     priority: 0,
