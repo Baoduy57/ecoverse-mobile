@@ -307,69 +307,306 @@ export async function analyzeAndClassifyWaste(
   }
 }
 
-/** Map label tiếng Anh sang tên tiếng Việt */
+/** Map label tiếng Anh sang tên tiếng Việt (ưu tiên cụm từ dài hơn) */
 const LABEL_TO_VIETNAMESE: Record<string, string> = {
+  // ── Đồ uống & bao bì nhựa ─────────────────────────────────────────────
+  'plastic bottle': 'Chai nhựa',
+  'water bottle': 'Chai nước',
+  'soda bottle': 'Chai nước ngọt',
+  'juice bottle': 'Chai nước ép',
+  'milk bottle': 'Chai sữa',
+  'glass bottle': 'Chai thủy tinh',
+  'wine bottle': 'Chai rượu',
+  'beer bottle': 'Chai bia',
   bottle: 'Chai',
-  plastic: 'Nhựa',
-  container: 'Hộp đựng',
-  paper: 'Giấy',
-  cardboard: 'Bìa carton',
-  can: 'Lon',
-  battery: 'Pin',
-  apple: 'Táo',
-  fruit: 'Trái cây',
-  food: 'Thức ăn',
-  electronics: 'Điện tử',
-  bag: 'Túi',
+  'plastic cup': 'Cốc nhựa',
+  'disposable cup': 'Cốc dùng một lần',
+  cup: 'Cốc',
   'plastic bag': 'Túi nilon',
-  towel: 'Giấy lau',
-  'paper towel': 'Cuộn giấy lau',
+  'shopping bag': 'Túi mua hàng',
+  'garbage bag': 'Túi rác',
+  bag: 'Túi',
+  'plastic container': 'Hộp nhựa',
+  'food container': 'Hộp đựng thức ăn',
+  container: 'Hộp đựng',
+  'plastic straw': 'Ống hút nhựa',
+  straw: 'Ống hút',
+  'plastic wrap': 'Màng bọc nhựa',
+  wrapper: 'Bao bì',
+  packaging: 'Bao bì đóng gói',
+  plastic: 'Nhựa',
+  // ── Giấy & carton ─────────────────────────────────────────────────────
   'toilet paper': 'Cuộn giấy vệ sinh',
+  'paper towel': 'Cuộn giấy lau',
   'tissue paper': 'Giấy thấm',
   'paper roll': 'Cuộn giấy',
-  roll: 'Cuộn',
+  'wrapping paper': 'Giấy gói',
+  'kraft paper': 'Giấy kraft',
+  'paper bag': 'Túi giấy',
+  'cardboard box': 'Thùng carton',
+  'cereal box': 'Hộp ngũ cốc',
+  carton: 'Hộp carton',
+  cardboard: 'Bìa carton',
+  newspaper: 'Báo giấy',
+  magazine: 'Tạp chí',
+  book: 'Sách',
   document: 'Tài liệu giấy',
-  packaging: 'Bao bì',
-  glass: 'Thủy tinh',
+  towel: 'Giấy lau',
+  tissue: 'Giấy ăn',
+  roll: 'Cuộn giấy',
+  paper: 'Giấy',
+  // ── Kim loại ──────────────────────────────────────────────────────────
+  'aluminum can': 'Lon nhôm',
+  'tin can': 'Lon thiếc',
+  'beer can': 'Lon bia',
+  'soda can': 'Lon nước ngọt',
+  can: 'Lon',
+  'metal lid': 'Nắp kim loại',
+  'steel pipe': 'Ống thép',
+  aluminum: 'Nhôm',
+  'aluminum foil': 'Giấy bạc nhôm',
+  foil: 'Giấy bạc',
+  steel: 'Thép',
+  tin: 'Thiếc',
   metal: 'Kim loại',
-  newspaper: 'Báo',
-  bulb: 'Đèn',
-  'plastic bottle': 'Chai nhựa',
-  'glass bottle': 'Chai thủy tinh',
+  // ── Thủy tinh ─────────────────────────────────────────────────────────
+  'glass jar': 'Lọ thủy tinh',
+  'glass cup': 'Ly thủy tinh',
+  'glass bowl': 'Bát thủy tinh',
+  jar: 'Lọ',
+  glass: 'Thủy tinh',
+  // ── Thực phẩm hữu cơ ──────────────────────────────────────────────────
+  'banana peel': 'Vỏ chuối',
+  'orange peel': 'Vỏ cam',
+  'apple core': 'Lõi táo',
+  'food waste': 'Thức ăn thừa',
+  'food scraps': 'Cặn thức ăn',
+  'vegetable scraps': 'Rau củ thừa',
+  banana: 'Chuối',
+  apple: 'Táo',
+  orange: 'Cam',
+  mango: 'Xoài',
+  grapes: 'Nho',
+  grape: 'Nho',
+  watermelon: 'Dưa hấu',
+  pineapple: 'Dứa',
+  coconut: 'Dừa',
+  corn: 'Bắp ngô',
+  potato: 'Khoai tây',
+  tomato: 'Cà chua',
+  carrot: 'Cà rốt',
+  onion: 'Hành tây',
+  cucumber: 'Dưa leo',
+  lettuce: 'Rau diếp',
+  spinach: 'Rau bó xôi',
+  mushroom: 'Nấm',
+  avocado: 'Bơ',
+  lemon: 'Chanh',
+  lime: 'Chanh xanh',
+  strawberry: 'Dâu tây',
+  pear: 'Lê',
+  peach: 'Đào',
+  fruit: 'Trái cây',
+  vegetable: 'Rau củ',
+  flower: 'Hoa',
+  leaf: 'Lá cây',
+  grass: 'Cỏ',
+  plant: 'Cây',
+  tree: 'Cây gỗ',
+  wood: 'Gỗ',
+  rice: 'Cơm/Gạo',
+  bread: 'Bánh mì',
+  meat: 'Thịt',
+  fish: 'Cá',
+  egg: 'Trứng',
+  milk: 'Sữa',
+  bone: 'Xương',
+  shell: 'Vỏ sò',
+  peel: 'Vỏ trái cây',
+  food: 'Thức ăn',
+  organic: 'Hữu cơ',
+  // ── Rác nguy hại & điện tử ────────────────────────────────────────────
+  'lithium battery': 'Pin lithium',
+  'aa battery': 'Pin AA',
+  'aaa battery': 'Pin AAA',
+  battery: 'Pin',
+  'fluorescent lamp': 'Đèn huỳnh quang',
+  'light bulb': 'Bóng đèn',
+  lightbulb: 'Bóng đèn',
+  bulb: 'Bóng đèn',
+  'mobile phone': 'Điện thoại di động',
+  smartphone: 'Điện thoại thông minh',
+  phone: 'Điện thoại',
+  laptop: 'Máy tính xách tay',
+  computer: 'Máy tính',
+  tablet: 'Máy tính bảng',
+  keyboard: 'Bàn phím',
+  mouse: 'Chuột máy tính',
+  'circuit board': 'Bảng mạch điện',
+  circuit: 'Mạch điện',
+  cable: 'Cáp điện',
+  charger: 'Sạc',
+  electronic: 'Thiết bị điện tử',
+  electronics: 'Đồ điện tử',
+  device: 'Thiết bị',
+  appliance: 'Đồ gia dụng',
+  electrical: 'Điện',
+  syringe: 'Ống tiêm',
+  medicine: 'Thuốc',
+  chemical: 'Hóa chất',
+  paint: 'Sơn',
+  spray: 'Bình xịt',
+  thermometer: 'Nhiệt kế',
+  toxic: 'Độc hại',
+  hazardous: 'Chất nguy hại',
+  fluorescent: 'Huỳnh quang',
+  // ── Rác thông thường ──────────────────────────────────────────────────
+  styrofoam: 'Xốp styrofoam',
+  'foam box': 'Hộp xốp',
+  foam: 'Xốp',
+  rubber: 'Cao su',
+  cloth: 'Vải',
+  diaper: 'Tã lót',
+  cigarette: 'Đầu mẩu thuốc lá',
+  tape: 'Băng keo',
+  ceramic: 'Gốm sứ',
+  napkin: 'Giấy ăn dùng một lần',
+  'candy wrapper': 'Giấy kẹo',
+  'chip bag': 'Túi bim bim',
+  waste: 'Rác',
+  trash: 'Rác thải',
+  misc: 'Vật dụng khác',
+  unknown: 'Vật thể chưa xác định',
+};
+
+/** Danh sách mô tả chi tiết theo từng nhãn phát hiện */
+const LABEL_DETAIL_DESCRIPTIONS: Record<string, string> = {
+  // Nhựa
+  'plastic bottle':
+    'Chai nhựa sau khi dùng nên được rửa sạch, bẹp dẹt lại để tiết kiệm không gian và bỏ vào thùng tái chế. Nhựa PET (ký hiệu số 1) là loại phổ biến nhất và dễ tái chế.',
+  'plastic bag':
+    'Túi nilon rất khó phân hủy (mất 500-1000 năm). Hãy tái sử dụng nhiều lần hoặc thay bằng túi vải. Nếu phải bỏ, gom thành một túi lớn để dễ phân loại.',
+  'plastic cup':
+    'Cốc nhựa dùng một lần là nguồn rác thải lớn. Hãy dùng cốc có thể tái sử dụng. Khi bỏ đi, làm sạch và bỏ vào thùng tái chế nếu có ký hiệu tái chế.',
+  straw: 'Ống hút nhựa khó tái chế vì kích thước nhỏ. Thay bằng ống hút giấy, inox hoặc tre để bảo vệ môi trường. Nên bỏ vào thùng rác thông thường.',
+  plastic: 'Đồ nhựa cần được phân loại theo ký hiệu tái chế (số 1-7 ở đáy). Rửa sạch trước khi bỏ vào thùng tái chế để đảm bảo chất lượng tái chế.',
+  // Giấy
+  'toilet paper':
+    'Giấy vệ sinh đã qua sử dụng không tái chế được và không nên xả xuống bồn cầu ở Việt Nam. Bỏ vào thùng rác thông thường hoặc thùng tái chế nếu chưa qua sử dụng.',
+  'paper towel': 'Cuộn giấy lau và hộp carton bao bì có thể tái chế. Nếu giấy lau đã dùng, bỏ vào thùng rác thông thường.',
+  newspaper:
+    'Báo và tạp chí cũ là nguyên liệu tái chế tốt. Gom lại thành bó, bán cho đồng nát hoặc bỏ vào thùng tái chế màu xanh dương.',
+  cardboard:
+    'Bìa carton và thùng giấy là vật liệu tái chế có giá trị. Tháo dẹt, tháo băng keo, tránh để ướt để đảm bảo chất lượng khi tái chế.',
+  paper: 'Giấy sạch (chưa dính dầu mỡ hay hóa chất) có thể tái chế. Bỏ vào thùng tái chế màu xanh dương hoặc bán cho vựa thu mua.',
+  // Kim loại
+  can: 'Lon nhôm là vật liệu tái chế có giá trị cao. Rửa sạch, bẹp dẹt để tiết kiệm không gian. Nhôm có thể tái chế vô hạn lần mà không mất chất lượng.',
+  'aluminum can': 'Lon nhôm tái chế tiết kiệm 95% năng lượng so với sản xuất nhôm mới. Rửa sạch và bỏ vào thùng tái chế.',
+  metal: 'Kim loại là vật liệu tái chế quý giá. Phân loại theo loại (nhôm, sắt, đồng) để đạt giá trị thu gom cao nhất.',
+  // Thủy tinh
+  'glass bottle': 'Chai thủy tinh có thể tái sử dụng nhiều lần hoặc tái chế. Rửa sạch, tháo nắp kim loại và bỏ vào điểm thu gom thủy tinh.',
+  glass: 'Thủy tinh tái chế 100% và có thể tái chế vô hạn lần. Không bỏ thủy tinh bể vào túi rác thông thường vì nguy hiểm. Gói cẩn thận trước khi bỏ.',
+  // Thực phẩm hữu cơ
+  'food waste': 'Thức ăn thừa là nguyên liệu lý tưởng để làm phân compost. Bỏ vào thùng rác hữu cơ (xanh lá). Phân compost từ rác thực phẩm rất tốt cho cây trồng.',
+  banana: 'Chuối và vỏ chuối là rác hữu cơ phân hủy tự nhiên nhanh chóng. Bỏ vào thùng rác hữu cơ hoặc ủ phân compost.',
+  apple: 'Táo và lõi táo là rác hữu cơ có thể phân hủy tự nhiên. Bỏ vào thùng rác hữu cơ hoặc ủ phân compost.',
+  fruit: 'Trái cây và phần còn thừa (vỏ, hạt) là rác hữu cơ tốt cho việc ủ phân compost. Bỏ vào thùng rác màu xanh lá.',
+  vegetable: 'Rau củ và phần cắt bỏ là rác hữu cơ phân hủy nhanh. Dùng làm phân compost hoặc bỏ vào thùng rác hữu cơ.',
+  food: 'Thức ăn thừa nên được bỏ vào thùng rác hữu cơ (xanh lá). Tránh đổ dầu ăn thừa vào cống thoát nước vì sẽ gây tắc nghẽn.',
+  // Điện tử & nguy hại
+  battery:
+    'Pin là rác nguy hại chứa kim loại nặng và axit. KHÔNG vứt vào thùng rác thông thường. Mang đến điểm thu gom pin tại siêu thị, cửa hàng điện máy.',
+  lightbulb:
+    'Bóng đèn cũ (đặc biệt đèn compact và đèn huỳnh quang) chứa thủy ngân. KHÔNG đập vỡ. Mang đến điểm thu gom chuyên dụng tại siêu thị.',
+  phone: 'Điện thoại cũ chứa nhiều kim loại quý và hóa chất độc hại. Mang đến cửa hàng điện thoại hoặc điểm thu gom thiết bị điện tử để xử lý đúng cách.',
+  electronics:
+    'Thiết bị điện tử cũ là rác điện tử (e-waste) cần xử lý đặc biệt. Liên hệ nhà sản xuất hoặc mang đến điểm thu gom thiết bị điện tử.',
+  medicine: 'Thuốc hết hạn là rác nguy hại. KHÔNG đổ xuống cống hay vứt vào thùng rác thông thường. Trả lại cho nhà thuốc hoặc cơ sở y tế.',
+  // Rác thông thường
+  styrofoam:
+    'Hộp xốp styrofoam (EPS) rất khó tái chế và mất hàng trăm năm để phân hủy. Bỏ vào thùng rác thông thường. Hạn chế sử dụng bằng cách mang hộp đựng riêng.',
+  diaper: 'Tã lót dùng một lần không thể tái chế. Gói kín trước khi bỏ vào thùng rác thông thường để tránh mùi và vi khuẩn lây lan.',
+  cigarette: 'Đầu mẩu thuốc lá chứa hóa chất độc hại. KHÔNG vứt xuống đất hay cống rãnh. Bỏ vào thùng rác thông thường sau khi dập tắt hoàn toàn.',
 };
 
 /**
- * Tạo tên hiển thị từ labels
+ * Tạo tên hiển thị từ labels — ưu tiên cụm từ dài nhất khớp trong từ điển
  */
 function generateDisplayName(labels: string[], wasteType: WasteType): string {
   if (!labels?.length) return wasteType.name;
-  const first = (labels[0] || '').toLowerCase();
-  const joined = labels.slice(0, 2).join(' ').toLowerCase();
-  return (
-    LABEL_TO_VIETNAMESE[joined] ||
-    LABEL_TO_VIETNAMESE[first] ||
-    (first ? first.charAt(0).toUpperCase() + first.slice(1) : wasteType.name)
-  );
+
+  // Thử ghép 3, 2, 1 nhãn đầu để tìm cụm từ dài nhất có trong từ điển
+  for (let n = Math.min(3, labels.length); n >= 1; n--) {
+    const candidate = labels
+      .slice(0, n)
+      .join(' ')
+      .toLowerCase()
+      .trim();
+    if (LABEL_TO_VIETNAMESE[candidate]) {
+      return LABEL_TO_VIETNAMESE[candidate];
+    }
+  }
+
+  // Thử từng nhãn riêng lẻ (không chỉ label[0])
+  for (const label of labels.slice(0, 5)) {
+    const lbl = (label || '').toLowerCase().trim();
+    if (LABEL_TO_VIETNAMESE[lbl]) {
+      return LABEL_TO_VIETNAMESE[lbl];
+    }
+    // Thử tìm nhãn nào đó trong từ điển có chứa label hoặc ngược lại
+    for (const [key, value] of Object.entries(LABEL_TO_VIETNAMESE)) {
+      if (lbl.includes(key) || key.includes(lbl)) {
+        return value;
+      }
+    }
+  }
+
+  // Fallback: viết hoa chữ đầu label đầu tiên
+  const first = (labels[0] || '').toLowerCase().trim();
+  return first ? first.charAt(0).toUpperCase() + first.slice(1) : wasteType.name;
 }
 
 /**
- * Tạo mô tả chi tiết về loại rác
+ * Tạo mô tả chi tiết về loại rác — ưu tiên mô tả theo vật phẩm cụ thể
  */
 function generateWasteDescription(wasteType: WasteType, labels: string[]): string {
-  const descriptions: Record<string, string> = {
-    organic: `Đây là rác hữu cơ có thể phân hủy tự nhiên. Vật phẩm này nên được bỏ vào thùng rác xanh lá để tạo phân compost.`,
-    recyclable: `Đây là rác có thể tái chế. Vật phẩm này có thể được tái chế để làm sản phẩm mới, giúp bảo vệ môi trường.`,
-    hazardous: `Đây là rác nguy hại cần xử lý đặc biệt. Không được vứt chung với rác thông thường vì có thể gây hại cho môi trường và sức khỏe.`,
-    general: `Đây là rác thông thường không thể tái chế. Vật phẩm này nên được bỏ vào thùng rác xám để xử lý đúng cách.`,
-  };
-
-  let description = descriptions[wasteType.id] || descriptions.general;
-
-  if (labels.length > 0) {
-    description += `\n\nPhát hiện: ${labels.slice(0, 3).join(', ')}`;
+  // 1. Thử tìm mô tả chi tiết theo nhãn cụ thể (ưu tiên cụm từ dài hơn)
+  for (let n = Math.min(3, labels.length); n >= 1; n--) {
+    const candidate = labels
+      .slice(0, n)
+      .join(' ')
+      .toLowerCase()
+      .trim();
+    if (LABEL_DETAIL_DESCRIPTIONS[candidate]) {
+      return LABEL_DETAIL_DESCRIPTIONS[candidate];
+    }
+  }
+  for (const label of labels.slice(0, 5)) {
+    const lbl = (label || '').toLowerCase().trim();
+    if (LABEL_DETAIL_DESCRIPTIONS[lbl]) {
+      return LABEL_DETAIL_DESCRIPTIONS[lbl];
+    }
+    // Partial match
+    for (const [key, desc] of Object.entries(LABEL_DETAIL_DESCRIPTIONS)) {
+      if (lbl.includes(key) || key.includes(lbl)) {
+        return desc;
+      }
+    }
   }
 
-  return description;
+  // 2. Fallback: mô tả theo loại rác kèm tên tiếng Việt của vật phẩm
+  const displayItem = generateDisplayName(labels, wasteType);
+  const itemNote =
+    displayItem && displayItem !== wasteType.name ? ` "${displayItem}"` : '';
+
+  const fallbacks: Record<string, string> = {
+    organic: `Vật phẩm${itemNote} thuộc nhóm rác hữu cơ — có thể phân hủy tự nhiên.\n\n✅ Bỏ vào thùng rác màu xanh lá.\n♻️ Có thể dùng ủ phân compost cho cây trồng.\n⚠️ Không để lẫn với rác tái chế hoặc rác nguy hại.`,
+    recyclable: `Vật phẩm${itemNote} thuộc nhóm rác có thể tái chế.\n\n✅ Rửa sạch trước khi bỏ vào thùng tái chế màu xanh dương.\n♻️ Tái chế giúp tiết kiệm tài nguyên và giảm ô nhiễm.\n⚠️ Không bỏ khi còn dính dầu mỡ hoặc hóa chất.`,
+    hazardous: `Vật phẩm${itemNote} thuộc nhóm rác nguy hại — cần xử lý đặc biệt.\n\n⛔ KHÔNG bỏ vào thùng rác thông thường.\n✅ Mang đến điểm thu gom chuyên dụng (siêu thị, cửa hàng điện máy).\n⚠️ Có thể gây hại nghiêm trọng cho môi trường và sức khỏe.`,
+    general: `Vật phẩm${itemNote} thuộc nhóm rác thông thường không tái chế được.\n\n✅ Bỏ vào thùng rác màu xám.\n💡 Cân nhắc tìm phương án thay thế thân thiện hơn với môi trường.\n⚠️ Không bỏ vào thùng tái chế.`,
+  };
+
+  return fallbacks[wasteType.id] || fallbacks.general;
 }
 
 /**
